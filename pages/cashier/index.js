@@ -616,3 +616,5 @@ export default function CashierPOS() {
     </>
   )
 }
+
+// v2
