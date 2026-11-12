@@ -29,6 +29,7 @@ export default function CashierPOS() {
   const [sales, setSales] = useState([])
   const [loading, setLoading] = useState(true)
   const [posTab, setPosTab] = useState('retail')
+  const [saleMode, setSaleMode] = useState('both')
   const [splitCashPaid, setSplitCashPaid] = useState('')
   const [receipt, setReceipt] = useState(null)
   const [editingPrice, setEditingPrice] = useState({})
@@ -61,6 +62,11 @@ export default function CashierPOS() {
     setProfile(prof)
     const shopData = prof.shops
     setShop(shopData)
+    // Apply sale mode: auto-set posTab if shop only sells one type
+    const mode = shopData.sale_mode || 'both'
+    setSaleMode(mode)
+    if (mode === 'wholesale') setPosTab('wholesale')
+    else setPosTab('retail')
     const shopId = shopData.id
     const [pr, cf, sr] = await Promise.all([
       supabase.from('products').select('*,product_field_values(field_id,value)').eq('shop_id', shopId).eq('is_active', true).order('name'),
@@ -339,11 +345,18 @@ export default function CashierPOS() {
                 />
                 {search && <button onClick={() => setSearch('')} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:'#4b5563', cursor:'pointer', fontSize:14 }}>✕</button>}
               </div>
-              <div style={{ display:'flex', background:'#111827', borderRadius:10, border:'1px solid #1f2937', overflow:'hidden', flexShrink:0 }}>
-                {[{k:'retail',l:'Retail'},{k:'wholesale',l:'Wholesale'}].map(t => (
-                  <button key={t.k} onClick={() => setPosTab(t.k)} style={{ padding:'9px 16px', border:'none', background: posTab===t.k ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'transparent', color: posTab===t.k ? '#fff' : '#6b7280', fontWeight: posTab===t.k ? 700 : 400, fontSize:12, cursor:'pointer' }}>{t.l}</button>
-                ))}
-              </div>
+              {saleMode === 'both' && (
+                <div style={{ display:'flex', background:'#111827', borderRadius:10, border:'1px solid #1f2937', overflow:'hidden', flexShrink:0 }}>
+                  {[{k:'retail',l:'Retail'},{k:'wholesale',l:'Wholesale'}].map(t => (
+                    <button key={t.k} onClick={() => setPosTab(t.k)} style={{ padding:'9px 16px', border:'none', background: posTab===t.k ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'transparent', color: posTab===t.k ? '#fff' : '#6b7280', fontWeight: posTab===t.k ? 700 : 400, fontSize:12, cursor:'pointer' }}>{t.l}</button>
+                  ))}
+                </div>
+              )}
+              {saleMode !== 'both' && (
+                <div style={{ padding:'7px 14px', background:'rgba(99,102,241,0.12)', borderRadius:10, border:'1px solid rgba(99,102,241,0.25)', fontSize:12, fontWeight:700, color:'#a5b4fc', flexShrink:0 }}>
+                  {saleMode === 'retail' ? '🏪 Retail' : '📦 Wholesale'}
+                </div>
+              )}
             </div>
 
             {/* Category label + product count */}
@@ -616,5 +629,3 @@ export default function CashierPOS() {
     </>
   )
 }
-
-// v2

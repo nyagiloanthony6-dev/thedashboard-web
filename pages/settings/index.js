@@ -11,7 +11,7 @@ export default function Settings() {
   const [toast, setToast] = useState('')
 
   // Shop info
-  const [shopForm, setShopForm] = useState({ name: '', phone: '', email: '', address: '', currency: 'TZS', tax_rate: '' })
+  const [shopForm, setShopForm] = useState({ name: '', phone: '', email: '', address: '', currency: 'TZS', tax_rate: '', sale_mode: 'both' })
   const [shopSaving, setShopSaving] = useState(false)
 
   // Categories
@@ -46,6 +46,7 @@ export default function Settings() {
       address: shopData.address || '',
       currency: shopData.currency || 'TZS',
       tax_rate: String(shopData.tax_rate || ''),
+      sale_mode: shopData.sale_mode || 'both',
     })
     const shopId = shopData.id
     const [cf, catData] = await Promise.all([
@@ -66,8 +67,9 @@ export default function Settings() {
       address: shopForm.address.trim() || null,
       currency: shopForm.currency,
       tax_rate: parseFloat(shopForm.tax_rate) || null,
+      sale_mode: shopForm.sale_mode,
     }).eq('id', shop.id)
-    if (error) { showToast(error.message, '#ff4d6d') } else { showToast('Shop info saved!'); setShop(p => ({ ...p, name: shopForm.name })) }
+    if (error) { showToast(error.message, '#ff4d6d') } else { showToast('Shop info saved!'); setShop(p => ({ ...p, name: shopForm.name, sale_mode: shopForm.sale_mode })) }
     setShopSaving(false)
   }
 
@@ -121,6 +123,12 @@ export default function Settings() {
 
   if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0d1117' }}><div style={{ width:36, height:36, border:'3px solid #30363d', borderTopColor:'#a78bfa', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>
 
+  const saleModeOptions = [
+    { value: 'both', label: '🔄 Retail & Wholesale', desc: 'Show both tabs on the cashier screen' },
+    { value: 'retail', label: '🏪 Retail Only', desc: 'Hide wholesale tab, always sell at retail price' },
+    { value: 'wholesale', label: '📦 Wholesale Only', desc: 'Hide retail tab, always sell at wholesale price' },
+  ]
+
   return (
     <>
       <Head><title>Settings — TheDashboard</title></Head>
@@ -172,6 +180,30 @@ export default function Settings() {
                 </div>
               </div>
               <button onClick={saveShopInfo} disabled={shopSaving} style={{ marginTop:20, padding:'12px 28px', borderRadius:8, background:'#a78bfa', color:'#000', fontWeight:700, fontSize:14, border:'none', cursor:'pointer' }}>{shopSaving ? 'Saving...' : 'Save Shop Info'}</button>
+            </div>
+
+            {/* Sale Mode */}
+            <div style={C.card}>
+              <p style={C.sectionTitle}>💰 SALE MODE</p>
+              <p style={{ fontSize:12, color:'#7d8590', marginBottom:16 }}>Controls which pricing tabs appear on the cashier (POS) screen.</p>
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                {saleModeOptions.map(opt => {
+                  const isActive = shopForm.sale_mode === opt.value
+                  return (
+                    <button key={opt.value} onClick={() => setShopForm(p => ({ ...p, sale_mode: opt.value }))}
+                      style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:10, border:`1.5px solid ${isActive ? '#a78bfa' : '#30363d'}`, background: isActive ? 'rgba(167,139,250,0.1)' : 'transparent', cursor:'pointer', textAlign:'left' }}>
+                      <div style={{ width:20, height:20, borderRadius:'50%', border:`2px solid ${isActive ? '#a78bfa' : '#484f58'}`, background: isActive ? '#a78bfa' : 'transparent', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        {isActive && <div style={{ width:8, height:8, borderRadius:'50%', background:'#000' }} />}
+                      </div>
+                      <div>
+                        <p style={{ fontSize:13, fontWeight: isActive ? 700 : 500, color: isActive ? '#e6edf3' : '#7d8590', marginBottom:2 }}>{opt.label}</p>
+                        <p style={{ fontSize:11, color:'#484f58' }}>{opt.desc}</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+              <button onClick={saveShopInfo} disabled={shopSaving} style={{ marginTop:16, padding:'12px 28px', borderRadius:8, background:'#a78bfa', color:'#000', fontWeight:700, fontSize:14, border:'none', cursor:'pointer' }}>{shopSaving ? 'Saving...' : 'Save Sale Mode'}</button>
             </div>
 
             {/* Subscription info */}
