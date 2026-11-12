@@ -277,6 +277,125 @@ export default function CashierPOS() {
         </div>
       )}
 
+      {/* ── PRINT STYLES ── */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          #print-receipt, #print-receipt * { visibility: visible !important; }
+          #print-receipt { position: fixed; left: 0; top: 0; width: 80mm; }
+          @page { size: 80mm auto; margin: 0; }
+        }
+      `}</style>
+
+      {/* ── HIDDEN PRINT RECEIPT ── */}
+      {receipt && (
+        <div id="print-receipt" style={{ display:'none' }}>
+          <style>{`
+            #print-receipt { font-family: 'Courier New', monospace; font-size: 11px; color: #000; padding: 8px 10px; width: 80mm; }
+            #print-receipt .center { text-align: center; }
+            #print-receipt .bold { font-weight: bold; }
+            #print-receipt .large { font-size: 15px; }
+            #print-receipt .xlarge { font-size: 18px; }
+            #print-receipt .sep { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+            #print-receipt .sep-solid { border: none; border-top: 1px solid #000; margin: 6px 0; }
+            #print-receipt .row { display: flex; justify-content: space-between; margin: 3px 0; }
+            #print-receipt .muted { color: #555; }
+            #print-receipt .total-row { display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; margin: 4px 0; }
+            #print-receipt .footer { text-align: center; margin-top: 10px; font-size: 10px; color: #555; }
+            @media print {
+              #print-receipt { display: block !important; }
+            }
+          `}</style>
+
+          {/* Shop header */}
+          <div className="center bold large">{shop?.name}</div>
+          {shop?.address && <div className="center muted" style={{ fontSize:10, marginTop:2 }}>{shop.address}</div>}
+          <div className="center" style={{ fontSize:10, marginTop:2 }}>
+            {[shop?.phone, shop?.email].filter(Boolean).join('  |  ')}
+          </div>
+
+          <hr className="sep-solid" />
+
+          {/* Receipt meta */}
+          <div className="center bold">RECEIPT</div>
+          <div className="row muted" style={{ fontSize:10, marginTop:4 }}>
+            <span>#{receipt.id}</span>
+            <span>{receipt.date.toLocaleDateString('en-GB')} {receipt.date.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</span>
+          </div>
+          {receipt.customer !== 'Walk-in' && (
+            <div className="row" style={{ fontSize:10, marginTop:2 }}>
+              <span className="muted">Customer:</span>
+              <span className="bold">{receipt.customer}</span>
+            </div>
+          )}
+          {receipt.payMeth && (
+            <div className="row" style={{ fontSize:10 }}>
+              <span className="muted">Payment:</span>
+              <span className="bold">{(receipt.isSplit ? 'SPLIT' : receipt.payMeth).toUpperCase()}</span>
+            </div>
+          )}
+
+          <hr className="sep" />
+
+          {/* Items */}
+          <div className="bold" style={{ fontSize:10, marginBottom:4 }}>ITEMS</div>
+          {receipt.items.map((it, i) => (
+            <div key={i} style={{ marginBottom:4 }}>
+              <div style={{ fontWeight:'bold', fontSize:11 }}>{it.name}</div>
+              {it.pn && <div className="muted" style={{ fontSize:9 }}>Part#: {it.pn}</div>}
+              <div className="row" style={{ fontSize:11 }}>
+                <span className="muted">{it.qty} × {it.price?.toLocaleString()}</span>
+                <span className="bold">{it.total?.toLocaleString()}</span>
+              </div>
+            </div>
+          ))}
+
+          <hr className="sep" />
+
+          {/* Totals */}
+          {receipt.discount > 0 && (
+            <div className="row muted" style={{ fontSize:11 }}>
+              <span>Subtotal</span>
+              <span>{receipt.subtotal?.toLocaleString()}</span>
+            </div>
+          )}
+          {receipt.discount > 0 && (
+            <div className="row muted" style={{ fontSize:11 }}>
+              <span>Discount</span>
+              <span>-{receipt.discount?.toLocaleString()}</span>
+            </div>
+          )}
+          <div className="total-row">
+            <span>TOTAL ({shop?.currency || 'TZS'})</span>
+            <span>{receipt.total?.toLocaleString()}</span>
+          </div>
+
+          {receipt.isSplit && (
+            <div style={{ marginTop:4, fontSize:11 }}>
+              <div className="row">
+                <span>Cash Paid</span>
+                <span>{receipt.cashPaid?.toLocaleString()}</span>
+              </div>
+              <div className="row bold">
+                <span>Balance Due</span>
+                <span>{receipt.loanBalance?.toLocaleString()}</span>
+              </div>
+            </div>
+          )}
+
+          <hr className="sep-solid" />
+
+          {/* Footer */}
+          <div className="footer">
+            <div>Thank you for your business!</div>
+            <div style={{ marginTop:4 }}>Visit us again soon.</div>
+            {shop?.phone && <div style={{ marginTop:4 }}>{shop.phone}</div>}
+            <div style={{ marginTop:8, fontSize:9, letterSpacing:0.5 }}>— Powered by TheDashboard —</div>
+            <div style={{ fontSize:9, color:'#888' }}>thedashboard.co.tz</div>
+          </div>
+        </div>
+      )}
+
       {/* ── HEADER ── */}
       <div style={{ background:'#0d1120', borderBottom:'1px solid #1a2236', padding:'0 20px', display:'flex', justifyContent:'space-between', alignItems:'center', height:56, position:'sticky', top:0, zIndex:100 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
