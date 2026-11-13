@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui } from '../../lib/kibali'
+import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
 import OrderModal from '../../components/kibali/OrderModal'
 
@@ -30,11 +30,11 @@ export default function KibaliShop() {
     if (!k.shop?.id) return
     const since = new Date(); since.setHours(0, 0, 0, 0)
     const [p, r, o] = await Promise.all([
-      supabase.from('products').select('id,name,unit,stock').eq('shop_id', k.shop.id).eq('is_active', true).order('name'),
+      loadProducts(k.shop.id),
       supabase.from('kibali_reserved').select('product_id,reserved'),
       supabase.from('release_orders').select('*,release_order_items(*)').gte('created_at', since.toISOString()).order('created_at', { ascending: false }),
     ])
-    setProducts(p.data || [])
+    setProducts(p)
     setReserved(Object.fromEntries((r.data || []).map(x => [String(x.product_id), x.reserved])))
     setOrders(o.data || [])
   }, [k.shop?.id])

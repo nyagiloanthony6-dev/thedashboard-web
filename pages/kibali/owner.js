@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui } from '../../lib/kibali'
+import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
 import OrderModal from '../../components/kibali/OrderModal'
 
@@ -23,11 +23,11 @@ export default function KibaliOwner() {
     const [o, a, p, r, m] = await Promise.all([
       supabase.from('release_orders').select('*,release_order_items(*)').order('created_at', { ascending: false }).limit(300),
       supabase.from('kibali_alerts').select('*').order('created_at', { ascending: false }).limit(200),
-      supabase.from('products').select('id,name,unit,stock,low_stock_alert').eq('shop_id', k.shop.id).eq('is_active', true).order('name'),
+      loadProducts(k.shop.id),
       supabase.from('kibali_reserved').select('product_id,reserved'),
       supabase.from('stock_movements').select('qty').eq('type', 'OUT').gte('created_at', since.toISOString()),
     ])
-    setOrders(o.data || []); setAlerts(a.data || []); setProducts(p.data || [])
+    setOrders(o.data || []); setAlerts(a.data || []); setProducts(p)
     setReserved(Object.fromEntries((r.data || []).map(x => [String(x.product_id), x.reserved])))
     setTodayOut(-(m.data || []).reduce((s, x) => s + x.qty, 0))
   }, [k.shop?.id])

@@ -11,8 +11,9 @@ logged with who released it and who collected it.
 Open the Supabase dashboard → SQL editor → paste
 `supabase/migrations/20261113000000_kibali.sql` → Run.
 
-Then also run `supabase/migrations/20261113010000_kibali_owner_shop_fix.sql`
-(needed for owners linked to their shop through `shop_owners`).
+Then also run, in order:
+- `supabase/migrations/20261113010000_kibali_owner_shop_fix.sql` (owners linked through `shop_owners`)
+- `supabase/migrations/20261113020000_kibali_stock_fields.sql` (uses the same quantity field as the Stock page: `wholesale_stock` for wholesale items, `retail_stock` for the rest)
 
 It only **adds** tables and functions. Every existing shop gets the `pos`
 module, so nothing changes for current clients. It is safe to run twice.

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, ui } from '../../lib/kibali'
+import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
 
 const TABS = [
@@ -277,10 +277,10 @@ function Receive({ k }) {
   const load = useCallback(async () => {
     const since = new Date(); since.setHours(0, 0, 0, 0)
     const [p, m] = await Promise.all([
-      supabase.from('products').select('id,name,unit,stock').eq('shop_id', k.shop.id).eq('is_active', true).order('name'),
+      loadProducts(k.shop.id),
       supabase.from('stock_movements').select('*').eq('type', 'IN').gte('created_at', since.toISOString()).order('created_at', { ascending: false }),
     ])
-    setProducts(p.data || []); setMoves(m.data || [])
+    setProducts(p); setMoves(m.data || [])
   }, [k.shop?.id])
   useEffect(() => { load() }, [load])
 
