@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { rpc, STATUS, fmtTime, ui, KIND, shopMode } from '../../lib/store'
+import { rpc, STATUS, fmtTime, ui, KIND, shopMode, usePartNumbers } from '../../lib/store'
 import Receipt from './Receipt'
 
 // Order details: receipt (with release code for people allowed to see it),
 // full release history, cancel (shop) and clear-flag (owner).
 export default function OrderModal({ k, orderId, onClose, onChanged, autoPrint }) {
   const [d, setD] = useState(null)
+  const parts = usePartNumbers(k.shop?.id)
   const [reason, setReason] = useState('')
   const [askCancel, setAskCancel] = useState(false)
   const [err, setErr] = useState('')
@@ -47,7 +48,7 @@ export default function OrderModal({ k, orderId, onClose, onChanged, autoPrint }
             {d.code && <p style={{ ...ui.muted, marginBottom: 14 }}>Namba ya siri <b style={{ ...ui.mono, color: '#15183A', fontSize: 15, letterSpacing: 2 }}>{d.code}</b> — mpe mchukuaji pamoja na risiti</p>}
 
             <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-              {d.code ? <Receipt order={o} items={d.items} code={d.code} shopName={k.shop?.name} /> : null}
+              {d.code ? <Receipt order={o} items={d.items} code={d.code} shopName={k.shop?.name} shopId={k.shop?.id} /> : null}
               <div style={{ flex: 1, minWidth: 240, display: 'grid', gap: 12 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {d.code && <button onClick={() => window.print()} style={ui.primary}>🖨 Chapisha</button>}
@@ -69,7 +70,7 @@ export default function OrderModal({ k, orderId, onClose, onChanged, autoPrint }
                   <thead><tr style={{ color: '#5B607E', textAlign: 'left' }}><th style={th}>Bidhaa</th><th style={thr}>Oda</th><th style={thr}>Imetoka</th><th style={thr}>Imebaki</th></tr></thead>
                   <tbody>{d.items.map(i => (
                     <tr key={i.id} style={{ borderTop: '1px solid #DCDFEC' }}>
-                      <td style={td}>{i.product_name} {shopMode() === 'both' && <span style={{ fontSize: 11, fontWeight: 700, color: KIND[i.kind || 'retail'].c }}>{KIND[i.kind || 'retail'].sw}</span>}</td>
+                      <td style={td}>{i.product_name} {shopMode() === 'both' && <span style={{ fontSize: 11, fontWeight: 700, color: KIND[i.kind || 'retail'].c }}>{KIND[i.kind || 'retail'].sw}</span>}{parts[String(i.product_id)] && <div style={{ fontSize: 11, color: '#5B607E', fontFamily: 'JetBrains Mono, monospace' }}>{parts[String(i.product_id)]}</div>}</td>
                       <td style={tdr}>{i.qty}</td>
                       <td style={{ ...tdr, color: '#0B7A6C' }}>{i.released}</td>
                       <td style={{ ...tdr, color: i.qty - i.released ? '#9A5B00' : '#5B607E' }}>{i.qty - i.released}</td>

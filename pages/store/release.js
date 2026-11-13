@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory, T, stockText, matchProduct, usesPartNumbers, shopMode } from '../../lib/store'
+import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory, T, stockText, matchProduct, usesPartNumbers, shopMode, usePartNumbers } from '../../lib/store'
 import Shell from '../../components/store/Shell'
 import Icon from '../../components/store/Icon'
 
@@ -28,6 +28,7 @@ export default function StoreRelease() {
 
 // ---------------------------------------------------------------------
 function ScanRelease({ k, initialNo }) {
+  const parts = usePartNumbers(k.shop?.id)
   const [no, setNo] = useState(initialNo)
   const [code, setCode] = useState('')
   const [msg, setMsg] = useState(null)        // {c, t, s}
@@ -179,7 +180,7 @@ function ScanRelease({ k, initialNo }) {
                   <div key={i.id} style={{ border: '1px solid #DCDFEC', borderRadius: 10, padding: 12, display: 'grid', gap: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                       <div>
-                        <p style={{ fontSize: 16, fontWeight: 800 }}>{i.product_name} {shopMode() === 'both' && <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, color: KIND[i.kind || 'retail'].c, background: KIND[i.kind || 'retail'].c + '22' }}>{KIND[i.kind || 'retail'].sw}</span>}</p>
+                        <p style={{ fontSize: 16, fontWeight: 800 }}>{i.product_name} {shopMode() === 'both' && <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, color: KIND[i.kind || 'retail'].c, background: KIND[i.kind || 'retail'].c + '22' }}>{KIND[i.kind || 'retail'].sw}</span>}</p>{parts[String(i.product_id)] && <p style={{ fontSize: 13, color: T.muted, fontFamily: 'JetBrains Mono, monospace' }}>P/N {parts[String(i.product_id)]}</p>}
                         <p style={{ fontSize: 11, fontWeight: 800, color: '#2D2F8F' }}>{swWords(i.qty)} ({i.qty}) {i.unit.toUpperCase()}</p>
                         {i.released > 0 && <p style={ui.muted}>Zilishatolewa {i.released} · zimebaki {rem}</p>}
                       </div>

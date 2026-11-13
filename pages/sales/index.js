@@ -378,7 +378,7 @@ export default function Sales() {
       <Layout title="Sales & POS" shop={shop} profile={profile}>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}} input::placeholder{color:#8A8FAE}`}</style>
 
-        <ReleaseSlipModal slip={slip} shopName={shop?.name} onClose={() => { setSlip(null); if (pendingReceipt) { setReceipt(pendingReceipt); setPendingReceipt(null) } }} />
+        <ReleaseSlipModal slip={slip} shopName={shop?.name} shopId={shop?.id} onClose={() => { setSlip(null); if (pendingReceipt) { setReceipt(pendingReceipt); setPendingReceipt(null) } }} />
         {/* Toast */}
         {toast && (
           <div style={{ position: 'fixed', top: 20, right: 20, background: toast.color || '#2D2F8F', color: '#fff', padding: '12px 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, zIndex: 9999, animation: 'fadeIn 0.2s ease' }}>

@@ -258,7 +258,7 @@ export default function CashierPOS() {
       `}</style>
 
       {/* Toast */}
-      <ReleaseSlipModal slip={slip} shopName={shop?.name} onClose={() => { setSlip(null); if (pendingReceipt) { setReceipt(pendingReceipt); setPendingReceipt(null) } }} />
+      <ReleaseSlipModal slip={slip} shopName={shop?.name} shopId={shop?.id} onClose={() => { setSlip(null); if (pendingReceipt) { setReceipt(pendingReceipt); setPendingReceipt(null) } }} />
       {toast && <div style={{ position:'fixed', top:16, right:16, background:toast.c, color:'#FFFFFF', padding:'10px 20px', borderRadius:12, fontWeight:700, fontSize:13, zIndex:9999, animation:'fadeIn 0.2s', boxShadow:'0 4px 20px rgba(0,0,0,0.4)' }}>{toast.msg}</div>}
 
       {/* Receipt Modal */}
