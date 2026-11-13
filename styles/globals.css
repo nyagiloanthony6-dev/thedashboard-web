@@ -1,16 +1,16 @@
 /* TheDashboard — Serengeti Labs brand (same palette as serengetilabs website)
    indigo #2D2F8F · saffron #F2A007 · coral #E4572E · teal #0F8B8D
-   Unbounded (headings) · Outfit (body) · JetBrains Mono (numbers) */
+   Outfit (headings and body) · JetBrains Mono (numbers) */
 :root {
   --bg: #F6F7FB; --surface: #FFFFFF; --sunk: #ECEEF7; --ink: #15183A; --muted: #5B607E; --line: #DCDFEC; --line-strong: #8A8FAE;
   --indigo: #2D2F8F; --saffron: #F2A007; --coral: #E4572E; --teal: #0F8B8D;
-  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --display: "Outfit", system-ui, sans-serif;
   --body: "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; -webkit-font-smoothing: antialiased; }
-h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: -0.02em; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: -0.01em; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
