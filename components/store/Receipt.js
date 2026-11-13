@@ -12,6 +12,8 @@ export default function Receipt({ order, items, code, shopName, shopId }) {
   }, [order.order_no])
 
   const total = items.reduce((a, i) => a + i.qty, 0)
+  // Only add quantities up when every line counts the same unit (never pcs + boksi)
+  const oneUnit = items.length > 0 && items.every(i => String(i.unit).toLowerCase() === String(items[0].unit).toLowerCase() && (i.kind || 'retail') === (items[0].kind || 'retail'))
   const cancelled = order.status === 'CANCELLED'
   const t = new Date(order.created_at)
 
@@ -52,7 +54,8 @@ export default function Receipt({ order, items, code, shopName, shopId }) {
         </div>
       ))}
       <div style={{ borderTop: '2px solid #000', margin: '8px 0 6px' }} />
-      <div>Mistari {items.length} · Vipimo vyote {total} ({swWords(total)})</div>
+      <div>Aina za bidhaa: {items.length}</div>
+      {oneUnit && <div style={{ fontWeight: 700 }}>Idadi yote: {total} {String(items[0].unit).toUpperCase()} ({swWords(total)})</div>}
       <div style={{ textAlign: 'center', fontSize: 10, lineHeight: '14px', marginTop: 8 }}>
         STORE: TOA KILE TU KINACHOONEKANA KWENYE MFUMO. MABADILIKO YOYOTE KWENYE KARATASI HII HAYAKUBALIKI.
       </div>
