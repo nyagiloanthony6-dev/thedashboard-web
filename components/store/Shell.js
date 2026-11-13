@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
@@ -11,6 +11,7 @@ import Icon from './Icon'
 // - Shop clerks / storekeepers: header + big bottom tabs
 export default function Shell({ k, title, tabs = [], children }) {
   const router = useRouter()
+  useMenuLang()
   const owner = k.role === 'shop_admin' || k.role === 'super_admin'
 
   if (k.loading) return (
@@ -37,10 +38,10 @@ export default function Shell({ k, title, tabs = [], children }) {
       <header style={{ position: 'sticky', top: 0, zIndex: 10, background: T.surface, borderBottom: `1px solid ${T.line}`, padding: '14px 16px 12px' }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ minWidth: 0 }}>
-            <p style={{ fontFamily: T.display, fontSize: 20, lineHeight: '28px', fontWeight: 700, letterSpacing: '-0.01em' }}>{title}</p>
+            <p style={{ fontFamily: T.display, fontSize: 20, lineHeight: '28px', fontWeight: 700, letterSpacing: '-0.01em' }}>{tr(title)}</p>
             <p style={{ fontSize: 13, color: T.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Store · {k.shop?.name}</p>
           </div>
-          <UserChip k={k} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><LangSwitch /><UserChip k={k} /></div>
         </div>
       </header>
       <main style={{ maxWidth: 640, margin: '0 auto', padding: '16px 16px 104px' }}>{inactive || children}</main>
@@ -63,8 +64,51 @@ export function StoreFrame({ k, title, children }) {
 }
 
 // ---------------------------------------------------------------------
+// Menu language (SW | EN): sidebar, tabs and page titles only. Saved per device.
+const MENU_EN = {
+  'Nyumbani': 'Home', 'Tahadhari': 'Alerts', 'Oda': 'Orders', 'Stock': 'Stock',
+  'Pokea mzigo': 'Receive stock', 'Oda mpya (duka)': 'New order (shop)', 'Toa mzigo (skani)': 'Release (scan)',
+  'Bidhaa': 'Products', 'Wafanyakazi': 'Team', 'Mipangilio': 'Settings',
+  'KAZI': 'WORK', 'USIMAMIZI': 'MANAGE', 'Zaidi': 'More', 'Toka': 'Log out',
+  'Oda mpya': 'New order', 'Oda za leo': "Today's orders", 'Oda zote': 'All orders',
+  'Skani': 'Scan', 'Skani risiti': 'Scan slip', 'Zinasubiri': 'Waiting', 'Pokea': 'Receive',
+  'Habari, bosi': 'Welcome, boss', 'Mtumiaji': 'User', 'Sales Rep': 'Sales rep',
+}
+const MENU_SW = { Owner: 'Mmiliki', Cashier: 'Keshia', 'Sales Rep': 'Muuzaji', 'Shop clerk': 'Karani wa duka', Storekeeper: 'Mtunza store' }
+let LANG = 'sw'
+const tr = (w) => !w ? w : LANG === 'en' ? (MENU_EN[w] || w) : (MENU_SW[w] || w)
+function useMenuLang() {
+  const [lang, setLang] = useState(LANG)
+  useEffect(() => {
+    try { LANG = localStorage.getItem('td-store-lang') === 'en' ? 'en' : 'sw' } catch {}
+    setLang(LANG)
+    const on = () => setLang(LANG)
+    window.addEventListener('td-store-lang', on)
+    return () => window.removeEventListener('td-store-lang', on)
+  }, [])
+  return lang
+}
+function setMenuLang(l) {
+  LANG = l
+  try { localStorage.setItem('td-store-lang', l) } catch {}
+  window.dispatchEvent(new Event('td-store-lang'))
+}
+function LangSwitch() {
+  const lang = useMenuLang()
+  return (
+    <div role="group" aria-label="Lugha / Language" style={{ display: 'inline-flex', width: 'fit-content', background: T.tint, borderRadius: 999, padding: 3, gap: 2 }}>
+      {[['sw', 'SW'], ['en', 'EN']].map(([v, l]) => (
+        <button key={v} onClick={() => setMenuLang(v)} aria-pressed={lang === v}
+          style={{ border: 0, borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+            background: lang === v ? T.green : 'transparent', color: lang === v ? '#fff' : T.muted }}>{l}</button>
+      ))}
+    </div>
+  )
+}
+
 function OwnerFrame({ k, title, tabs, isOn, children }) {
   const [more, setMore] = useState(false)
+  useMenuLang()
   const pos = k.modules.pos
   const main = [
     { href: '/store/owner', label: 'Nyumbani', icon: 'home' },
@@ -95,18 +139,18 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
           </div>
           <nav style={{ padding: 10, display: 'grid', gap: 2 }}>
             {main.map(n => <SideLink key={n.href} n={n} on={isOn(n.href)} />)}
-            <p style={sideHead}>KAZI</p>
+            <p style={sideHead}>{tr('KAZI')}</p>
             {work.map(n => <SideLink key={n.href} n={n} on={isOn(n.href) || (n.href === '/store/shop' && isOn('/store/shop?tab=orders')) || (n.href === '/store/release' && isOn('/store/release?tab=waiting'))} />)}
-            <p style={sideHead}>USIMAMIZI</p>
+            <p style={sideHead}>{tr('USIMAMIZI')}</p>
             {admin.map(n => <SideLink key={n.href} n={n} on={isOn(n.href)} />)}
           </nav>
-          <div style={{ marginTop: 'auto', padding: 14, borderTop: `1px solid ${T.line}` }}><UserChip k={k} wide /></div>
+          <div style={{ marginTop: 'auto', padding: 14, borderTop: `1px solid ${T.line}`, display: 'grid', gap: 12 }}><LangSwitch /><UserChip k={k} wide /></div>
         </aside>
 
         <div className="kb-main">
           <header className="kb-top">
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontFamily: T.display, fontSize: 20, lineHeight: '28px', fontWeight: 700, letterSpacing: '-0.01em' }}>{title}</p>
+              <p style={{ fontFamily: T.display, fontSize: 20, lineHeight: '28px', fontWeight: 700, letterSpacing: '-0.01em' }}>{tr(title)}</p>
               <p className="kb-top-shop" style={{ fontSize: 13, color: T.muted }}>Store · {k.shop?.name}</p>
             </div>
             <div className="kb-top-user"><UserChip k={k} /></div>
@@ -116,7 +160,7 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
               <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
                 {tabs.map(t => (
                   <Link key={t.href} href={t.href} style={{ ...chip, ...(isOn(t.href) ? chipOn : {}) }}>
-                    <Icon name={t.icon} size={16} />{t.label}
+                    <Icon name={t.icon} size={16} />{tr(t.label)}
                   </Link>
                 ))}
               </div>
@@ -131,11 +175,12 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
         {more && (
           <div onClick={e => e.target === e.currentTarget && setMore(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(21,24,58,0.45)', zIndex: 40, display: 'flex', alignItems: 'flex-end' }}>
             <div style={{ background: T.surface, width: '100%', borderRadius: '16px 16px 0 0', padding: '18px 16px 28px', display: 'grid', gap: 4 }}>
-              <p style={{ ...sideHead, margin: '0 0 6px' }}>KAZI</p>
+              <div style={{ marginBottom: 6 }}><LangSwitch /></div>
+              <p style={{ ...sideHead, margin: '0 0 6px' }}>{tr('KAZI')}</p>
               {work.map(n => <SideLink key={n.href} n={n} on={false} onClick={() => setMore(false)} />)}
-              <p style={{ ...sideHead, margin: '12px 0 6px' }}>USIMAMIZI</p>
+              <p style={{ ...sideHead, margin: '12px 0 6px' }}>{tr('USIMAMIZI')}</p>
               {admin.map(n => <SideLink key={n.href} n={n} on={isOn(n.href)} onClick={() => setMore(false)} />)}
-              <button onClick={signOut} style={{ ...sideLink, color: T.danger, border: 'none', background: 'none', width: '100%', textAlign: 'left' }}><Icon name="logout" size={20} />Toka</button>
+              <button onClick={signOut} style={{ ...sideLink, color: T.danger, border: 'none', background: 'none', width: '100%', textAlign: 'left' }}><Icon name="logout" size={20} />{tr('Toka')}</button>
             </div>
           </div>
         )}
@@ -149,7 +194,7 @@ function Frame({ title, children }) {
   return (
     <>
       <Head>
-        <title>{title ? title + ' — TheDashboard Store' : 'TheDashboard Store'}</title>
+        <title>{title ? tr(title) + ' — TheDashboard Store' : 'TheDashboard Store'}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content={T.surface} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -231,7 +276,7 @@ function SideLink({ n, on, onClick }) {
       <span style={{ width: 34, height: 26, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: on ? T.gold : 'transparent', color: T.ink }}>
         <Icon name={n.icon} size={19} />
       </span>
-      {n.label}
+      {tr(n.label)}
     </Link>
   )
 }
@@ -248,7 +293,7 @@ function BottomTabs({ tabs, isOn }) {
               <Icon name={t.icon} size={22} />
               {t.badge ? <span style={{ position: 'absolute', top: -4, right: 6, minWidth: 18, height: 18, borderRadius: 999, background: T.danger, color: T.raised, fontSize: 11, fontWeight: 700, lineHeight: '18px', textAlign: 'center', padding: '0 4px' }}>{t.badge}</span> : null}
             </span>
-            {t.label}
+            {tr(t.label)}
           </>
         )
         const st = { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '10px 0 14px', fontSize: 12, fontWeight: 600, color: on ? T.ink : T.muted, textDecoration: 'none', background: 'none', border: 'none' }
@@ -262,17 +307,17 @@ function BottomTabs({ tabs, isOn }) {
 }
 
 function UserChip({ k, wide }) {
-  const name = k.profile?.full_name || 'Mtumiaji'
+  const name = k.profile?.full_name || tr('Mtumiaji')
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: wide ? 'space-between' : 'flex-end' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
         <span style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 999, background: T.green, color: T.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{name.charAt(0).toUpperCase()}</span>
         <div style={{ minWidth: 0, display: wide ? 'block' : 'none' }} className="kb-user-text">
           <p style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</p>
-          <p style={{ fontSize: 12, color: T.muted }}>{ROLE_LABELS[k.role] || k.role}</p>
+          <p style={{ fontSize: 12, color: T.muted }}>{tr(ROLE_LABELS[k.role]) || k.role}</p>
         </div>
       </div>
-      <button onClick={signOut} aria-label="Toka" title="Toka" style={{ width: 40, height: 40, borderRadius: 8, border: `1px solid ${T.line}`, background: T.raised, color: T.muted, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <button onClick={signOut} aria-label={tr('Toka')} title={tr('Toka')} style={{ width: 40, height: 40, borderRadius: 8, border: `1px solid ${T.line}`, background: T.raised, color: T.muted, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Icon name="logout" size={18} />
       </button>
     </div>
