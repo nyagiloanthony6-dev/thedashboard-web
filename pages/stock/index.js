@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt } from '../../lib/supabase'
+import { loadModules, ownedShop } from '../../lib/store'
 
 export default function Stock() {
   const [profile,setProfile]=useState(null)
@@ -9,6 +10,7 @@ export default function Stock() {
   const [products,setProducts]=useState([])
   const [customFields,setCustomFields]=useState([])
   const [categories,setCategories]=useState([])
+  const [kibaliOn,setKibaliOn]=useState(false)
   const [loading,setLoading]=useState(true)
   const [search,setSearch]=useState('')
   const [showModal,setShowModal]=useState(false)
@@ -77,8 +79,10 @@ export default function Stock() {
   const loadData=async()=>{
     const {data:{user}}=await supabase.auth.getUser()
     const {data:prof}=await supabase.from('app_users').select('*,shops(*)').eq('id',user.id).single()
-    setProfile(prof);setShop(prof.shops)
-    const shopId=prof.shops.id
+    const shopData=prof.shops||await ownedShop(user.id)
+    setProfile(prof);setShop(shopData)
+    const shopId=shopData.id
+    loadModules(shopId).then(m=>setKibaliOn(m.kibali))
     const [pr,cf,cat]=await Promise.all([
       supabase.from('products').select('*').eq('shop_id',shopId).eq('is_active',true).order('name'),
       supabase.from('product_custom_fields').select('*').eq('shop_id',shopId),
@@ -249,7 +253,7 @@ export default function Stock() {
         const isWholesale = samePriceMatch.product_type==='wholesale' || samePriceMatch.wholesale_stock > 0
         const curStock = isWholesale ? (samePriceMatch.wholesale_stock||0) : (samePriceMatch.retail_stock||samePriceMatch.stock||0)
         stockUpdates.push({
-          id: samePriceMatch.id,
+          id: samePriceMatch.id, _qty: qtyBoxes, _kind: isWholesale ? 'wholesale' : 'retail', _ref: 'Bulk import ' + batchRef,
           fields: isWholesale
             ? {wholesale_stock: curStock + qtyBoxes}
             : {retail_stock: curStock + qtyBoxes, stock: curStock + qtyBoxes}
@@ -274,15 +278,30 @@ export default function Stock() {
     // ── STEP 3: Save to database ──────────────────────────────────
     setBulkStatus('Saving to database...')
 
+    // Store shops: every quantity goes through Store so it is recorded
+    // as a delivery (who, when, reference) in the stock movement history.
+    const kibaliErrors = []
+    const kibaliReceive = async (id, qty, kind, ref) => {
+      if (!qty) return
+      const { error } = await supabase.rpc('kibali_receive_stock', { p_product_id: String(id), p_qty: qty, p_reference: ref, p_kind: kind })
+      if (error) kibaliErrors.push(ref + ': ' + error.message)
+    }
+
     // Run stock updates in parallel
-    await Promise.all(stockUpdates.map(u =>
-      supabase.from('products').update(u.fields).eq('id', u.id)
-    ))
+    if (kibaliOn) {
+      for (const u of stockUpdates) await kibaliReceive(u.id, u._qty, u._kind, u._ref)
+    } else {
+      await Promise.all(stockUpdates.map(u =>
+        supabase.from('products').update(u.fields).eq('id', u.id)
+      ))
+    }
 
     // Insert new products one by one (need their IDs for batch records)
     for (const ins of stockInserts) {
       const {_item,_qtyBoxes,_unitCostTZS,_itemLanded,_landedPerPc,_batchRef,_pcsPerBox,_totalPcs,_unitCostRMB,...prodData} = ins
+      if (kibaliOn) prodData.wholesale_stock = 0
       const {data:newProd} = await supabase.from('products').insert(prodData).select('id').single()
+      if (kibaliOn && newProd?.id) await kibaliReceive(newProd.id, _qtyBoxes, 'wholesale', 'Bulk import ' + _batchRef)
       if (newProd?.id && _item.part_number && partField) {
         pfvInserts.push({product_id:newProd.id, field_id:partField.id, value:_item.part_number})
       }
@@ -306,13 +325,18 @@ export default function Stock() {
     setBulkModal(false); setBulkText(''); setBulkParsed([]); setBulkDate('')
     setBulkExRate(''); setBulkClearing(''); setBulkTransport(''); setBulkOther('')
     loadData()
-    alert('✅ ' + (stockUpdates.length + stockInserts.length) + ' products saved!')
+    alert('✅ ' + (stockUpdates.length + stockInserts.length) + ' products saved!' + (kibaliErrors.length ? '\n\n⚠️ Store could not record ' + kibaliErrors.length + ' deliveries:\n' + kibaliErrors.slice(0, 5).join('\n') : ''))
   }
 
   const save=async()=>{
     if(!form.name.trim()){alert('Enter product name');return}
     setSaving(true)
     const d={name:form.name.trim(),category:form.category,image_emoji:form.image_emoji,buy_price:parseFloat(form.buy_price)||0,sell_price:parseFloat(form.sell_price)||0,wholesale_price:parseFloat(form.wholesale_price)||0,stock:parseInt(form.retail_stock)||0,retail_stock:parseInt(form.retail_stock)||0,wholesale_stock:parseInt(form.wholesale_stock)||0,box_qty:parseInt(form.box_qty)||1,unit:form.unit,product_type:form.product_type,low_stock_alert:parseInt(form.low_stock_alert)||10,is_active:true,shop_id:shop.id,min_sell_price:form.min_sell_price?parseFloat(form.min_sell_price):null}
+    // Store shops: quantities only change through Store (Pokea / Hesabu)
+    if(kibaliOn){
+      if(editProd){delete d.stock;delete d.retail_stock;delete d.wholesale_stock}
+      else{d.stock=0;d.retail_stock=0;d.wholesale_stock=0}
+    }
     let prodId=editProd?.id
     if(editProd){const {data}=await supabase.from('products').update(d).eq('id',editProd.id).select().single();setProducts(p=>p.map(x=>x.id===editProd.id?{...x,...data,_cfv:{...x._cfv,...customFieldValues}}:x))}
     else{const {data}=await supabase.from('products').insert(d).select().single();if(data){prodId=data.id;setProducts(p=>[...p,{...data,_cfv:{}}])}}
@@ -333,7 +357,7 @@ export default function Stock() {
     return!q||p.name.toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q)||Object.values(p._cfv||{}).some(v=>String(v).toLowerCase().includes(q))
   })
   const getStock=p=>p.product_type==='wholesale'?(p.wholesale_stock||0):(p.retail_stock||p.stock||0)
-  const card={background:'#161b22',border:'1px solid #30363d',borderRadius:12,padding:16}
+  const card={background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:12,padding:16}
   const partField=customFields.find(f=>f.field_name.toLowerCase().includes('part'))
   const toggleSort=col=>setReportSort(s=>({col,dir:s.col===col&&s.dir==='asc'?'desc':'asc'}))
   const reportFiltered=products.filter(p=>{
@@ -360,36 +384,36 @@ export default function Stock() {
       <Head><title>Stock — TheDashboard</title></Head>
       <Layout title="Stock Management" shop={shop} profile={profile}>
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:12}}>
-          {[{l:'Products',v:products.length,c:'#2196F3'},{l:'Low Stock',v:products.filter(p=>getStock(p)<(p.low_stock_alert||10)).length,c:'#ff4d6d'},{l:'Categories',v:new Set(products.map(p=>p.category).filter(Boolean)).size,c:'#a78bfa'}].map(k=>(
-            <div key={k.l} style={card}><p style={{fontSize:10,color:'#7d8590',letterSpacing:0.8}}>{k.l.toUpperCase()}</p><p style={{fontSize:22,fontWeight:900,color:k.c,marginTop:6}}>{k.v}</p></div>
+          {[{l:'Products',v:products.length,c:'#2D2F8F'},{l:'Low Stock',v:products.filter(p=>getStock(p)<(p.low_stock_alert||10)).length,c:'#B93A16'},{l:'Categories',v:new Set(products.map(p=>p.category).filter(Boolean)).size,c:'#0F7375'}].map(k=>(
+            <div key={k.l} style={card}><p style={{fontSize:10,color:'#5B607E',letterSpacing:0.8}}>{k.l.toUpperCase()}</p><p style={{fontSize:22,fontWeight:900,color:k.c,marginTop:6}}>{k.v}</p></div>
           ))}</div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
           {[
-            {l:'Total Items',v:products.reduce((a,p)=>a+getStock(p),0).toLocaleString()+' units',c:'#ffb547'},
-            {l:'Stock Value (Cost)',v:'TZS '+(products.reduce((a,p)=>a+(getStock(p)*(p.buy_price||0)),0)).toLocaleString(),c:'#34d399'},
-            {l:'Stock Value (Selling)',v:'TZS '+(products.reduce((a,p)=>{const sp=p.product_type==='wholesale'?(p.wholesale_price||p.sell_price||0):(p.sell_price||p.wholesale_price||0);return a+(getStock(p)*sp)},0)).toLocaleString(),c:'#f97316'},
+            {l:'Total Items',v:products.reduce((a,p)=>a+getStock(p),0).toLocaleString()+' units',c:'#9A5B00'},
+            {l:'Stock Value (Cost)',v:'TZS '+(products.reduce((a,p)=>a+(getStock(p)*(p.buy_price||0)),0)).toLocaleString(),c:'#0B7A6C'},
+            {l:'Stock Value (Selling)',v:'TZS '+(products.reduce((a,p)=>{const sp=p.product_type==='wholesale'?(p.wholesale_price||p.sell_price||0):(p.sell_price||p.wholesale_price||0);return a+(getStock(p)*sp)},0)).toLocaleString(),c:'#9A5B00'},
           ].map(k=>(
-            <div key={k.l} style={card}><p style={{fontSize:10,color:'#7d8590',letterSpacing:0.8}}>{k.l.toUpperCase()}</p><p style={{fontSize:18,fontWeight:900,color:k.c,marginTop:6}}>{k.v}</p>{k.sub&&<p style={{fontSize:10,color:'#ff4d6d',marginTop:4}}>⚠️ {k.sub}</p>}</div>
+            <div key={k.l} style={card}><p style={{fontSize:10,color:'#5B607E',letterSpacing:0.8}}>{k.l.toUpperCase()}</p><p style={{fontSize:18,fontWeight:900,color:k.c,marginTop:6}}>{k.v}</p>{k.sub&&<p style={{fontSize:10,color:'#B93A16',marginTop:4}}>⚠️ {k.sub}</p>}</div>
           ))}
         </div>
         {/* Tabs */}
-        <div style={{display:'flex',gap:8,marginBottom:20,borderBottom:'1px solid #30363d',paddingBottom:0}}>
+        <div style={{display:'flex',gap:8,marginBottom:20,borderBottom:'1px solid #DCDFEC',paddingBottom:0}}>
           {[['products','📦 Products'],['report','📊 Stock Report']].map(([k,l])=>(
-            <button key={k} onClick={()=>setTab(k)} style={{padding:'9px 20px',borderRadius:'8px 8px 0 0',border:'1px solid',borderBottom:'none',borderColor:tab===k?'#30363d':'transparent',background:tab===k?'#161b22':'transparent',color:tab===k?'#e6edf3':'#7d8590',fontWeight:tab===k?700:400,fontSize:13,cursor:'pointer',marginBottom:-1}}>{l}</button>
+            <button key={k} onClick={()=>setTab(k)} style={{padding:'9px 20px',borderRadius:'8px 8px 0 0',border:'1px solid',borderBottom:'none',borderColor:tab===k?'#DCDFEC':'transparent',background:tab===k?'#FFFFFF':'transparent',color:tab===k?'#15183A':'#5B607E',fontWeight:tab===k?700:400,fontSize:13,cursor:'pointer',marginBottom:-1}}>{l}</button>
           ))}
         </div>
 
         {tab==='products'&&<>
         <div style={{display:'flex',gap:12,marginBottom:16,alignItems:'center'}}>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search products..." style={{flex:1}}/>
-          <button onClick={()=>setBulkModal(true)} style={{padding:'10px 16px',borderRadius:8,background:'rgba(33,150,243,0.12)',color:'#4da6ff',border:'1px solid #2196F340',fontWeight:700,fontSize:13,cursor:'pointer',marginRight:8}}>📋 Bulk Add</button><button onClick={openAdd} style={{padding:'10px 20px',borderRadius:8,background:'#2196F3',color:'#000',fontWeight:700,fontSize:13,border:'none',whiteSpace:'nowrap'}}>+ Add Product</button>
+          <button onClick={()=>setBulkModal(true)} style={{padding:'10px 16px',borderRadius:8,background:'rgba(45,47,143,0.12)',color:'#2D2F8F',border:'1px solid #2196F340',fontWeight:700,fontSize:13,cursor:'pointer',marginRight:8}}>📋 Bulk Add</button><button onClick={openAdd} style={{padding:'10px 20px',borderRadius:8,background:'#2D2F8F',color:'#FFFFFF',fontWeight:700,fontSize:13,border:'none',whiteSpace:'nowrap'}}>+ Add Product</button>
         </div>
-        <div style={{background:'#161b22',border:'1px solid #30363d',borderRadius:12,overflow:'hidden'}}>
+        <div style={{background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:12,overflow:'hidden'}}>
           <table style={{width:'100%',borderCollapse:'collapse'}}>
             <thead>
-              <tr style={{borderBottom:'1px solid #30363d'}}>
+              <tr style={{borderBottom:'1px solid #DCDFEC'}}>
                 {['Product','Category','Buy Price','Sell Price','Stock','Actions'].map(h=>(
-                  <th key={h} style={{padding:'12px 16px',textAlign:'left',fontSize:10,color:'#7d8590',letterSpacing:0.8,fontWeight:600}}>{h.toUpperCase()}</th>
+                  <th key={h} style={{padding:'12px 16px',textAlign:'left',fontSize:10,color:'#5B607E',letterSpacing:0.8,fontWeight:600}}>{h.toUpperCase()}</th>
                 ))}
               </tr>
             </thead>
@@ -397,36 +421,36 @@ export default function Stock() {
               {filtered.map((p,i)=>{
                 const stock=getStock(p),low=stock<(p.low_stock_alert||10)
                 return(
-                  <tr key={p.id} style={{borderBottom:i<filtered.length-1?'1px solid #30363d':'none'}} onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                  <tr key={p.id} style={{borderBottom:i<filtered.length-1?'1px solid #DCDFEC':'none'}} onMouseEnter={e=>e.currentTarget.style.background='rgba(21,24,58,0.02)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
                     <td style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',alignItems:'center',gap:10}}>
                         <span style={{fontSize:20}}>{p.image_emoji||'📦'}</span>
                         <div>
                           <p style={{fontSize:13,fontWeight:600}}>{p.name}</p>
                           {customFields.filter(f=>p._cfv?.[f.id]).map(f=>(
-                            <p key={f.id} style={{fontSize:10,color:'#a78bfa',marginTop:1}}>{f.field_name}: {p._cfv[f.id]}</p>
+                            <p key={f.id} style={{fontSize:10,color:'#0F7375',marginTop:1}}>{f.field_name}: {p._cfv[f.id]}</p>
                           ))}
                         </div>
                       </div>
                     </td>
-                    <td style={{padding:'12px 16px',fontSize:12,color:'#7d8590'}}>{p.category||'—'}</td>
-                    <td style={{padding:'12px 16px',fontSize:12,fontWeight:600,color:'#ffb547'}}>{fmt(p.buy_price)}</td>
+                    <td style={{padding:'12px 16px',fontSize:12,color:'#5B607E'}}>{p.category||'—'}</td>
+                    <td style={{padding:'12px 16px',fontSize:12,fontWeight:600,color:'#9A5B00'}}>{fmt(p.buy_price)}</td>
                     <td style={{padding:'12px 16px',fontSize:12}}>
-                      {p.sell_price>0&&<div style={{color:'#4da6ff'}}>{fmt(p.sell_price)}</div>}
-                      {p.wholesale_price>0&&<div style={{color:'#2196F3'}}>{fmt(p.wholesale_price)} whs</div>}
+                      {p.sell_price>0&&<div style={{color:'#2D2F8F'}}>{fmt(p.sell_price)}</div>}
+                      {p.wholesale_price>0&&<div style={{color:'#2D2F8F'}}>{fmt(p.wholesale_price)} whs</div>}
                     </td>
-                    <td style={{padding:'12px 16px',fontSize:14,fontWeight:700,color:low?'#ff4d6d':'#e6edf3'}}>{stock}</td>
+                    <td style={{padding:'12px 16px',fontSize:14,fontWeight:700,color:low?'#B93A16':'#15183A'}}>{stock}</td>
                     <td style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
-                        <button onClick={()=>openEdit(p)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid #30363d',background:'transparent',color:'#2196F3',fontSize:11,fontWeight:600}}>Edit</button>
-                        <button onClick={()=>openBatches(p)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid #a78bfa40',background:'transparent',color:'#a78bfa',fontSize:11,fontWeight:600}}>📦 Batches</button>
-                        <button onClick={()=>del(p.id)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid rgba(255,77,109,0.3)',background:'transparent',color:'#ff4d6d',fontSize:11,fontWeight:600}}>Del</button>
+                        <button onClick={()=>openEdit(p)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid #DCDFEC',background:'transparent',color:'#2D2F8F',fontSize:11,fontWeight:600}}>Edit</button>
+                        <button onClick={()=>openBatches(p)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid #a78bfa40',background:'transparent',color:'#0F7375',fontSize:11,fontWeight:600}}>📦 Batches</button>
+                        <button onClick={()=>del(p.id)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid rgba(185,58,22,0.3)',background:'transparent',color:'#B93A16',fontSize:11,fontWeight:600}}>Del</button>
                       </div>
                     </td>
                   </tr>
                 )
               })}
-              {!filtered.length&&<tr><td colSpan={6} style={{padding:40,textAlign:'center',color:'#484f58'}}>No products found</td></tr>}
+              {!filtered.length&&<tr><td colSpan={6} style={{padding:40,textAlign:'center',color:'#8A8FAE'}}>No products found</td></tr>}
             </tbody>
           </table>
         </div>
@@ -436,21 +460,21 @@ export default function Stock() {
           <div>
             {/* Report controls */}
             <div style={{display:'flex',gap:10,marginBottom:16,alignItems:'center',flexWrap:'wrap'}}>
-              <input value={reportSearch} onChange={e=>setReportSearch(e.target.value)} placeholder="Search by name or part number..." style={{flex:1,minWidth:200,background:'#0d1117',border:'1.5px solid #30363d',borderRadius:8,color:'#e6edf3',padding:'9px 12px',fontSize:13,outline:'none'}}/>
-              <select value={reportCat} onChange={e=>setReportCat(e.target.value)} style={{background:'#0d1117',border:'1.5px solid #30363d',borderRadius:8,color:reportCat?'#e6edf3':'#484f58',padding:'9px 12px',fontSize:13,outline:'none'}}>
+              <input value={reportSearch} onChange={e=>setReportSearch(e.target.value)} placeholder="Search by name or part number..." style={{flex:1,minWidth:200,background:'#F6F7FB',border:'1.5px solid #DCDFEC',borderRadius:8,color:'#15183A',padding:'9px 12px',fontSize:13,outline:'none'}}/>
+              <select value={reportCat} onChange={e=>setReportCat(e.target.value)} style={{background:'#F6F7FB',border:'1.5px solid #DCDFEC',borderRadius:8,color:reportCat?'#15183A':'#8A8FAE',padding:'9px 12px',fontSize:13,outline:'none'}}>
                 <option value="">All Categories</option>
                 {[...new Set(products.map(p=>p.category).filter(Boolean))].sort().map(c=><option key={c} value={c}>{c}</option>)}
               </select>
-              <button onClick={exportCSV} style={{padding:'9px 16px',borderRadius:8,background:'rgba(37,211,102,0.12)',color:'#25d366',border:'1px solid #25d36640',fontWeight:700,fontSize:13,cursor:'pointer',whiteSpace:'nowrap'}}>⬇ CSV</button>
-              <button onClick={exportExcel} style={{padding:'9px 16px',borderRadius:8,background:'rgba(33,150,243,0.12)',color:'#4da6ff',border:'1px solid #2196F340',fontWeight:700,fontSize:13,cursor:'pointer',whiteSpace:'nowrap'}}>⬇ Excel</button>
+              <button onClick={exportCSV} style={{padding:'9px 16px',borderRadius:8,background:'rgba(11,122,108,0.12)',color:'#0B7A6C',border:'1px solid #25d36640',fontWeight:700,fontSize:13,cursor:'pointer',whiteSpace:'nowrap'}}>⬇ CSV</button>
+              <button onClick={exportExcel} style={{padding:'9px 16px',borderRadius:8,background:'rgba(45,47,143,0.12)',color:'#2D2F8F',border:'1px solid #2196F340',fontWeight:700,fontSize:13,cursor:'pointer',whiteSpace:'nowrap'}}>⬇ Excel</button>
             </div>
-            <p style={{fontSize:11,color:'#7d8590',marginBottom:12}}>{reportFiltered.length} products · {reportFiltered.reduce((a,p)=>a+getStock(p),0).toLocaleString()} total units</p>
+            <p style={{fontSize:11,color:'#5B607E',marginBottom:12}}>{reportFiltered.length} products · {reportFiltered.reduce((a,p)=>a+getStock(p),0).toLocaleString()} total units</p>
 
             {/* Report table */}
-            <div style={{background:'#161b22',border:'1px solid #30363d',borderRadius:12,overflow:'hidden'}}>
+            <div style={{background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:12,overflow:'hidden'}}>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead>
-                  <tr style={{borderBottom:'1px solid #30363d',background:'#0d1117'}}>
+                  <tr style={{borderBottom:'1px solid #DCDFEC',background:'#F6F7FB'}}>
                     {[
                       {label:'#',col:null},
                       {label:'Product',col:'name'},
@@ -462,7 +486,7 @@ export default function Stock() {
                       {label:'Sell Price',col:'sell'},
                     ].map(({label,col})=>(
                       <th key={label} onClick={col?()=>toggleSort(col):undefined}
-                        style={{padding:'11px 14px',textAlign:'left',fontSize:10,color:col&&reportSort.col===col?'#e6edf3':'#7d8590',letterSpacing:0.8,fontWeight:600,cursor:col?'pointer':'default',userSelect:'none',whiteSpace:'nowrap'}}>
+                        style={{padding:'11px 14px',textAlign:'left',fontSize:10,color:col&&reportSort.col===col?'#15183A':'#5B607E',letterSpacing:0.8,fontWeight:600,cursor:col?'pointer':'default',userSelect:'none',whiteSpace:'nowrap'}}>
                         {label}
                         {col&&<span style={{marginLeft:4,opacity:reportSort.col===col?1:0.3,fontSize:10}}>
                           {reportSort.col===col?(reportSort.dir==='asc'?'▲':'▼'):'⇅'}
@@ -478,23 +502,23 @@ export default function Stock() {
                     const partNo=partField?p._cfv?.[partField.id]||'—':'—'
                     const sellPrice=p.product_type==='wholesale'?(p.wholesale_price||0):(p.sell_price||0)
                     return(
-                      <tr key={p.id} style={{borderBottom:i<reportFiltered.length-1?'1px solid #30363d':'none'}}
-                        onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.02)'}
+                      <tr key={p.id} style={{borderBottom:i<reportFiltered.length-1?'1px solid #DCDFEC':'none'}}
+                        onMouseEnter={e=>e.currentTarget.style.background='rgba(21,24,58,0.02)'}
                         onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                        <td style={{padding:'10px 14px',fontSize:11,color:'#484f58'}}>{i+1}</td>
+                        <td style={{padding:'10px 14px',fontSize:11,color:'#8A8FAE'}}>{i+1}</td>
                         <td style={{padding:'10px 14px'}}>
                           <p style={{fontSize:13,fontWeight:600}}>{p.image_emoji||'📦'} {p.name}</p>
                         </td>
-                        <td style={{padding:'10px 14px',fontSize:12,fontFamily:'monospace',color:'#a78bfa'}}>{partNo}</td>
-                        <td style={{padding:'10px 14px',fontSize:12,color:'#7d8590'}}>{p.category||'—'}</td>
-                        <td style={{padding:'10px 14px',fontSize:11,color:'#484f58',textTransform:'capitalize'}}>{p.product_type||'—'}</td>
-                        <td style={{padding:'10px 14px',fontSize:14,fontWeight:800,color:low?'#ff4d6d':stock===0?'#484f58':'#25d366'}}>{stock.toLocaleString()}</td>
-                        <td style={{padding:'10px 14px',fontSize:12,color:'#ffb547',fontWeight:600}}>{p.buy_price?fmt(p.buy_price):'—'}</td>
-                        <td style={{padding:'10px 14px',fontSize:12,color:'#4da6ff',fontWeight:600}}>{sellPrice?fmt(sellPrice):'—'}</td>
+                        <td style={{padding:'10px 14px',fontSize:12,fontFamily:'monospace',color:'#0F7375'}}>{partNo}</td>
+                        <td style={{padding:'10px 14px',fontSize:12,color:'#5B607E'}}>{p.category||'—'}</td>
+                        <td style={{padding:'10px 14px',fontSize:11,color:'#8A8FAE',textTransform:'capitalize'}}>{p.product_type||'—'}</td>
+                        <td style={{padding:'10px 14px',fontSize:14,fontWeight:800,color:low?'#B93A16':stock===0?'#8A8FAE':'#0B7A6C'}}>{stock.toLocaleString()}</td>
+                        <td style={{padding:'10px 14px',fontSize:12,color:'#9A5B00',fontWeight:600}}>{p.buy_price?fmt(p.buy_price):'—'}</td>
+                        <td style={{padding:'10px 14px',fontSize:12,color:'#2D2F8F',fontWeight:600}}>{sellPrice?fmt(sellPrice):'—'}</td>
                       </tr>
                     )
                   })}
-                  {!reportFiltered.length&&<tr><td colSpan={8} style={{padding:40,textAlign:'center',color:'#484f58'}}>No products found</td></tr>}
+                  {!reportFiltered.length&&<tr><td colSpan={8} style={{padding:40,textAlign:'center',color:'#8A8FAE'}}>No products found</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -502,11 +526,11 @@ export default function Stock() {
         )}
 
         {showModal&&(
-          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:1000}} onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
-            <div style={{background:'#161b22',borderRadius:'20px 20px 0 0',padding:28,width:'100%',maxWidth:560,maxHeight:'90vh',overflowY:'auto',border:'1px solid #30363d'}}>
+          <div style={{position:'fixed',inset:0,background:'rgba(21,24,58,0.55)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:1000}} onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+            <div style={{background:'#FFFFFF',borderRadius:'20px 20px 0 0',padding:28,width:'100%',maxWidth:560,maxHeight:'90vh',overflowY:'auto',border:'1px solid #DCDFEC'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
                 <h2 style={{fontSize:16,fontWeight:800}}>{editProd?'Edit Product':'Add Product'}</h2>
-                <button onClick={()=>setShowModal(false)} style={{background:'none',border:'none',color:'#7d8590',fontSize:20}}>✕</button>
+                <button onClick={()=>setShowModal(false)} style={{background:'none',border:'none',color:'#5B607E',fontSize:20}}>✕</button>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <div style={{gridColumn:'1/-1'}}><label>Product Name *</label><input value={form.name} onChange={set('name')} placeholder="e.g. Brake Pad"/></div>
@@ -518,7 +542,7 @@ export default function Stock() {
                           if(e.target.value==='__other__'){setCustomCat('');setForm(p=>({...p,category:''}))}
                           else{setForm(p=>({...p,category:e.target.value}));setCustomCat('')}
                         }}
-                        style={{background:'#0d1117',border:'1.5px solid #30363d',borderRadius:8,color:'#e6edf3',padding:'9px 12px',fontSize:13,width:'100%',outline:'none',fontFamily:'inherit'}}>
+                        style={{background:'#F6F7FB',border:'1.5px solid #DCDFEC',borderRadius:8,color:'#15183A',padding:'9px 12px',fontSize:13,width:'100%',outline:'none',fontFamily:'inherit'}}>
                         <option value="">— Select category —</option>
                         {categories.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
                         <option value="__other__">✏️ Other (type new)</option>
@@ -538,29 +562,30 @@ export default function Stock() {
                 <div><label>Emoji</label><input value={form.image_emoji} onChange={set('image_emoji')} placeholder="📦"/></div>
                 <div><label>Buy Price / Box</label><input value={form.buy_price} onChange={set('buy_price')} type="number" placeholder="0"/></div>
                 <div><label>Retail Sell Price</label><input value={form.sell_price} onChange={set('sell_price')} type="number" placeholder="0"/></div>
-                <div><label style={{color:'#f59e0b'}}>Min Sell Price (Floor)</label><input value={form.min_sell_price} onChange={set('min_sell_price')} type="number" placeholder="Optional — cashier can't go below this"/></div>
+                <div><label style={{color:'#9A5B00'}}>Min Sell Price (Floor)</label><input value={form.min_sell_price} onChange={set('min_sell_price')} type="number" placeholder="Optional — cashier can't go below this"/></div>
                 <div><label>Wholesale Price</label><input value={form.wholesale_price} onChange={set('wholesale_price')} type="number" placeholder="0"/></div>
-                <div><label>Retail Stock (pcs)</label><input value={form.retail_stock} onChange={set('retail_stock')} type="number" placeholder="0"/></div>
-                <div><label>Warehouse Stock (boxes)</label><input value={form.wholesale_stock} onChange={set('wholesale_stock')} type="number" placeholder="0"/></div>
+                <div><label>Retail Stock (pcs)</label><input value={kibaliOn&&!editProd?'0':form.retail_stock} onChange={set('retail_stock')} type="number" placeholder="0" disabled={kibaliOn} style={kibaliOn?{opacity:0.5,cursor:'not-allowed'}:undefined}/></div>
+                <div><label>Warehouse Stock (boxes)</label><input value={kibaliOn&&!editProd?'0':form.wholesale_stock} onChange={set('wholesale_stock')} type="number" placeholder="0" disabled={kibaliOn} style={kibaliOn?{opacity:0.5,cursor:'not-allowed'}:undefined}/></div>
+                {kibaliOn&&<div style={{gridColumn:'1/-1',padding:'8px 12px',borderRadius:8,background:'rgba(242,160,7,0.08)',border:'1px solid rgba(242,160,7,0.3)',color:'#9A5B00',fontSize:12}}>Store iko ON: idadi ya stock inabadilishwa kupitia Store tu — <b>Pokea mzigo</b> kwa mzigo unaoingia, <b>Hesabu / rekebisha</b> kwa marekebisho. Hivyo kila mabadiliko yanarekodiwa.</div>}
                 <div><label>Pieces per Box</label><input value={form.box_qty} onChange={set('box_qty')} type="number" placeholder="1"/></div>
                 <div><label>Unit</label><input value={form.unit} onChange={set('unit')} placeholder="unit"/></div>
                 <div style={{gridColumn:'1/-1'}}>
                   <label>Product Type</label>
                   <div style={{display:'flex',gap:8}}>
                     {['retail','wholesale','both'].map(t=>(
-                      <button key={t} onClick={()=>setForm(p=>({...p,product_type:t}))} style={{flex:1,padding:'9px',borderRadius:8,border:'1px solid',borderColor:form.product_type===t?'#2196F3':'#30363d',background:form.product_type===t?'rgba(33,150,243,0.15)':'transparent',color:form.product_type===t?'#2196F3':'#7d8590',fontSize:12,fontWeight:700,textTransform:'capitalize'}}>{t}</button>
+                      <button key={t} onClick={()=>setForm(p=>({...p,product_type:t}))} style={{flex:1,padding:'9px',borderRadius:8,border:'1px solid',borderColor:form.product_type===t?'#2D2F8F':'#DCDFEC',background:form.product_type===t?'rgba(45,47,143,0.15)':'transparent',color:form.product_type===t?'#2D2F8F':'#5B607E',fontSize:12,fontWeight:700,textTransform:'capitalize'}}>{t}</button>
                     ))}
                   </div>
                 </div>
-                {customFields.length>0&&<div style={{gridColumn:'1/-1',borderTop:'1px solid #30363d',paddingTop:14,marginTop:4}}>
-                  <p style={{fontSize:10,color:'#a78bfa',letterSpacing:0.8,fontWeight:700,marginBottom:10}}>🏷️ CUSTOM FIELDS</p>
+                {customFields.length>0&&<div style={{gridColumn:'1/-1',borderTop:'1px solid #DCDFEC',paddingTop:14,marginTop:4}}>
+                  <p style={{fontSize:10,color:'#0F7375',letterSpacing:0.8,fontWeight:700,marginBottom:10}}>🏷️ CUSTOM FIELDS</p>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                     {customFields.map(f=>(
                       <div key={f.id} style={{gridColumn:f.field_type==='textarea'?'1/-1':'auto'}}>
-                        <label style={{color:'#a78bfa'}}>{f.field_name}{f.is_required&&<span style={{color:'#ff4d6d'}}> *</span>}</label>
+                        <label style={{color:'#0F7375'}}>{f.field_name}{f.is_required&&<span style={{color:'#B93A16'}}> *</span>}</label>
                         {f.field_type==='textarea'
-                          ?<textarea value={customFieldValues[f.id]||''} onChange={e=>setCustomFieldValues(p=>({...p,[f.id]:e.target.value}))} rows={2} placeholder={f.placeholder||f.field_name} style={{width:'100%',background:'#0d1117',border:'1.5px solid #a78bfa40',borderRadius:8,color:'#e6edf3',padding:'9px 12px',fontSize:13,fontFamily:'inherit',resize:'none',outline:'none'}}/>
-                          :<input value={customFieldValues[f.id]||''} onChange={e=>setCustomFieldValues(p=>({...p,[f.id]:e.target.value}))} type={f.field_type==='number'?'number':'text'} placeholder={f.placeholder||f.field_name} style={{background:'#0d1117',border:'1.5px solid #a78bfa40',borderRadius:8,color:'#e6edf3',padding:'9px 12px',fontSize:13,outline:'none',width:'100%'}}/>
+                          ?<textarea value={customFieldValues[f.id]||''} onChange={e=>setCustomFieldValues(p=>({...p,[f.id]:e.target.value}))} rows={2} placeholder={f.placeholder||f.field_name} style={{width:'100%',background:'#F6F7FB',border:'1.5px solid #a78bfa40',borderRadius:8,color:'#15183A',padding:'9px 12px',fontSize:13,fontFamily:'inherit',resize:'none',outline:'none'}}/>
+                          :<input value={customFieldValues[f.id]||''} onChange={e=>setCustomFieldValues(p=>({...p,[f.id]:e.target.value}))} type={f.field_type==='number'?'number':'text'} placeholder={f.placeholder||f.field_name} style={{background:'#F6F7FB',border:'1.5px solid #a78bfa40',borderRadius:8,color:'#15183A',padding:'9px 12px',fontSize:13,outline:'none',width:'100%'}}/>
                         }
                       </div>
                     ))}
@@ -568,8 +593,8 @@ export default function Stock() {
                 </div>}
               </div>
               <div style={{display:'flex',gap:10,marginTop:20}}>
-                <button onClick={()=>setShowModal(false)} style={{flex:1,padding:'11px',borderRadius:8,border:'1px solid #30363d',background:'transparent',color:'#e6edf3',fontWeight:600}}>Cancel</button>
-                <button onClick={save} disabled={saving} style={{flex:2,padding:'11px',borderRadius:8,background:'#2196F3',color:'#000',fontWeight:700,border:'none'}}>{saving?'Saving...':'Save Product'}</button>
+                <button onClick={()=>setShowModal(false)} style={{flex:1,padding:'11px',borderRadius:8,border:'1px solid #DCDFEC',background:'transparent',color:'#15183A',fontWeight:600}}>Cancel</button>
+                <button onClick={save} disabled={saving} style={{flex:2,padding:'11px',borderRadius:8,background:'#2D2F8F',color:'#FFFFFF',fontWeight:700,border:'none'}}>{saving?'Saving...':'Save Product'}</button>
               </div>
             </div>
           </div>
@@ -577,81 +602,81 @@ export default function Stock() {
       </Layout>
       {/* Bulk Stock Modal */}
       {bulkModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}}>
-          <div style={{background:'#161b22',border:'1px solid #30363d',borderRadius:16,padding:24,width:'100%',maxWidth:600,maxHeight:'90vh',overflowY:'auto'}}>
+        <div style={{position:'fixed',inset:0,background:'rgba(21,24,58,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}}>
+          <div style={{background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:16,padding:24,width:'100%',maxWidth:600,maxHeight:'90vh',overflowY:'auto'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-              <h2 style={{fontSize:16,fontWeight:800,color:'#4da6ff'}}>📋 Bulk Add Stock</h2>
-              <button onClick={()=>{setBulkModal(false);setBulkText('');setBulkParsed([])}} style={{background:'none',border:'none',color:'#7d8590',fontSize:20,cursor:'pointer'}}>✕</button>
+              <h2 style={{fontSize:16,fontWeight:800,color:'#2D2F8F'}}>📋 Bulk Add Stock</h2>
+              <button onClick={()=>{setBulkModal(false);setBulkText('');setBulkParsed([])}} style={{background:'none',border:'none',color:'#5B607E',fontSize:20,cursor:'pointer'}}>✕</button>
             </div>
             {bulkParsed.length===0 ? (
               <>
-                <p style={{fontSize:12,color:'#7d8590',marginBottom:10}}>Paste from supplier list (tab-separated). Supports: Name + Part No + Qty + Rate, or Part No + Qty only.</p>
+                <p style={{fontSize:12,color:'#5B607E',marginBottom:10}}>Paste from supplier list (tab-separated). Supports: Name + Part No + Qty + Rate, or Part No + Qty only.</p>
                 <textarea value={bulkText} onChange={e=>setBulkText(e.target.value)} rows={8}
                   placeholder={'ITEM NAME\tITEM NO.\tMOQ PCS\trate\nRubber Bush\t48818-30160\t100\t¥21.00\nBushing\t48655-0D060\t50\t¥9.00'}
-                  style={{width:'100%',background:'#0d1117',border:'1px solid #30363d',borderRadius:8,color:'#e6edf3',padding:'10px 12px',fontSize:12,fontFamily:'monospace',resize:'vertical',outline:'none',marginBottom:12}}/>
-                <button onClick={parseBulk} style={{width:'100%',padding:'10px',borderRadius:8,background:'#4da6ff',color:'#000',fontWeight:700,fontSize:14,border:'none',cursor:'pointer'}}>Parse List →</button>
+                  style={{width:'100%',background:'#F6F7FB',border:'1px solid #DCDFEC',borderRadius:8,color:'#15183A',padding:'10px 12px',fontSize:12,fontFamily:'monospace',resize:'vertical',outline:'none',marginBottom:12}}/>
+                <button onClick={parseBulk} style={{width:'100%',padding:'10px',borderRadius:8,background:'#2D2F8F',color:'#FFFFFF',fontWeight:700,fontSize:14,border:'none',cursor:'pointer'}}>Parse List →</button>
               </>
             ) : (
               <>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-                  <p style={{fontSize:12,color:'#7d8590'}}>{bulkParsed.length} items parsed</p>
-                  <button onClick={()=>setBulkParsed([])} style={{background:'none',border:'none',color:'#ffb547',fontSize:12,cursor:'pointer'}}>← Edit</button>
+                  <p style={{fontSize:12,color:'#5B607E'}}>{bulkParsed.length} items parsed</p>
+                  <button onClick={()=>setBulkParsed([])} style={{background:'none',border:'none',color:'#9A5B00',fontSize:12,cursor:'pointer'}}>← Edit</button>
                 </div>
                 <div style={{marginBottom:14}}>
-                  <label style={{fontSize:10,color:'#7d8590',letterSpacing:0.8,display:'block',marginBottom:4}}>STOCK RECEIVED DATE</label>
+                  <label style={{fontSize:10,color:'#5B607E',letterSpacing:0.8,display:'block',marginBottom:4}}>STOCK RECEIVED DATE</label>
                   <input type="date" value={bulkDate} onChange={e=>setBulkDate(e.target.value)}
-                    style={{background:'#0d1117',border:'1px solid #30363d',borderRadius:8,color:'#e6edf3',padding:'8px 12px',fontSize:13,outline:'none',width:'100%'}}/>
-                  <p style={{fontSize:10,color:'#484f58',marginTop:3}}>Leave blank to use today's date</p>
+                    style={{background:'#F6F7FB',border:'1px solid #DCDFEC',borderRadius:8,color:'#15183A',padding:'8px 12px',fontSize:13,outline:'none',width:'100%'}}/>
+                  <p style={{fontSize:10,color:'#8A8FAE',marginTop:3}}>Leave blank to use today's date</p>
                 </div>
-                <div style={{background:'rgba(37,211,102,0.05)',border:'1px solid #25d36630',borderRadius:10,padding:14,marginBottom:14}}>
-                  <p style={{fontSize:11,color:'#25d366',fontWeight:700,letterSpacing:0.8,marginBottom:10}}>💱 LANDED COST</p>
+                <div style={{background:'rgba(11,122,108,0.05)',border:'1px solid #25d36630',borderRadius:10,padding:14,marginBottom:14}}>
+                  <p style={{fontSize:11,color:'#0B7A6C',fontWeight:700,letterSpacing:0.8,marginBottom:10}}>💱 LANDED COST</p>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
                     <div>
-                      <label style={{fontSize:10,color:'#7d8590',display:'block',marginBottom:4}}>RMB → TZS RATE</label>
+                      <label style={{fontSize:10,color:'#5B607E',display:'block',marginBottom:4}}>RMB → TZS RATE</label>
                       <input value={bulkExRate} onChange={e=>setBulkExRate(e.target.value)} type="number" placeholder="e.g. 390"
-                        style={{width:'100%',background:'#0d1117',border:'1px solid #30363d',borderRadius:6,color:'#4da6ff',padding:'7px 10px',fontSize:13,outline:'none',fontWeight:700}}/>
+                        style={{width:'100%',background:'#F6F7FB',border:'1px solid #DCDFEC',borderRadius:6,color:'#2D2F8F',padding:'7px 10px',fontSize:13,outline:'none',fontWeight:700}}/>
                     </div>
                     <div>
-                      <label style={{fontSize:10,color:'#7d8590',display:'block',marginBottom:4}}>CLEARING FEE (TZS)</label>
+                      <label style={{fontSize:10,color:'#5B607E',display:'block',marginBottom:4}}>CLEARING FEE (TZS)</label>
                       <input value={bulkClearing} onChange={e=>setBulkClearing(e.target.value)} type="number" placeholder="e.g. 150,000"
-                        style={{width:'100%',background:'#0d1117',border:'1px solid #30363d',borderRadius:6,color:'#e6edf3',padding:'7px 10px',fontSize:12,outline:'none'}}/>
+                        style={{width:'100%',background:'#F6F7FB',border:'1px solid #DCDFEC',borderRadius:6,color:'#15183A',padding:'7px 10px',fontSize:12,outline:'none'}}/>
                     </div>
                     <div>
-                      <label style={{fontSize:10,color:'#7d8590',display:'block',marginBottom:4}}>TRANSPORT (TZS)</label>
+                      <label style={{fontSize:10,color:'#5B607E',display:'block',marginBottom:4}}>TRANSPORT (TZS)</label>
                       <input value={bulkTransport} onChange={e=>setBulkTransport(e.target.value)} type="number" placeholder="e.g. 50,000"
-                        style={{width:'100%',background:'#0d1117',border:'1px solid #30363d',borderRadius:6,color:'#e6edf3',padding:'7px 10px',fontSize:12,outline:'none'}}/>
+                        style={{width:'100%',background:'#F6F7FB',border:'1px solid #DCDFEC',borderRadius:6,color:'#15183A',padding:'7px 10px',fontSize:12,outline:'none'}}/>
                     </div>
                     <div>
-                      <label style={{fontSize:10,color:'#7d8590',display:'block',marginBottom:4}}>OTHER CHARGES (TZS)</label>
+                      <label style={{fontSize:10,color:'#5B607E',display:'block',marginBottom:4}}>OTHER CHARGES (TZS)</label>
                       <input value={bulkOther} onChange={e=>setBulkOther(e.target.value)} type="number" placeholder="e.g. 30,000"
-                        style={{width:'100%',background:'#0d1117',border:'1px solid #30363d',borderRadius:6,color:'#e6edf3',padding:'7px 10px',fontSize:12,outline:'none'}}/>
+                        style={{width:'100%',background:'#F6F7FB',border:'1px solid #DCDFEC',borderRadius:6,color:'#15183A',padding:'7px 10px',fontSize:12,outline:'none'}}/>
                     </div>
                   </div>
-                  {bulkExRate&&<p style={{fontSize:11,color:'#25d366',marginTop:4}}>1 RMB = TZS {bulkExRate} | Extra costs: TZS {((parseFloat(bulkClearing)||0)+(parseFloat(bulkTransport)||0)+(parseFloat(bulkOther)||0)).toLocaleString()}</p>}
+                  {bulkExRate&&<p style={{fontSize:11,color:'#0B7A6C',marginTop:4}}>1 RMB = TZS {bulkExRate} | Extra costs: TZS {((parseFloat(bulkClearing)||0)+(parseFloat(bulkTransport)||0)+(parseFloat(bulkOther)||0)).toLocaleString()}</p>}
                 </div>
                 {bulkParsed.map((item,i)=>(
-                  <div key={i} style={{background:'#0d1117',borderRadius:10,padding:12,marginBottom:8,border:`1px solid ${item.matched?'#25d36630':'#2196F330'}`}}>
+                  <div key={i} style={{background:'#F6F7FB',borderRadius:10,padding:12,marginBottom:8,border:`1px solid ${item.matched?'#25d36630':'#2196F330'}`}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
                       <div>
                         <p style={{fontSize:13,fontWeight:700}}>{item.matched?'✅ ':'🆕 '}{item.name||item.part_number}</p>
-                        {item.part_number&&<p style={{fontSize:10,color:'#a78bfa',fontFamily:'monospace',marginTop:2}}>#{item.part_number}</p>}
-                        <p style={{fontSize:10,color:item.matched?'#25d366':'#2196F3',marginTop:2}}>{item.matched?'Existing — will add to stock':'New product — will be created'}</p>
+                        {item.part_number&&<p style={{fontSize:10,color:'#0F7375',fontFamily:'monospace',marginTop:2}}>#{item.part_number}</p>}
+                        <p style={{fontSize:10,color:item.matched?'#0B7A6C':'#2D2F8F',marginTop:2}}>{item.matched?'Existing — will add to stock':'New product — will be created'}</p>
                       </div>
                       <div style={{textAlign:'right'}}>
-                        <input value={item.qty_boxes} onChange={e=>setBulkParsed(p=>p.map((x,j)=>j===i?{...x,qty_boxes:e.target.value}:x))} type="number" style={{width:70,background:'#161b22',border:'1px solid #30363d',borderRadius:6,color:'#ffb547',padding:'4px 8px',fontSize:13,fontWeight:700,textAlign:'right'}}/>
-                        <p style={{fontSize:9,color:'#7d8590',marginTop:2}}>boxes</p>
+                        <input value={item.qty_boxes} onChange={e=>setBulkParsed(p=>p.map((x,j)=>j===i?{...x,qty_boxes:e.target.value}:x))} type="number" style={{width:70,background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:6,color:'#9A5B00',padding:'4px 8px',fontSize:13,fontWeight:700,textAlign:'right'}}/>
+                        <p style={{fontSize:9,color:'#5B607E',marginTop:2}}>boxes</p>
                       </div>
                     </div>
                     {!item.matched&&!item.name&&(
-                      <input value={item.name} onChange={e=>setBulkParsed(p=>p.map((x,j)=>j===i?{...x,name:e.target.value}:x))} placeholder="Enter product name" style={{width:'100%',marginTop:8,background:'#161b22',border:'1px solid #ffb547',borderRadius:6,color:'#e6edf3',padding:'6px 10px',fontSize:12,outline:'none'}}/>
+                      <input value={item.name} onChange={e=>setBulkParsed(p=>p.map((x,j)=>j===i?{...x,name:e.target.value}:x))} placeholder="Enter product name" style={{width:'100%',marginTop:8,background:'#FFFFFF',border:'1px solid #9A5B00',borderRadius:6,color:'#15183A',padding:'6px 10px',fontSize:12,outline:'none'}}/>
                     )}
                     <div style={{display:'flex',gap:8,marginTop:8,alignItems:'center'}}>
-                      <input value={item.buy_price} onChange={e=>setBulkParsed(p=>p.map((x,j)=>j===i?{...x,buy_price:e.target.value}:x))} placeholder="Price (¥ RMB)" type="number" style={{flex:1,background:'#161b22',border:'1px solid #30363d',borderRadius:6,color:'#e6edf3',padding:'6px 10px',fontSize:12,outline:'none'}}/>
-                      {item.buy_price&&bulkExRate&&<p style={{fontSize:11,color:'#25d366',whiteSpace:'nowrap',fontWeight:700}}>≈ TZS {Math.round(parseFloat(item.buy_price)*(parseFloat(bulkExRate)||1)).toLocaleString()}/pc</p>}
+                      <input value={item.buy_price} onChange={e=>setBulkParsed(p=>p.map((x,j)=>j===i?{...x,buy_price:e.target.value}:x))} placeholder="Price (¥ RMB)" type="number" style={{flex:1,background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:6,color:'#15183A',padding:'6px 10px',fontSize:12,outline:'none'}}/>
+                      {item.buy_price&&bulkExRate&&<p style={{fontSize:11,color:'#0B7A6C',whiteSpace:'nowrap',fontWeight:700}}>≈ TZS {Math.round(parseFloat(item.buy_price)*(parseFloat(bulkExRate)||1)).toLocaleString()}/pc</p>}
                     </div>
                   </div>
                 ))}
-                <button onClick={saveBulk} disabled={!!bulkSaving} style={{width:'100%',padding:'12px',borderRadius:8,background:bulkSaving?'#1e3a5f':'#25d366',color:bulkSaving?'#4da6ff':'#000',fontWeight:800,fontSize:14,border:'none',cursor:bulkSaving?'not-allowed':'pointer',marginTop:4}}>
+                <button onClick={saveBulk} disabled={!!bulkSaving} style={{width:'100%',padding:'12px',borderRadius:8,background:bulkSaving?'#ECEEF7':'#0B7A6C',color:bulkSaving?'#2D2F8F': '#FFFFFF',fontWeight:800,fontSize:14,border:'none',cursor:bulkSaving?'not-allowed':'pointer',marginTop:4}}>
                   {bulkSaving ? (bulkStatus||'Saving...') : `✅ Save ${bulkParsed.filter(i=>parseInt(i.qty_boxes)>0).length} Items`}
                 </button>
               </>
@@ -661,20 +686,20 @@ export default function Stock() {
       )}
       {/* BATCH HISTORY MODAL */}
       {batchModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}}>
-          <div style={{background:'#161b22',border:'1px solid #30363d',borderRadius:16,padding:24,width:'100%',maxWidth:640,maxHeight:'85vh',overflowY:'auto'}}>
+        <div style={{position:'fixed',inset:0,background:'rgba(21,24,58,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}}>
+          <div style={{background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:16,padding:24,width:'100%',maxWidth:640,maxHeight:'85vh',overflowY:'auto'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
               <div>
                 <h2 style={{fontSize:16,fontWeight:800}}>📦 Batch History</h2>
-                <p style={{fontSize:12,color:'#7d8590',marginTop:2}}>{batchProd?.name}</p>
+                <p style={{fontSize:12,color:'#5B607E',marginTop:2}}>{batchProd?.name}</p>
               </div>
-              <button onClick={()=>setBatchModal(false)} style={{background:'none',border:'none',color:'#7d8590',fontSize:20,cursor:'pointer'}}>✕</button>
+              <button onClick={()=>setBatchModal(false)} style={{background:'none',border:'none',color:'#5B607E',fontSize:20,cursor:'pointer'}}>✕</button>
             </div>
 
             {loadingBatch ? (
-              <div style={{textAlign:'center',padding:40}}><div style={{width:32,height:32,border:'3px solid #30363d',borderTopColor:'#a78bfa',borderRadius:'50%',animation:'spin 0.8s linear infinite',margin:'0 auto'}}/></div>
+              <div style={{textAlign:'center',padding:40}}><div style={{width:32,height:32,border:'3px solid #DCDFEC',borderTopColor:'#0F7375',borderRadius:'50%',animation:'spin 0.8s linear infinite',margin:'0 auto'}}/></div>
             ) : batches.length === 0 ? (
-              <div style={{textAlign:'center',padding:40,color:'#484f58'}}>
+              <div style={{textAlign:'center',padding:40,color:'#8A8FAE'}}>
                 <p style={{fontSize:32,marginBottom:8}}>📦</p>
                 <p>No batch records found for this product</p>
               </div>
@@ -683,13 +708,13 @@ export default function Stock() {
                 {/* Summary */}
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
                   {[
-                    {l:'Total Batches',v:batches.length,c:'#2196F3'},
-                    {l:'Total Received',v:batches.reduce((a,b)=>a+(b.qty_pieces||0),0)+' pcs',c:'#ffb547'},
-                    {l:'Still in Stock',v:batches.reduce((a,b)=>a+(b.qty_remaining||0),0)+' pcs',c:'#25d366'},
+                    {l:'Total Batches',v:batches.length,c:'#2D2F8F'},
+                    {l:'Total Received',v:batches.reduce((a,b)=>a+(b.qty_pieces||0),0)+' pcs',c:'#9A5B00'},
+                    {l:'Still in Stock',v:batches.reduce((a,b)=>a+(b.qty_remaining||0),0)+' pcs',c:'#0B7A6C'},
                   ].map(k=>(
-                    <div key={k.l} style={{background:'#0d1117',borderRadius:8,padding:10,textAlign:'center'}}>
+                    <div key={k.l} style={{background:'#F6F7FB',borderRadius:8,padding:10,textAlign:'center'}}>
                       <p style={{fontSize:18,fontWeight:900,color:k.c}}>{k.v}</p>
-                      <p style={{fontSize:10,color:'#7d8590',marginTop:3}}>{k.l.toUpperCase()}</p>
+                      <p style={{fontSize:10,color:'#5B607E',marginTop:3}}>{k.l.toUpperCase()}</p>
                     </div>
                   ))}
                 </div>
@@ -698,38 +723,38 @@ export default function Stock() {
                 {batches.map((b,i)=>{
                   const pct = b.qty_pieces>0?Math.round(b.qty_remaining/b.qty_pieces*100):0
                   return (
-                  <div key={b.id} style={{background:'#0d1117',borderRadius:10,padding:14,marginBottom:8,border:'1px solid #30363d'}}>
+                  <div key={b.id} style={{background:'#F6F7FB',borderRadius:10,padding:14,marginBottom:8,border:'1px solid #DCDFEC'}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
                       <div>
-                        {b.batch_ref&&<p style={{fontSize:11,color:'#a78bfa',fontFamily:'monospace',fontWeight:700,marginBottom:2}}>{b.batch_ref}</p>}
-                        <p style={{fontSize:12,color:'#7d8590'}}>Received: {b.received_date}</p>
-                        {b.vendor_name&&<p style={{fontSize:11,color:'#484f58',marginTop:1}}>Vendor: {b.vendor_name}</p>}
+                        {b.batch_ref&&<p style={{fontSize:11,color:'#0F7375',fontFamily:'monospace',fontWeight:700,marginBottom:2}}>{b.batch_ref}</p>}
+                        <p style={{fontSize:12,color:'#5B607E'}}>Received: {b.received_date}</p>
+                        {b.vendor_name&&<p style={{fontSize:11,color:'#8A8FAE',marginTop:1}}>Vendor: {b.vendor_name}</p>}
                       </div>
-                      <span style={{background:b.status==='active'?'#25d36618':'#48485818',color:b.status==='active'?'#25d366':'#484f58',border:`1px solid ${b.status==='active'?'#25d36630':'#30363d'}`,borderRadius:4,padding:'2px 8px',fontSize:10,fontWeight:700}}>
+                      <span style={{background:b.status==='active'?'#25d36618':'#48485818',color:b.status==='active'?'#0B7A6C':'#8A8FAE',border:`1px solid ${b.status==='active'?'#25d36630':'#DCDFEC'}`,borderRadius:4,padding:'2px 8px',fontSize:10,fontWeight:700}}>
                         {b.status?.toUpperCase()}
                       </span>
                     </div>
                     {/* Progress */}
                     <div style={{marginBottom:10}}>
                       <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
-                        <span style={{fontSize:11,color:'#7d8590'}}>{b.qty_remaining} remaining of {b.qty_pieces} received</span>
-                        <span style={{fontSize:11,fontWeight:700,color:pct>50?'#25d366':pct>20?'#ffb547':'#ff4d6d'}}>{pct}%</span>
+                        <span style={{fontSize:11,color:'#5B607E'}}>{b.qty_remaining} remaining of {b.qty_pieces} received</span>
+                        <span style={{fontSize:11,fontWeight:700,color:pct>50?'#0B7A6C':pct>20?'#9A5B00':'#B93A16'}}>{pct}%</span>
                       </div>
-                      <div style={{height:6,background:'#30363d',borderRadius:3}}>
-                        <div style={{height:'100%',width:pct+'%',background:pct>50?'#25d366':pct>20?'#ffb547':'#ff4d6d',borderRadius:3,transition:'width 0.3s'}}/>
+                      <div style={{height:6,background:'#DCDFEC',borderRadius:3}}>
+                        <div style={{height:'100%',width:pct+'%',background:pct>50?'#0B7A6C':pct>20?'#9A5B00':'#B93A16',borderRadius:3,transition:'width 0.3s'}}/>
                       </div>
                     </div>
                     {/* Cost info */}
                     <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
                       {[
                         {l:'Boxes',v:b.qty_boxes},
-                        {l:'Cost/Pc',v:'TZS '+(b.landed_cost_per_piece||0).toLocaleString(),c:'#ffb547'},
-                        {l:'Total Cost',v:'TZS '+(b.total_cost_tzs||0).toLocaleString(),c:'#ff4d6d'},
+                        {l:'Cost/Pc',v:'TZS '+(b.landed_cost_per_piece||0).toLocaleString(),c:'#9A5B00'},
+                        {l:'Total Cost',v:'TZS '+(b.total_cost_tzs||0).toLocaleString(),c:'#B93A16'},
                         {l:'Currency',v:`${b.currency||'TZS'} @ ${b.exchange_rate||1}`},
                       ].map(s=>(
                         <div key={s.l} style={{textAlign:'center'}}>
-                          <p style={{fontSize:9,color:'#7d8590',letterSpacing:0.5,marginBottom:2}}>{s.l.toUpperCase()}</p>
-                          <p style={{fontSize:11,fontWeight:700,color:s.c||'#e6edf3'}}>{s.v}</p>
+                          <p style={{fontSize:9,color:'#5B607E',letterSpacing:0.5,marginBottom:2}}>{s.l.toUpperCase()}</p>
+                          <p style={{fontSize:11,fontWeight:700,color:s.c||'#15183A'}}>{s.v}</p>
                         </div>
                       ))}
                     </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
+import { SLMark, SLWordmark } from '../../components/store/Shell'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import Head from 'next/head'
@@ -39,20 +40,20 @@ export default function Register() {
   return (
     <>
       <Head><title>Start Free Trial — TheDashboard</title></Head>
-      <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0d1117',padding:24}}>
+      <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#F6F7FB',padding:24}}>
         <div style={{width:'100%',maxWidth:440}}>
           <div style={{textAlign:'center',marginBottom:32}}>
-            <div style={{width:48,height:48,background:'#2196F3',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:20,color:'#000',margin:'0 auto 16px'}}>D</div>
+            <div style={{ display:'flex', justifyContent:'center', marginBottom:16 }}><SLMark size={52} /></div>
             <h1 style={{fontSize:24,fontWeight:800,letterSpacing:-0.5}}>Create your shop</h1>
-            <p style={{color:'#7d8590',fontSize:13,marginTop:6}}>14 days free · No credit card needed</p>
+            <p style={{color:'#5B607E',fontSize:13,marginTop:6}}>14 days free · No credit card needed</p>
           </div>
           {step===2?(
-            <div style={{background:'#161b22',border:'1px solid #30363d',borderRadius:12,padding:40,textAlign:'center'}}>
-              <div style={{width:36,height:36,border:'3px solid #30363d',borderTopColor:'#2196F3',borderRadius:'50%',animation:'spin 0.8s linear infinite',margin:'0 auto 20px'}}/>
-              <p style={{color:'#2196F3',fontWeight:700,fontSize:14}}>{status}</p>
+            <div style={{background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:12,padding:40,textAlign:'center'}}>
+              <div style={{width:36,height:36,border:'3px solid #DCDFEC',borderTopColor:'#2D2F8F',borderRadius:'50%',animation:'spin 0.8s linear infinite',margin:'0 auto 20px'}}/>
+              <p style={{color:'#2D2F8F',fontWeight:700,fontSize:14}}>{status}</p>
             </div>
           ):(
-            <form onSubmit={register} style={{background:'#161b22',border:'1px solid #30363d',borderRadius:12,padding:24}}>
+            <form onSubmit={register} style={{background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:12,padding:24}}>
               {[
                 {k:'shopName',l:'Shop Name *',ph:'e.g. G2K Auto Parts',type:'text'},
                 {k:'fullName',l:'Your Full Name *',ph:'e.g. Anthony Nyagilo',type:'text'},
@@ -66,14 +67,14 @@ export default function Register() {
                   <input type={f.type} value={form[f.k]} onChange={set(f.k)} placeholder={f.ph} required/>
                 </div>
               ))}
-              {error&&<div style={{background:'rgba(255,77,109,0.1)',border:'1px solid rgba(255,77,109,0.3)',borderRadius:8,padding:'10px 14px',marginBottom:14,color:'#ff4d6d',fontSize:13}}>{error}</div>}
-              <button type="submit" disabled={loading} style={{width:'100%',padding:'13px',borderRadius:8,background:'#2196F3',color:'#000',fontWeight:700,fontSize:15,border:'none',marginTop:4}}>
+              {error&&<div style={{background:'rgba(185,58,22,0.1)',border:'1px solid rgba(185,58,22,0.3)',borderRadius:8,padding:'10px 14px',marginBottom:14,color:'#B93A16',fontSize:13}}>{error}</div>}
+              <button type="submit" disabled={loading} style={{width:'100%',padding:'13px',borderRadius:8,background:'#2D2F8F',color:'#FFFFFF',fontWeight:700,fontSize:15,border:'none',marginTop:4}}>
                 Create Account & Start Free Trial 🚀
               </button>
             </form>
           )}
-          <p style={{textAlign:'center',marginTop:18,color:'#7d8590',fontSize:13}}>
-            Already have an account? <Link href="/auth/login" style={{color:'#2196F3',fontWeight:600}}>Sign in</Link>
+          <p style={{textAlign:'center',marginTop:18,color:'#5B607E',fontSize:13}}>
+            Already have an account? <Link href="/auth/login" style={{color:'#2D2F8F',fontWeight:600}}>Sign in</Link>
           </p>
         </div>
       </div>
