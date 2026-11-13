@@ -87,8 +87,8 @@ export default function Team() {
   const kibaliStaff=team.filter(m=>m.role==='shop_clerk'||m.role==='storekeeper')
   // Store-only shops: hide cashier / sales rep sections unless someone is still in them
   const showCashiers=posOn||!kibaliOn||cashiers.length>0
-  const showReps=posOn||!kibaliOn||salesReps.length>0
   const salesReps=team.filter(m=>m.role==='sales_rep')
+  const showReps=posOn||!kibaliOn||salesReps.length>0
   const card={background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:12,padding:16}
 
   // Toggle pill component inline
@@ -122,10 +122,10 @@ export default function Team() {
         </div>
 
         {/* Brought By legend */}
-        <div style={{marginBottom:16,padding:'10px 14px',borderRadius:8,background:'rgba(11,122,108,0.06)',border:'1px solid rgba(11,122,108,0.15)',display:'flex',alignItems:'center',gap:8}}>
+        {posOn&&<div style={{marginBottom:16,padding:'10px 14px',borderRadius:8,background:'rgba(11,122,108,0.06)',border:'1px solid rgba(11,122,108,0.15)',display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontSize:14}}>👤</span>
           <p style={{fontSize:12,color:'#5B607E'}}><span style={{color:'#0B7A6C',fontWeight:700}}>Brought By</span> — toggle to control which team members appear in the cashier's "Brought By" dropdown at POS.</p>
-        </div>
+        </div>}
 
         <h2 style={{fontSize:11,color:'#5B607E',letterSpacing:0.8,marginBottom:12,display:showCashiers?'block':'none'}}>CASHIERS</h2>
         <div style={{display:showCashiers?'grid':'none',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12,marginBottom:28}}>
