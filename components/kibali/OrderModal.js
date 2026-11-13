@@ -34,17 +34,17 @@ export default function OrderModal({ k, orderId, onClose, onChanged, autoPrint }
 
   const o = d?.order
   return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 50, overflowY: 'auto', padding: '24px 12px' }}>
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(27,33,29,0.5)', zIndex: 50, overflowY: 'auto', padding: '24px 12px' }}>
       <div style={{ ...ui.card, maxWidth: 760, margin: '0 auto', position: 'relative' }}>
-        <button onClick={onClose} aria-label="Funga" style={{ position: 'absolute', right: 10, top: 8, background: 'none', border: 'none', color: '#7d8590', fontSize: 26 }}>×</button>
+        <button onClick={onClose} aria-label="Funga" style={{ position: 'absolute', right: 10, top: 8, background: 'none', border: 'none', color: '#5f5a50', fontSize: 26 }}>×</button>
         {!o ? <p style={ui.muted}>Inapakia…</p> : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4, paddingRight: 30 }}>
               <span style={{ ...ui.mono, fontSize: 22, fontWeight: 800 }}>{o.order_no}</span>
               <span style={ui.pill(o.status)}>{STATUS[o.status].label}</span>
-              {o.flagged && <span style={{ ...ui.pill('CANCELLED'), color: '#ff4d6d', background: 'rgba(255,77,109,0.12)' }}>FLAGGED — karatasi haifanani</span>}
+              {o.flagged && <span style={{ ...ui.pill('CANCELLED'), color: '#b3261e', background: '#fbe9e7' }}>FLAGGED — karatasi haifanani</span>}
             </div>
-            {d.code && <p style={{ ...ui.muted, marginBottom: 14 }}>Namba ya siri <b style={{ ...ui.mono, color: '#e6edf3', fontSize: 15, letterSpacing: 2 }}>{d.code}</b> — mpe mchukuaji pamoja na risiti</p>}
+            {d.code && <p style={{ ...ui.muted, marginBottom: 14 }}>Namba ya siri <b style={{ ...ui.mono, color: '#1b211d', fontSize: 15, letterSpacing: 2 }}>{d.code}</b> — mpe mchukuaji pamoja na risiti</p>}
 
             <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start' }}>
               {d.code ? <Receipt order={o} items={d.items} code={d.code} shopName={k.shop?.name} /> : null}
@@ -63,29 +63,29 @@ export default function OrderModal({ k, orderId, onClose, onChanged, autoPrint }
                     </div>
                   </div>
                 )}
-                {err && <div style={ui.banner('#ff4d6d')}>{err}</div>}
+                {err && <div style={ui.banner('#b3261e')}>{err}</div>}
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead><tr style={{ color: '#7d8590', textAlign: 'left' }}><th style={th}>Bidhaa</th><th style={thr}>Oda</th><th style={thr}>Imetoka</th><th style={thr}>Imebaki</th></tr></thead>
+                  <thead><tr style={{ color: '#5f5a50', textAlign: 'left' }}><th style={th}>Bidhaa</th><th style={thr}>Oda</th><th style={thr}>Imetoka</th><th style={thr}>Imebaki</th></tr></thead>
                   <tbody>{d.items.map(i => (
-                    <tr key={i.id} style={{ borderTop: '1px solid #30363d' }}>
+                    <tr key={i.id} style={{ borderTop: '1px solid #d9cfbd' }}>
                       <td style={td}>{i.product_name} <span style={{ fontSize: 11, fontWeight: 700, color: KIND[i.kind || 'retail'].c }}>{KIND[i.kind || 'retail'].sw}</span></td>
                       <td style={tdr}>{i.qty}</td>
-                      <td style={{ ...tdr, color: '#3fb950' }}>{i.released}</td>
-                      <td style={{ ...tdr, color: i.qty - i.released ? '#f0b429' : '#7d8590' }}>{i.qty - i.released}</td>
+                      <td style={{ ...tdr, color: '#2f6b4c' }}>{i.released}</td>
+                      <td style={{ ...tdr, color: i.qty - i.released ? '#8a5a00' : '#5f5a50' }}>{i.qty - i.released}</td>
                     </tr>))}
                   </tbody>
                 </table>
 
                 <div>
                   <p style={{ fontWeight: 800, marginBottom: 8 }}>Historia</p>
-                  <Event c="#2196F3" t={`Oda imetengenezwa${o.customer_name ? ' — ' + o.customer_name : ''}`} s={`${fmtTime(o.created_at)} · ${o.created_by_name}`} />
+                  <Event c="#1f4d3a" t={`Oda imetengenezwa${o.customer_name ? ' — ' + o.customer_name : ''}`} s={`${fmtTime(o.created_at)} · ${o.created_by_name}`} />
                   {d.releases.map(r => (
-                    <Event key={r.id} c="#3fb950" t={'Imetoka: ' + r.lines.map(l => `${l.qty} ${l.product_name}`).join(', ')}
+                    <Event key={r.id} c="#2f6b4c" t={'Imetoka: ' + r.lines.map(l => `${l.qty} ${l.product_name}`).join(', ')}
                       s={`${fmtTime(r.created_at)} · ${r.released_by_name} → ${r.collector_name}${r.collector_phone ? ' · ' + r.collector_phone : ''}`} />
                   ))}
-                  {o.status === 'CANCELLED' && <Event c="#7d8590" t={'Imesitishwa: ' + (o.cancel_reason || '')} s={`${fmtTime(o.updated_at)} · ${o.cancelled_by_name || ''}`} />}
-                  {(o.status === 'PENDING' || o.status === 'PARTIAL') && <Event c="#f0b429" t="Inasubiri kuchukuliwa stoo" s="Bidhaa zimehifadhiwa kwa oda hii" hollow />}
+                  {o.status === 'CANCELLED' && <Event c="#5f5a50" t={'Imesitishwa: ' + (o.cancel_reason || '')} s={`${fmtTime(o.updated_at)} · ${o.cancelled_by_name || ''}`} />}
+                  {(o.status === 'PENDING' || o.status === 'PARTIAL') && <Event c="#8a5a00" t="Inasubiri kuchukuliwa stoo" s="Bidhaa zimehifadhiwa kwa oda hii" hollow />}
                 </div>
               </div>
             </div>

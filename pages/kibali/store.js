@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory } from '../../lib/kibali'
+import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory, T } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
+import Icon from '../../components/kibali/Icon'
 
 const TABS = [
-  { href: '/kibali/store', label: 'Skani', icon: '⌗' },
-  { href: '/kibali/store?tab=waiting', label: 'Zinasubiri', icon: '◷' },
-  { href: '/kibali/store?tab=receive', label: 'Pokea', icon: '↓' },
+  { href: '/kibali/store', label: 'Skani', icon: 'scan' },
+  { href: '/kibali/store?tab=waiting', label: 'Zinasubiri', icon: 'clock' },
+  { href: '/kibali/store?tab=receive', label: 'Pokea', icon: 'down' },
 ]
 
 export default function KibaliStore() {
@@ -17,7 +18,7 @@ export default function KibaliStore() {
 
   return (
     <Shell k={k} title={{ scan: 'Skani risiti', waiting: 'Zinasubiri', receive: 'Pokea mzigo' }[tab]} tabs={TABS}>
-      {k.modules.kibali && !k.can('order.release') && <div style={ui.banner('#f0b429')}>Akaunti yako haina ruhusa ya kutoa mzigo stoo.</div>}
+      {k.modules.kibali && !k.can('order.release') && <div style={ui.banner('#8a5a00')}>Akaunti yako haina ruhusa ya kutoa mzigo stoo.</div>}
       {k.can('order.release') && tab === 'scan' && <ScanRelease k={k} initialNo={router.query.no || ''} />}
       {k.can('order.release') && tab === 'waiting' && <Waiting onPick={no => router.push('/kibali/store?no=' + encodeURIComponent(no))} />}
       {k.can('stock.receive') && tab === 'receive' && <Receive k={k} />}
@@ -64,7 +65,7 @@ function ScanRelease({ k, initialNo }) {
           timer = setTimeout(tick, 350)
         }
         tick()
-      } catch (e) { setMsg({ c: '#f0b429', t: 'Kamera haikufunguka', s: 'Andika namba ya oda badala yake.' }); setScanning(false) }
+      } catch (e) { setMsg({ c: '#8a5a00', t: 'Kamera haikufunguka', s: 'Andika namba ya oda badala yake.' }); setScanning(false) }
     })()
     return () => { stop = true; clearTimeout(timer); stream?.getTracks().forEach(t => t.stop()) }
   }, [scanning])
@@ -86,30 +87,30 @@ function ScanRelease({ k, initialNo }) {
 
   const open = async () => {
     setMsg(null); setOrder(null); setMis(null)
-    if (!no.trim()) return setMsg({ c: '#f0b429', t: 'Andika namba ya oda' })
-    if (!/^\d{4}$/.test(code.trim())) return setMsg({ c: '#f0b429', t: 'Namba ya siri ni tarakimu 4' })
+    if (!no.trim()) return setMsg({ c: '#8a5a00', t: 'Andika namba ya oda' })
+    if (!/^\d{4}$/.test(code.trim())) return setMsg({ c: '#8a5a00', t: 'Namba ya siri ni tarakimu 4' })
     setBusy(true)
     try {
       const r = await rpc('kibali_lookup_order', { p_order_no: no, p_code: code })
-      if (r.error === 'not_found') setMsg({ c: '#ff4d6d', t: `Oda ${no.toUpperCase()} haipo kwenye mfumo.`, s: 'Usitoe chochote. Karatasi hii inaweza kuwa ya kughushi — piga simu duka. Mmiliki amearifiwa.' })
-      else if (r.error === 'bad_code') setMsg({ c: '#ff4d6d', t: 'Namba ya siri si sahihi.', s: 'Usitoe. Muulize mchukuaji risiti halisi au piga simu duka. Mmiliki amearifiwa.' })
-      else if (r.error === 'locked') setMsg({ c: '#ff4d6d', t: 'Oda imefungwa kwa saa 1.', s: 'Namba ya siri imekosewa mara 5. Mmiliki amearifiwa.' })
+      if (r.error === 'not_found') setMsg({ c: '#b3261e', t: `Oda ${no.toUpperCase()} haipo kwenye mfumo.`, s: 'Usitoe chochote. Karatasi hii inaweza kuwa ya kughushi — piga simu duka. Mmiliki amearifiwa.' })
+      else if (r.error === 'bad_code') setMsg({ c: '#b3261e', t: 'Namba ya siri si sahihi.', s: 'Usitoe. Muulize mchukuaji risiti halisi au piga simu duka. Mmiliki amearifiwa.' })
+      else if (r.error === 'locked') setMsg({ c: '#b3261e', t: 'Oda imefungwa kwa saa 1.', s: 'Namba ya siri imekosewa mara 5. Mmiliki amearifiwa.' })
       else show(r)
-    } catch (e) { setMsg({ c: '#ff4d6d', t: e.message }) }
+    } catch (e) { setMsg({ c: '#b3261e', t: e.message }) }
     setBusy(false)
   }
 
   const release = async () => {
     setMsg(null)
     const lines = order.items.map(i => ({ item_id: i.id, qty: Number(give[i.id] || 0) })).filter(l => l.qty)
-    if (lines.some(l => !Number.isInteger(l.qty) || l.qty < 0)) return setMsg({ c: '#ff4d6d', t: 'Idadi ziwe namba kamili' })
-    if (!collector.trim()) return setMsg({ c: '#ff4d6d', t: 'Andika jina la anayechukua' })
+    if (lines.some(l => !Number.isInteger(l.qty) || l.qty < 0)) return setMsg({ c: '#b3261e', t: 'Idadi ziwe namba kamili' })
+    if (!collector.trim()) return setMsg({ c: '#b3261e', t: 'Andika jina la anayechukua' })
     setBusy(true)
     try {
       const r = await rpc('kibali_release', { p_order_no: order.order.order_no, p_code: code, p_lines: lines, p_collector: collector, p_collector_phone: phone })
-      setMsg({ c: '#3fb950', t: r.status === 'RELEASED' ? 'Mzigo wote umetolewa. ✓' : 'Sehemu imetolewa — kilichobaki kinabaki kwenye oda.', s: r.released.map(x => `${x.qty} ${x.unit} ${x.product_name} (${KIND[x.kind || 'retail'].sw})`).join(', ') })
+      setMsg({ c: '#2f6b4c', t: r.status === 'RELEASED' ? 'Mzigo wote umetolewa. ✓' : 'Sehemu imetolewa — kilichobaki kinabaki kwenye oda.', s: r.released.map(x => `${x.qty} ${x.unit} ${x.product_name} (${KIND[x.kind || 'retail'].sw})`).join(', ') })
       await refresh(order.order.id)
-    } catch (e) { setMsg({ c: '#ff4d6d', t: e.message }) }
+    } catch (e) { setMsg({ c: '#b3261e', t: e.message }) }
     setBusy(false)
   }
 
@@ -118,9 +119,9 @@ function ScanRelease({ k, initialNo }) {
     setBusy(true)
     try {
       await rpc('kibali_report_mismatch', { p_order_id: order.order.id, p_paper_says: mis.paper, p_brought_by: mis.who })
-      setMis(null); setMsg({ c: '#ff4d6d', t: 'Imeripotiwa kwa mmiliki.', s: 'Usitoe chochote hadi duka lithibitishe na mmiliki aondoe flag.' })
+      setMis(null); setMsg({ c: '#b3261e', t: 'Imeripotiwa kwa mmiliki.', s: 'Usitoe chochote hadi duka lithibitishe na mmiliki aondoe flag.' })
       await refresh(order.order.id)
-    } catch (e) { setMsg({ c: '#ff4d6d', t: e.message }) }
+    } catch (e) { setMsg({ c: '#b3261e', t: e.message }) }
     setBusy(false)
   }
 
@@ -131,7 +132,12 @@ function ScanRelease({ k, initialNo }) {
   return (
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ ...ui.card, display: 'grid', gap: 12 }}>
-        {canScan && !scanning && <button onClick={() => setScanning(true)} style={{ ...ui.btn, padding: 14, fontSize: 15 }}>📷 Skani QR ya risiti</button>}
+        {canScan && !scanning && (
+          <button onClick={() => setScanning(true)} style={{ height: 140, borderRadius: 16, border: 'none', background: '#121614', color: '#f2ece0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 16, fontWeight: 600 }}>
+            <span style={{ width: 64, height: 64, borderRadius: 14, border: '3px solid #edb54a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="scan" size={30} color="#edb54a" /></span>
+            Gusa kuskani QR ya risiti
+          </button>
+        )}
         {scanning && (
           <div style={{ display: 'grid', gap: 8 }}>
             <video ref={videoRef} playsInline muted style={{ width: '100%', borderRadius: 10, background: '#000', maxHeight: 320, objectFit: 'cover' }} />
@@ -144,7 +150,8 @@ function ScanRelease({ k, initialNo }) {
           <div><label>Namba ya siri</label>
             <input ref={codeRef} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 4))} onKeyDown={e => e.key === 'Enter' && open()} inputMode="numeric" placeholder="••••" autoComplete="off" style={{ ...ui.mono, fontSize: 20, fontWeight: 700, letterSpacing: 6 }} /></div>
         </div>
-        <button disabled={busy} onClick={open} style={{ ...ui.primary, padding: 14, fontSize: 15 }}>{busy && !order ? 'Inafungua…' : 'Fungua oda'}</button>
+        {!canScan && !scanning && <p style={{ ...ui.muted, marginTop: -4 }}>Andika namba ya oda na namba ya siri kutoka kwenye risiti ya mchukuaji. Kwenye simu ya Android (Chrome) utaweza kuskani QR kwa kamera.</p>}
+        <button disabled={busy} onClick={open} style={{ ...ui.primary, height: 54 }}>{busy && !order ? 'Inafungua…' : 'Fungua oda'}</button>
       </div>
 
       {msg && <div style={ui.banner(msg.c)}><b>{msg.t}</b>{msg.s && <div style={{ marginTop: 2 }}>{msg.s}</div>}</div>}
@@ -159,30 +166,30 @@ function ScanRelease({ k, initialNo }) {
             <span style={ui.pill(o.status)}>{STATUS[o.status].label}</span>
           </div>
 
-          {o.status === 'CANCELLED' && <div style={ui.banner('#ff4d6d')}><b>Oda hii imesitishwa na duka.</b> Usitoe chochote. {o.cancel_reason}</div>}
-          {o.status === 'RELEASED' && <div style={ui.banner('#ff4d6d')}><b>Mzigo wote ulishatolewa.</b> Kama mtu anajaribu kuchukua tena kwa risiti hii, inatumika mara ya pili. Mmiliki amearifiwa.</div>}
-          {o.flagged && <div style={ui.banner('#ff4d6d')}><b>Oda ina flag — karatasi haifanani.</b> Usitoe hadi mmiliki aondoe flag.</div>}
+          {o.status === 'CANCELLED' && <div style={ui.banner('#b3261e')}><b>Oda hii imesitishwa na duka.</b> Usitoe chochote. {o.cancel_reason}</div>}
+          {o.status === 'RELEASED' && <div style={ui.banner('#b3261e')}><b>Mzigo wote ulishatolewa.</b> Kama mtu anajaribu kuchukua tena kwa risiti hii, inatumika mara ya pili. Mmiliki amearifiwa.</div>}
+          {o.flagged && <div style={ui.banner('#b3261e')}><b>Oda ina flag — karatasi haifanani.</b> Usitoe hadi mmiliki aondoe flag.</div>}
 
           {(o.status === 'PENDING' || o.status === 'PARTIAL') && !o.flagged && (
             <>
-              <div style={ui.banner('#f0b429')}><b>Toa kile tu kinachoonekana hapa.</b> Karatasi ikionyesha tofauti, usitoe — bonyeza "Karatasi haifanani".</div>
+              <div style={ui.banner('#8a5a00')}><b>Toa kile tu kinachoonekana hapa.</b> Karatasi ikionyesha tofauti, usitoe — bonyeza "Karatasi haifanani".</div>
               {order.items.map(i => {
                 const rem = i.qty - i.released
                 return (
-                  <div key={i.id} style={{ border: '1px solid #30363d', borderRadius: 10, padding: 12, display: 'grid', gap: 8 }}>
+                  <div key={i.id} style={{ border: '1px solid #d9cfbd', borderRadius: 10, padding: 12, display: 'grid', gap: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                       <div>
                         <p style={{ fontSize: 16, fontWeight: 800 }}>{i.product_name} <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, color: KIND[i.kind || 'retail'].c, background: KIND[i.kind || 'retail'].c + '22' }}>{KIND[i.kind || 'retail'].sw}</span></p>
-                        <p style={{ fontSize: 11, fontWeight: 800, color: '#58a6ff' }}>{swWords(i.qty)} ({i.qty}) {i.unit.toUpperCase()}</p>
+                        <p style={{ fontSize: 11, fontWeight: 800, color: '#24506b' }}>{swWords(i.qty)} ({i.qty}) {i.unit.toUpperCase()}</p>
                         {i.released > 0 && <p style={ui.muted}>Zilishatolewa {i.released} · zimebaki {rem}</p>}
                       </div>
                       <p style={{ ...ui.mono, fontSize: 30, fontWeight: 800 }}>{rem}</p>
                     </div>
                     {rem > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTop: '1px solid #30363d', paddingTop: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTop: '1px solid #d9cfbd', paddingTop: 8 }}>
                         <span style={{ fontSize: 13 }}>Unatoa sasa</span>
                         <input type="number" min="0" max={rem} step="1" inputMode="numeric" value={give[i.id] ?? ''} onChange={e => setGive({ ...give, [i.id]: e.target.value })}
-                          aria-label={'Unatoa ' + i.product_name} style={{ width: 110, ...ui.mono, fontSize: 18, fontWeight: 800, textAlign: 'right', borderColor: Number(give[i.id]) > rem ? '#ff4d6d' : undefined }} />
+                          aria-label={'Unatoa ' + i.product_name} style={{ width: 110, ...ui.mono, fontSize: 18, fontWeight: 800, textAlign: 'right', borderColor: Number(give[i.id]) > rem ? '#b3261e' : undefined }} />
                       </div>
                     )}
                   </div>
@@ -192,15 +199,15 @@ function ScanRelease({ k, initialNo }) {
                 <div><label>Aliyechukua (jina)</label><input value={collector} onChange={e => setCollector(e.target.value)} /></div>
                 <div><label>Simu</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="si lazima" /></div>
               </div>
-              <button disabled={busy || !giving} onClick={release} style={{ ...ui.primary, padding: 16, fontSize: 16 }}>{busy ? 'Inatoa…' : `Toa mzigo · vipimo ${giving}${giving < remaining ? ` (${remaining - giving} vitabaki)` : ''}`}</button>
-              {!mis && <button onClick={() => setMis({ paper: '', who: '' })} style={{ ...ui.danger, padding: 12 }}>⊘ Karatasi haifanani</button>}
+              <button disabled={busy || !giving} onClick={release} style={{ ...ui.primary, height: 56, fontSize: 17 }}>{busy ? 'Inatoa…' : `Toa mzigo · vipimo ${giving}${giving < remaining ? ` (${remaining - giving} vitabaki)` : ''}`}</button>
+              {!mis && <button onClick={() => setMis({ paper: '', who: '' })} style={{ ...ui.danger, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Icon name="stop" size={18} />Karatasi haifanani</button>}
               {mis && (
-                <div style={{ border: '1px solid rgba(255,77,109,0.5)', borderRadius: 10, padding: 12, display: 'grid', gap: 8 }}>
-                  <p style={{ fontWeight: 800, color: '#ff4d6d' }}>Usitoe chochote. Andika karatasi inasema nini:</p>
+                <div style={{ border: '1px solid rgba(179,38,30,0.45)', borderRadius: 10, padding: 12, display: 'grid', gap: 8 }}>
+                  <p style={{ fontWeight: 800, color: '#b3261e' }}>Usitoe chochote. Andika karatasi inasema nini:</p>
                   <textarea rows={2} value={mis.paper} onChange={e => setMis({ ...mis, paper: e.target.value })} placeholder="mf. Karatasi inasema simenti 11, mfumo unasema 1" autoFocus />
                   <input value={mis.who} onChange={e => setMis({ ...mis, who: e.target.value })} placeholder="Aliyeleta karatasi (jina / maelezo)" />
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button disabled={busy || !mis.paper.trim()} onClick={report} style={{ ...ui.danger, background: '#ff4d6d', color: '#fff', flex: 1 }}>Tuma tahadhari kwa mmiliki</button>
+                    <button disabled={busy || !mis.paper.trim()} onClick={report} style={{ ...ui.danger, background: T.danger, color: T.raised, flex: 1, height: 48 }}>Tuma tahadhari kwa mmiliki</button>
                     <button onClick={() => setMis(null)} style={ui.btn}>Acha</button>
                   </div>
                 </div>
@@ -239,16 +246,16 @@ function Waiting({ onPick }) {
   return (
     <div style={{ display: 'grid', gap: 10 }}>
       {rows.length > 0 && (
-        <div style={{ ...ui.card, background: '#1c2128' }}>
+        <div style={{ ...ui.card, background: T.tint, border: 'none' }}>
           <p style={{ ...ui.muted, fontWeight: 800, marginBottom: 8 }}>VYA KUANDAA · ODA {rows.length}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
             {Object.entries(totals).filter(([, v]) => v > 0).map(([n, v]) => <div key={n}><p style={{ ...ui.mono, fontSize: 20, fontWeight: 800 }}>{v}</p><p style={ui.muted}>{n}</p></div>)}
           </div>
         </div>
       )}
-      {rows.length === 0 && <div style={{ ...ui.card, textAlign: 'center', color: '#7d8590' }}>Hakuna oda inayosubiri.</div>}
+      {rows.length === 0 && <div style={{ ...ui.card, textAlign: 'center', color: '#5f5a50' }}>Hakuna oda inayosubiri.</div>}
       {rows.map(o => (
-        <button key={o.id} onClick={() => onPick(o.order_no)} style={{ ...ui.card, textAlign: 'left', color: '#e6edf3', display: 'grid', gap: 6 }}>
+        <button key={o.id} className="kb-card-btn" onClick={() => onPick(o.order_no)} style={{ ...ui.card, textAlign: 'left', color: T.ink, display: 'grid', gap: 6, width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ ...ui.mono, fontSize: 16, fontWeight: 800 }}>{o.order_no}</span>
             <span style={ui.pill(o.status)}>{o.status === 'PARTIAL' ? 'Nusu' : `◷ dakika ${mins(o.created_at)}`}</span>
@@ -291,13 +298,13 @@ function Receive({ k }) {
 
   const save = async () => {
     setMsg(null)
-    if (!p) return setMsg({ c: '#ff4d6d', t: 'Chagua bidhaa' })
-    if (!Number.isInteger(q) || q < 1) return setMsg({ c: '#ff4d6d', t: 'Idadi iwe namba kamili, 1 au zaidi' })
+    if (!p) return setMsg({ c: '#b3261e', t: 'Chagua bidhaa' })
+    if (!Number.isInteger(q) || q < 1) return setMsg({ c: '#b3261e', t: 'Idadi iwe namba kamili, 1 au zaidi' })
     setBusy(true)
     try {
       const bal = await rpc('kibali_receive_stock', { p_product_id: String(p.id), p_qty: q, p_reference: ref, p_kind: kind })
-      setMsg({ c: '#3fb950', t: `${p.name} (${KIND[kind].sw}): +${q} → ${bal} stoo` }); setQty(''); setRef(''); load()
-    } catch (e) { setMsg({ c: '#ff4d6d', t: e.message }) }
+      setMsg({ c: '#2f6b4c', t: `${p.name} (${KIND[kind].sw}): +${q} → ${bal} stoo` }); setQty(''); setRef(''); load()
+    } catch (e) { setMsg({ c: '#b3261e', t: e.message }) }
     setBusy(false)
   }
 
@@ -317,29 +324,29 @@ function Receive({ k }) {
           <div><label>Aina ya stoo</label>
             <div style={{ display: 'flex', gap: 8 }}>
               {['retail', 'wholesale'].map(kd => (
-                <button key={kd} type="button" onClick={() => setKind(kd)} style={{ flex: 1, padding: 10, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: kind === kd ? KIND[kd].c : '#30363d', background: kind === kd ? KIND[kd].c + '22' : 'transparent', color: kind === kd ? KIND[kd].c : '#7d8590' }}>
+                <button key={kd} type="button" onClick={() => setKind(kd)} style={{ flex: 1, padding: 10, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: kind === kd ? KIND[kd].c : '#d9cfbd', background: kind === kd ? KIND[kd].c + '22' : 'transparent', color: kind === kd ? KIND[kd].c : '#5f5a50' }}>
                   {KIND[kd].sw} · {kd === 'wholesale' ? p.wholesale : p.retail} stoo
                 </button>
               ))}
             </div>
-            {!hasBoth(p) && kind !== defaultKind(p) && <p style={{ ...ui.muted, marginTop: 4, color: '#f0b429' }}>Bidhaa hii kwa kawaida ni {KIND[defaultKind(p)].sw}. Hakikisha ni sahihi.</p>}
+            {!hasBoth(p) && kind !== defaultKind(p) && <p style={{ ...ui.muted, marginTop: 4, color: '#8a5a00' }}>Bidhaa hii kwa kawaida ni {KIND[defaultKind(p)].sw}. Hakikisha ni sahihi.</p>}
           </div>
         )}
         <div><label>Idadi iliyopokelewa{p ? ` (${p.unit})` : ''}</label>
           <input type="number" min="1" step="1" inputMode="numeric" value={qty} onChange={e => setQty(e.target.value)} style={{ ...ui.mono, fontSize: 24, fontWeight: 800 }} />
-          {q > 0 && <p style={{ fontSize: 11, fontWeight: 800, color: '#58a6ff', marginTop: 4 }}>{swWords(q)} ({q}) {(p?.unit || '').toUpperCase()}</p>}</div>
+          {q > 0 && <p style={{ fontSize: 11, fontWeight: 800, color: '#24506b', marginTop: 4 }}>{swWords(q)} ({q}) {(p?.unit || '').toUpperCase()}</p>}</div>
         <div><label>Msambazaji / namba ya delivery note</label><input value={ref} onChange={e => setRef(e.target.value)} placeholder="mf. Twiga Cement · DN 4471" /></div>
-        {p && q > 0 && <div style={ui.banner('#3fb950')}>Baada ya kupokea ({KIND[kind].sw}): <b style={ui.mono}>{cur} → {cur + q}</b></div>}
+        {p && q > 0 && <div style={ui.banner('#2f6b4c')}>Baada ya kupokea ({KIND[kind].sw}): <b style={ui.mono}>{cur} → {cur + q}</b></div>}
         {msg && <div style={ui.banner(msg.c)}>{msg.t}</div>}
-        <button disabled={busy} onClick={save} style={{ ...ui.primary, padding: 14, fontSize: 15 }}>{busy ? 'Inahifadhi…' : 'Ongeza kwenye stoo'}</button>
+        <button disabled={busy} onClick={save} style={{ ...ui.primary, height: 54 }}>{busy ? 'Inahifadhi…' : 'Ongeza kwenye stoo'}</button>
       </div>
       <div style={ui.card}>
         <p style={{ fontWeight: 800, marginBottom: 8 }}>Zilizopokelewa leo</p>
         {moves.length === 0 && <p style={ui.muted}>Bado hakuna.</p>}
         {moves.map(m => (
-          <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid #30363d' }}>
+          <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid #d9cfbd' }}>
             <div><p style={{ fontWeight: 700 }}>{m.product_name} <span style={{ fontSize: 11, color: KIND[m.kind || 'retail'].c }}>{KIND[m.kind || 'retail'].sw}</span></p><p style={ui.muted}>{fmtTime(m.created_at)} · {m.created_by_name}{m.reference ? ' · ' + m.reference : ''}</p></div>
-            <span style={{ ...ui.mono, color: '#3fb950', fontWeight: 800 }}>+{m.qty}</span>
+            <span style={{ ...ui.mono, color: '#2f6b4c', fontWeight: 800 }}>+{m.qty}</span>
           </div>
         ))}
       </div>

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf } from '../../lib/kibali'
+import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
+import Icon from '../../components/kibali/Icon'
 import OrderModal from '../../components/kibali/OrderModal'
 
 const TABS = [
-  { href: '/kibali/shop', label: 'Oda mpya', icon: '＋' },
-  { href: '/kibali/shop?tab=orders', label: 'Oda', icon: '☰' },
+  { href: '/kibali/shop', label: 'Oda mpya', icon: 'plus' },
+  { href: '/kibali/shop?tab=orders', label: 'Oda', icon: 'list' },
 ]
 const blankLine = () => ({ key: Math.random().toString(36).slice(2), product_id: '', search: '', qty: '', kind: 'retail' })
 
@@ -88,7 +89,7 @@ export default function KibaliShop() {
 
   return (
     <Shell k={k} title={tab === 'new' ? 'Oda mpya' : 'Oda za leo'} tabs={TABS}>
-      {k.modules.kibali && !k.can('order.create') && <div style={ui.banner('#f0b429')}>Akaunti yako haina ruhusa ya kutengeneza oda za Kibali.</div>}
+      {k.modules.kibali && !k.can('order.create') && <div style={ui.banner('#8a5a00')}>Akaunti yako haina ruhusa ya kutengeneza oda za Kibali.</div>}
       {tab === 'new' && k.can('order.create') && (
         <div style={{ display: 'grid', gap: 14, maxWidth: 640 }}>
           <div style={{ ...ui.card, display: 'grid', gap: 10 }}>
@@ -102,7 +103,7 @@ export default function KibaliShop() {
 
           <div style={ui.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-              <p style={{ fontWeight: 800 }}>Bidhaa</p>
+              <p style={ui.h}>Bidhaa</p>
               {cats.length > 0 && (
                 <select value={cat} onChange={e => setCat(e.target.value)} style={{ width: 'auto', minWidth: 180, padding: '7px 10px', fontSize: 13 }} aria-label="Kundi">
                   <option value="">Makundi yote</option>
@@ -117,54 +118,61 @@ export default function KibaliShop() {
                 const q = Number(l.qty)
                 const a = p ? avail(p, l.kind) : null
                 return (
-                  <div key={l.key} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 36px', gap: 8, alignItems: 'start' }}>
-                    <div>
+                  <div key={l.key} style={{ display: 'grid', gap: 8, paddingBottom: 12, borderBottom: `1px solid ${T.line}` }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 88px 46px', gap: 8 }}>
                       <input list="kb-products" value={l.search} onChange={e => setLine(l.key, { search: e.target.value })} placeholder={`Bidhaa ${i + 1}`} aria-label={`Bidhaa ${i + 1}`} />
-                      <div style={{ fontSize: 11, marginTop: 4, display: 'flex', justifyContent: 'space-between', gap: 8, minHeight: 15 }}>
-                        <span style={{ color: '#58a6ff', fontWeight: 700 }}>{q > 0 ? `${swWords(q)} (${q}) ${(p?.unit || '').toUpperCase()}` : ''}</span>
-                        {l.search && !p && <span style={{ color: '#f0b429' }}>Chagua kutoka kwenye orodha</span>}
-                        {p && <span style={{ color: q > a ? '#ff4d6d' : '#3fb950', fontWeight: 700 }}>{q > a ? `! ${KIND[l.kind].sw}: zipo ${a} tu` : `✓ ${KIND[l.kind].sw}: ${a} zipo`}</span>}
-                      </div>
-                      {p && (
-                        <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                          {['retail', 'wholesale'].map(kd => {
-                            const on = l.kind === kd, show = hasBoth(p) || defaultKind(p) === kd
-                            if (!show) return null
-                            return (
-                              <button key={kd} type="button" onClick={() => setLine(l.key, { kind: kd })}
-                                style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: '1px solid', borderColor: on ? KIND[kd].c : '#30363d', background: on ? KIND[kd].c + '22' : 'transparent', color: on ? KIND[kd].c : '#7d8590' }}>
-                                {KIND[kd].sw} · {avail(p, kd)}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
+                      <input type="number" min="1" step="1" inputMode="numeric" value={l.qty} onChange={e => setLine(l.key, { qty: e.target.value })} placeholder="Idadi" aria-label={`Idadi ${i + 1}`} style={{ fontFamily: T.mono, fontWeight: 700, fontSize: 18, textAlign: 'center' }} />
+                      <button onClick={() => setLines(ls => ls.length > 1 ? ls.filter(x => x.key !== l.key) : [blankLine()])} aria-label="Ondoa" style={{ ...ui.btn, padding: 0, height: 46, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={18} /></button>
                     </div>
-                    <input type="number" min="1" step="1" inputMode="numeric" value={l.qty} onChange={e => setLine(l.key, { qty: e.target.value })} placeholder="Idadi" aria-label={`Idadi ${i + 1}`} style={{ fontWeight: 800, fontSize: 16 }} />
-                    <button onClick={() => setLines(ls => ls.length > 1 ? ls.filter(x => x.key !== l.key) : [blankLine()])} aria-label="Ondoa" style={{ ...ui.btn, padding: '10px 0' }}>×</button>
+                    {(q > 0 || l.search) && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', fontSize: 13 }}>
+                        <span style={{ color: T.green, fontWeight: 700, letterSpacing: 0.2 }}>{q > 0 ? `${swWords(q)} (${q}) ${(p?.unit || '').toUpperCase()}` : ''}</span>
+                        {l.search && !p && <span style={{ color: T.warning, fontWeight: 600 }}>Chagua kutoka kwenye orodha</span>}
+                        {p && <span style={{ color: q > a ? T.danger : T.success, fontWeight: 600 }}>{q > a ? `! ${KIND[l.kind].sw}: zipo ${a} tu` : `✓ ${KIND[l.kind].sw}: ${a} zipo`}</span>}
+                      </div>
+                    )}
+                    {p && (hasBoth(p)) && (
+                      <div role="group" aria-label="Aina ya stoo" style={{ display: 'flex', background: T.tint, borderRadius: 999, padding: 3, width: 'fit-content' }}>
+                        {['retail', 'wholesale'].map(kd => {
+                          const on = l.kind === kd
+                          return (
+                            <button key={kd} type="button" onClick={() => setLine(l.key, { kind: kd })} aria-pressed={on}
+                              style={{ padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600, border: 'none', background: on ? T.raised : 'transparent', color: on ? KIND[kd].c : T.muted, boxShadow: on ? '0 0 0 1px ' + T.line : 'none' }}>
+                              {KIND[kd].sw} · {avail(p, kd)}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 )
               })}
             </div>
-            <button onClick={() => setLines(ls => [...ls, blankLine()])} style={{ ...ui.btn, width: '100%', marginTop: 12, borderStyle: 'dashed', color: '#58a6ff' }}>+ Ongeza bidhaa</button>
+            <button onClick={() => setLines(ls => [...ls, blankLine()])} style={{ ...ui.btn, width: '100%', marginTop: 12, borderStyle: 'dashed', color: T.green, height: 46 }}>+ Ongeza bidhaa</button>
           </div>
 
-          {error && <div style={ui.banner('#ff4d6d')}>{error}</div>}
-          {short && <div style={ui.banner('#f0b429')}>Stoo haina za kutosha kwa baadhi ya bidhaa. Unaweza kuendelea, lakini stoo itatoa kilichopo tu.</div>}
-          <button disabled={saving} onClick={create} style={{ ...ui.primary, padding: 16, fontSize: 16 }}>
-            {saving ? 'Inahifadhi…' : `🖨 Tengeneza oda na chapisha${totalUnits ? ` · vipimo ${totalUnits}` : ''}`}
-          </button>
+          {error && <div style={ui.banner('#b3261e')}>{error}</div>}
+          {short && <div style={ui.banner(T.warning)}>Stoo haina za kutosha kwa baadhi ya bidhaa. Unaweza kuendelea, lakini stoo itatoa kilichopo tu.</div>}
+          <div style={{ position: 'sticky', bottom: 84, zIndex: 5, background: T.raised, border: `1px solid ${T.line}`, borderTop: `2px solid ${T.green}`, borderRadius: 12, padding: 12, display: 'grid', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: T.muted }}>
+              <span>Bidhaa {lines.filter(l => l.product_id && Number(l.qty) > 0).length} · Vipimo vyote {totalUnits}</span>
+              {short && <span style={{ color: T.danger, fontWeight: 600 }}>Stoo haitoshi</span>}
+            </div>
+            <button disabled={saving} onClick={create} style={{ ...ui.primary, height: 54, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Icon name="print" size={20} />{saving ? 'Inahifadhi…' : 'Tengeneza oda na chapisha'}
+            </button>
+          </div>
         </div>
       )}
 
       {tab === 'orders' && (
         <div style={{ display: 'grid', gap: 8, maxWidth: 720 }}>
-          {orders.length === 0 && <div style={{ ...ui.card, textAlign: 'center', color: '#7d8590' }}>Hakuna oda leo bado.</div>}
+          {orders.length === 0 && <div style={{ ...ui.card, textAlign: 'center', color: '#5f5a50' }}>Hakuna oda leo bado.</div>}
           {orders.map(o => (
-            <button key={o.id} onClick={() => setOpenId(o.id)} style={{ ...ui.card, textAlign: 'left', color: '#e6edf3', display: 'grid', gap: 4 }}>
+            <button key={o.id} className="kb-card-btn" onClick={() => setOpenId(o.id)} style={{ ...ui.card, textAlign: 'left', color: T.ink, display: 'grid', gap: 4, width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                 <span style={{ ...ui.mono, fontSize: 16, fontWeight: 700, textDecoration: o.status === 'CANCELLED' ? 'line-through' : 'none' }}>{o.order_no}</span>
-                <span>{o.flagged && <span style={{ ...ui.pill('CANCELLED'), color: '#ff4d6d', background: 'rgba(255,77,109,0.12)', marginRight: 6 }}>FLAG</span>}<span style={ui.pill(o.status)}>{STATUS[o.status].label}</span></span>
+                <span>{o.flagged && <span style={{ ...ui.pill('CANCELLED'), color: '#b3261e', background: '#fbe9e7', marginRight: 6 }}>FLAG</span>}<span style={ui.pill(o.status)}>{STATUS[o.status].label}</span></span>
               </div>
               <span style={{ fontWeight: 700 }}>{o.customer_name || 'Mteja wa papo hapo'}</span>
               <span style={ui.muted}>{itemSummary(o.release_order_items)}</span>
