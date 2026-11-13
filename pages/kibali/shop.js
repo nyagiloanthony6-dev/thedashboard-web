@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey } from '../../lib/kibali'
+import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
 import OrderModal from '../../components/kibali/OrderModal'
 
@@ -24,6 +24,7 @@ export default function KibaliShop() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [openId, setOpenId] = useState(null)
+  const [cat, setCat] = useState('')
   const [justCreated, setJustCreated] = useState(null)
 
   const load = useCallback(async () => {
@@ -44,6 +45,8 @@ export default function KibaliShop() {
     load(); const t = setInterval(load, 15000); return () => clearInterval(t)
   }, [load, k.modules.kibali])
 
+  const cats = useMemo(() => categoriesOf(products), [products])
+  const pickable = cat ? products.filter(p => p.category === cat) : products
   const byName = useMemo(() => Object.fromEntries(products.map(p => [p.name.toLowerCase(), p])), [products])
   const byId = useMemo(() => Object.fromEntries(products.map(p => [String(p.id), p])), [products])
   const avail = (p, kind) => (kind === 'wholesale' ? p?.wholesale : p?.retail || 0) - (reserved[resKey(p?.id, kind)] || 0)
@@ -97,8 +100,16 @@ export default function KibaliShop() {
           </div>
 
           <div style={ui.card}>
-            <p style={{ fontWeight: 800, marginBottom: 10 }}>Bidhaa</p>
-            <datalist id="kb-products">{products.map(p => <option key={p.id} value={p.name}>Rejareja {avail(p, 'retail')} · Jumla {avail(p, 'wholesale')}</option>)}</datalist>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+              <p style={{ fontWeight: 800 }}>Bidhaa</p>
+              {cats.length > 0 && (
+                <select value={cat} onChange={e => setCat(e.target.value)} style={{ width: 'auto', minWidth: 180, padding: '7px 10px', fontSize: 13 }} aria-label="Kundi">
+                  <option value="">Makundi yote</option>
+                  {cats.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              )}
+            </div>
+            <datalist id="kb-products">{pickable.map(p => <option key={p.id} value={p.name}>{p.category ? p.category + ' · ' : ''}Rejareja {avail(p, 'retail')} · Jumla {avail(p, 'wholesale')}</option>)}</datalist>
             <div style={{ display: 'grid', gap: 10 }}>
               {lines.map((l, i) => {
                 const p = byId[String(l.product_id)]

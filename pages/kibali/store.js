@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth } from '../../lib/kibali'
+import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
 
 const TABS = [
@@ -307,7 +307,11 @@ function Receive({ k }) {
         <div><label>Bidhaa</label>
           <select value={pid} onChange={e => { setPid(e.target.value); const np = products.find(x => String(x.id) === e.target.value); setKind(defaultKind(np)) }}>
             <option value="">— chagua —</option>
-            {products.map(x => <option key={x.id} value={String(x.id)}>{x.name} — Rejareja {x.retail} · Jumla {x.wholesale}</option>)}
+            {byCategory(products).map(([c, ps]) => (
+              <optgroup key={c} label={c}>
+                {ps.map(x => <option key={x.id} value={String(x.id)}>{x.name} — Rejareja {x.retail} · Jumla {x.wholesale}</option>)}
+              </optgroup>
+            ))}
           </select></div>
         {p && (
           <div><label>Aina ya stoo</label>

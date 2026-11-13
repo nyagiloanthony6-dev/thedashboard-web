@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey } from '../../lib/kibali'
+import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
 import OrderModal from '../../components/kibali/OrderModal'
 
@@ -150,28 +150,36 @@ function Orders({ orders, onOpen }) {
 function Stock({ products, reserved, onChanged }) {
   const [q, setQ] = useState('')
   const [low, setLow] = useState(false)
+  const [cat, setCat] = useState('')
   const [sel, setSel] = useState(null)
+  const cats = useMemo(() => categoriesOf(products), [products])
   const rows = useMemo(() => products.map(p => {
     const rr = reserved[resKey(p.id, 'retail')] || 0, rw = reserved[resKey(p.id, 'wholesale')] || 0
     const ar = p.retail - rr, aw = p.wholesale - rw
     const main = defaultKind(p), mainAv = main === 'wholesale' ? aw : ar
     return { ...p, rr, rw, ar, aw, isLow: mainAv <= (p.low_stock_alert ?? 10), isOut: ar <= 0 && aw <= 0 }
   }), [products, reserved])
-  const list = rows.filter(r => (!q || r.name.toLowerCase().includes(q.toLowerCase())) && (!low || r.isLow))
+  const list = rows.filter(r => (!q || r.name.toLowerCase().includes(q.toLowerCase()) || (r.category || '').toLowerCase().includes(q.toLowerCase())) && (!low || r.isLow) && (!cat || r.category === cat))
+  const catTotals = cat ? list.reduce((a, r) => ({ retail: a.retail + r.retail, wholesale: a.wholesale + r.wholesale }), { retail: 0, wholesale: 0 }) : null
   const current = sel ? rows.find(r => r.id === sel) : null
 
   return (
     <div style={{ display: 'grid', gap: 10 }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tafuta bidhaa…" style={{ flex: 1, minWidth: 200 }} />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tafuta bidhaa au kundi…" style={{ flex: 1, minWidth: 200 }} />
+        <select value={cat} onChange={e => setCat(e.target.value)} style={{ width: 'auto', minWidth: 170 }} aria-label="Kundi">
+          <option value="">Makundi yote ({cats.length})</option>
+          {cats.map(c => <option key={c} value={c}>{c} ({rows.filter(r => r.category === c).length})</option>)}
+        </select>
         <button onClick={() => setLow(v => !v)} style={{ ...ui.btn, borderColor: low ? '#f0b429' : '#30363d', color: low ? '#f0b429' : '#7d8590' }}>Zinazokaribia kuisha ({rows.filter(r => r.isLow).length})</button>
       </div>
       <p style={ui.muted}>Kila aina inaonyesha: <b>stoo</b> (zilizopo ndani) na <b>zipo</b> (stoo kasoro zilizohifadhiwa kwa oda ambazo hazijachukuliwa). Bidhaa mpya ongeza kwenye ukurasa wa Stock.</p>
       <div style={{ ...ui.card, padding: 0, overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 560 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 660 }}>
           <thead>
             <tr style={{ color: '#7d8590' }}>
               <th style={{ padding: '10px 12px', fontSize: 11, textAlign: 'left' }} rowSpan={2}>Bidhaa</th>
+              <th style={{ padding: '10px 12px', fontSize: 11, textAlign: 'left' }} rowSpan={2}>Kundi</th>
               <th style={{ padding: '10px 12px 2px', fontSize: 11, textAlign: 'center', color: KIND.retail.c }} colSpan={2}>REJAREJA</th>
               <th style={{ padding: '10px 12px 2px', fontSize: 11, textAlign: 'center', color: KIND.wholesale.c }} colSpan={2}>JUMLA</th>
               <th rowSpan={2} />
@@ -181,6 +189,7 @@ function Stock({ products, reserved, onChanged }) {
           <tbody>{list.map(r => (
             <tr key={r.id} onClick={() => setSel(r.id)} style={{ borderTop: '1px solid #30363d', cursor: 'pointer' }}>
               <td style={{ padding: '10px 12px' }}><b>{r.name}</b> <span style={ui.muted}>/{r.unit || 'unit'}</span></td>
+              <td style={{ padding: '10px 12px', color: '#7d8590', fontSize: 12 }}>{r.category || '—'}</td>
               <td style={{ ...num, color: r.product_type === 'wholesale' && !r.retail ? '#484f58' : '#e6edf3' }}>{r.retail}</td>
               <td style={{ ...num, color: r.ar < 0 ? '#ff4d6d' : '#7d8590' }}>{r.ar}</td>
               <td style={{ ...num, color: r.product_type === 'retail' && !r.wholesale ? '#484f58' : '#e6edf3' }}>{r.wholesale}</td>
@@ -188,6 +197,13 @@ function Stock({ products, reserved, onChanged }) {
               <td style={{ padding: '10px 12px' }}>{r.isOut ? <span style={{ color: '#ff4d6d', fontWeight: 800, fontSize: 11 }}>IMEISHA</span> : r.isLow ? <span style={{ color: '#f0b429', fontWeight: 800, fontSize: 11 }}>INAKARIBIA</span> : null}</td>
             </tr>))}
           </tbody>
+          {catTotals && list.length > 0 && (
+            <tfoot><tr style={{ borderTop: '2px solid #30363d' }}>
+              <td style={{ padding: '10px 12px', fontWeight: 800 }} colSpan={2}>Kundi {cat}: bidhaa {list.length} · stoo yote</td>
+              <td style={num}>{catTotals.retail}</td><td />
+              <td style={num}>{catTotals.wholesale}</td><td /><td />
+            </tr></tfoot>
+          )}
         </table>
       </div>
       {current && <ItemPanel p={current} onClose={() => setSel(null)} onChanged={onChanged} />}
@@ -231,7 +247,7 @@ function ItemPanel({ p, onClose, onChanged }) {
     <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 50, overflowY: 'auto', padding: '24px 12px' }}>
       <div style={{ ...ui.card, maxWidth: 680, margin: '0 auto', position: 'relative', display: 'grid', gap: 12 }}>
         <button onClick={onClose} aria-label="Funga" style={{ position: 'absolute', right: 10, top: 8, background: 'none', border: 'none', color: '#7d8590', fontSize: 26 }}>×</button>
-        <div><p style={{ fontSize: 20, fontWeight: 800 }}>{p.name}</p><p style={ui.muted}>{p.unit || 'unit'} · aina: {p.product_type || 'retail'} · agiza ikifika {p.low_stock_alert ?? 10}</p></div>
+        <div><p style={{ fontSize: 20, fontWeight: 800 }}>{p.name}</p><p style={ui.muted}>{p.category ? p.category + ' · ' : ''}{p.unit || 'unit'} · aina: {p.product_type || 'retail'} · agiza ikifika {p.low_stock_alert ?? 10}</p></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 10 }}>
           {['retail', 'wholesale'].map(kd => (
             <div key={kd} style={{ border: '1px solid ' + KIND[kd].c + '55', borderRadius: 10, padding: 12 }}>
