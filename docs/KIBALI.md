@@ -59,6 +59,21 @@ The owner opens **Team → + Add Team Member** and picks a role:
 Clerks and storekeepers sign in with their username email and 4-digit PIN,
 like cashiers.
 
+## Kibali-only shops
+
+- Owner sidebar: Kibali (Stoo), Stock, Team, Settings. All POS pages and
+  Customers are hidden and blocked.
+- Team offers only Shop clerk and Storekeeper. An existing cashier account
+  works as a shop clerk; a sales rep account has no Kibali screen.
+
+## Stock quantities in Kibali shops
+
+When Kibali is on, quantities on the Stock page are read-only. Stock only
+changes through Kibali (Pokea mzigo, releases, Hesabu / rekebisha), so every
+change is recorded. New items can be created in Kibali (+ Bidhaa mpya) or on
+the Stock page; opening stock is recorded as a delivery. The Stock page bulk
+import also records each quantity as a Kibali delivery.
+
 ## How it is protected
 
 - All Kibali writes go through database functions (`kibali_*`) that check

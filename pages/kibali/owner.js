@@ -152,6 +152,7 @@ function Stock({ products, reserved, onChanged }) {
   const [low, setLow] = useState(false)
   const [cat, setCat] = useState('')
   const [sel, setSel] = useState(null)
+  const [adding, setAdding] = useState(false)
   const cats = useMemo(() => categoriesOf(products), [products])
   const rows = useMemo(() => products.map(p => {
     const rr = reserved[resKey(p.id, 'retail')] || 0, rw = reserved[resKey(p.id, 'wholesale')] || 0
@@ -172,8 +173,9 @@ function Stock({ products, reserved, onChanged }) {
           {cats.map(c => <option key={c} value={c}>{c} ({rows.filter(r => r.category === c).length})</option>)}
         </select>
         <button onClick={() => setLow(v => !v)} style={{ ...ui.btn, borderColor: low ? '#f0b429' : '#30363d', color: low ? '#f0b429' : '#7d8590' }}>Zinazokaribia kuisha ({rows.filter(r => r.isLow).length})</button>
+        <button onClick={() => setAdding(true)} style={ui.primary}>+ Bidhaa mpya</button>
       </div>
-      <p style={ui.muted}>Kila aina inaonyesha: <b>stoo</b> (zilizopo ndani) na <b>zipo</b> (stoo kasoro zilizohifadhiwa kwa oda ambazo hazijachukuliwa). Bidhaa mpya ongeza kwenye ukurasa wa Stock.</p>
+      <p style={ui.muted}>Kila aina inaonyesha: <b>stoo</b> (zilizopo ndani) na <b>zipo</b> (stoo kasoro zilizohifadhiwa kwa oda ambazo hazijachukuliwa).</p>
       <div style={{ ...ui.card, padding: 0, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 660 }}>
           <thead>
@@ -207,6 +209,7 @@ function Stock({ products, reserved, onChanged }) {
         </table>
       </div>
       {current && <ItemPanel p={current} onClose={() => setSel(null)} onChanged={onChanged} />}
+      {adding && <NewItem cats={cats} existing={products} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); onChanged() }} />}
     </div>
   )
 }
@@ -309,4 +312,89 @@ function ItemPanel({ p, onClose, onChanged }) {
 
 function Mini({ l, v }) {
   return <div><p style={{ fontSize: 10, color: '#7d8590', fontWeight: 700 }}>{l.toUpperCase()}</p><p style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 20, fontWeight: 800 }}>{v}</p></div>
+}
+
+// ---------------------------------------------------------------------
+// New item from inside Kibali. Created with 0 stock; the opening quantity
+// is then received through Kibali so it is in the movement history.
+function NewItem({ cats, existing, onClose, onSaved }) {
+  const [shopCats, setShopCats] = useState([])
+  const [shopId, setShopId] = useState(null)
+  const [f, setF] = useState({ name: '', category: '', unit: 'pc', type: 'retail', sell: '', whs: '', buy: '', low: '10', openR: '', openW: '' })
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    (async () => {
+      const { data: me } = await supabase.auth.getUser()
+      const { data: prof } = await supabase.from('app_users').select('shop_id').eq('id', me.user.id).single()
+      let id = prof?.shop_id
+      if (!id) { const { data: o } = await supabase.from('shop_owners').select('shop_id').eq('user_id', me.user.id).limit(1); id = o?.[0]?.shop_id }
+      setShopId(id)
+      if (id) {
+        const { data } = await supabase.from('product_categories').select('name').eq('shop_id', id).order('name')
+        setShopCats((data || []).map(c => c.name))
+      }
+    })()
+  }, [])
+  const allCats = [...new Set([...shopCats, ...cats])].sort()
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+  const showR = f.type !== 'wholesale', showW = f.type !== 'retail'
+
+  const save = async () => {
+    setErr('')
+    const name = f.name.trim()
+    if (!name) return setErr('Andika jina la bidhaa')
+    if (existing.some(p => p.name.trim().toLowerCase() === name.toLowerCase())) return setErr('Bidhaa yenye jina hili tayari ipo')
+    const oR = showR ? Number(f.openR || 0) : 0, oW = showW ? Number(f.openW || 0) : 0
+    if (![oR, oW].every(n => Number.isInteger(n) && n >= 0)) return setErr('Idadi ya mwanzo iwe namba kamili')
+    if (!shopId) return setErr('Duka halijapatikana — jaribu tena')
+    setBusy(true)
+    try {
+      const { data: prod, error } = await supabase.from('products').insert({
+        shop_id: shopId, name, category: f.category.trim() || null, unit: f.unit.trim() || 'unit', product_type: f.type,
+        sell_price: parseFloat(f.sell) || 0, wholesale_price: parseFloat(f.whs) || 0, buy_price: parseFloat(f.buy) || 0,
+        low_stock_alert: parseInt(f.low) || 10, stock: 0, retail_stock: 0, wholesale_stock: 0, box_qty: 1,
+        is_active: true, image_emoji: '📦',
+      }).select('id').single()
+      if (error) throw new Error(error.message)
+      if (oR > 0) await rpc('kibali_receive_stock', { p_product_id: String(prod.id), p_qty: oR, p_reference: 'Stoo ya mwanzo', p_kind: 'retail' })
+      if (oW > 0) await rpc('kibali_receive_stock', { p_product_id: String(prod.id), p_qty: oW, p_reference: 'Stoo ya mwanzo', p_kind: 'wholesale' })
+      onSaved()
+    } catch (e) { setErr(e.message); setBusy(false) }
+  }
+
+  return (
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 50, overflowY: 'auto', padding: '24px 12px' }}>
+      <div style={{ ...ui.card, maxWidth: 560, margin: '0 auto', position: 'relative', display: 'grid', gap: 10 }}>
+        <button onClick={onClose} aria-label="Funga" style={{ position: 'absolute', right: 10, top: 8, background: 'none', border: 'none', color: '#7d8590', fontSize: 26 }}>×</button>
+        <p style={{ fontSize: 18, fontWeight: 800 }}>Bidhaa mpya</p>
+        <div><label>Jina la bidhaa *</label><input value={f.name} onChange={set('name')} placeholder="mf. Shock Absorber Buffer" autoFocus /></div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div><label>Kundi</label>
+            <input list="kb-newcats" value={f.category} onChange={set('category')} placeholder="Chagua au andika" />
+            <datalist id="kb-newcats">{allCats.map(c => <option key={c} value={c} />)}</datalist></div>
+          <div><label>Kipimo (unit)</label><input value={f.unit} onChange={set('unit')} placeholder="pc, box, bag…" /></div>
+        </div>
+        <div><label>Aina ya uuzaji</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[['retail', 'Rejareja'], ['wholesale', 'Jumla'], ['both', 'Zote mbili']].map(([v, l]) => (
+              <button key={v} type="button" onClick={() => setF({ ...f, type: v })} style={{ flex: 1, padding: 9, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: f.type === v ? '#2196F3' : '#30363d', background: f.type === v ? 'rgba(33,150,243,0.15)' : 'transparent', color: f.type === v ? '#2196F3' : '#7d8590' }}>{l}</button>
+            ))}
+          </div></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+          <div><label>Bei ya kununua</label><input type="number" value={f.buy} onChange={set('buy')} placeholder="0" /></div>
+          {showR && <div><label>Bei rejareja</label><input type="number" value={f.sell} onChange={set('sell')} placeholder="0" /></div>}
+          {showW && <div><label>Bei jumla</label><input type="number" value={f.whs} onChange={set('whs')} placeholder="0" /></div>}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+          {showR && <div><label style={{ color: KIND.retail.c }}>Stoo ya mwanzo · Rejareja</label><input type="number" min="0" step="1" value={f.openR} onChange={set('openR')} placeholder="0" /></div>}
+          {showW && <div><label style={{ color: KIND.wholesale.c }}>Stoo ya mwanzo · Jumla</label><input type="number" min="0" step="1" value={f.openW} onChange={set('openW')} placeholder="0" /></div>}
+          <div><label>Agiza ikifika</label><input type="number" min="0" value={f.low} onChange={set('low')} /></div>
+        </div>
+        <p style={ui.muted}>Stoo ya mwanzo inarekodiwa kama "Imepokelewa" kwenye historia ya bidhaa.</p>
+        {err && <div style={ui.banner('#ff4d6d')}>{err}</div>}
+        <div style={{ display: 'flex', gap: 8 }}><button disabled={busy} onClick={save} style={ui.primary}>{busy ? 'Inahifadhi…' : 'Hifadhi bidhaa'}</button><button onClick={onClose} style={ui.btn}>Acha</button></div>
+      </div>
+    </div>
+  )
 }

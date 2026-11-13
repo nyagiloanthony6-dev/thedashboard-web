@@ -88,7 +88,8 @@ export default function KibaliShop() {
 
   return (
     <Shell k={k} title={tab === 'new' ? 'Oda mpya' : 'Oda za leo'} tabs={TABS}>
-      {tab === 'new' && (
+      {k.modules.kibali && !k.can('order.create') && <div style={ui.banner('#f0b429')}>Akaunti yako haina ruhusa ya kutengeneza oda za Kibali.</div>}
+      {tab === 'new' && k.can('order.create') && (
         <div style={{ display: 'grid', gap: 14, maxWidth: 640 }}>
           <div style={{ ...ui.card, display: 'grid', gap: 10 }}>
             <div><label>Mteja</label><input value={form.customer} onChange={e => setForm({ ...form, customer: e.target.value })} placeholder="mf. Juma Hardware" /></div>

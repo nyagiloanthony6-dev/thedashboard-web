@@ -26,7 +26,9 @@ const ROLE_ALLOWED = {
   storekeeper: ['/kibali$', '/kibali/store'],
 }
 // Owner pages for a shop that has Kibali but not POS
-const KIBALI_ONLY_ADMIN = ['/kibali', '/stock', '/customers', '/team', '/settings']
+const KIBALI_ONLY_ADMIN = ['/kibali', '/stock', '/team', '/settings']
+// Staff in a Kibali-only shop: a cashier works as a shop clerk; sales reps have no Kibali screen
+const KIBALI_ONLY_STAFF = { cashier: ['/kibali$', '/kibali/shop'], sales_rep: ['/kibali$'] }
 
 // Role + modules are cached per user so route changes don't re-query
 let access = null
@@ -56,9 +58,11 @@ export default function App({ Component, pageProps }) {
       if (session) {
         const { role, modules } = await getAccess(session.user.id)
         const isAdmin = role === 'shop_admin' || role === 'super_admin'
-        const kibaliOnly = isAdmin && !modules.pos && modules.kibali
-        const homeRoute = kibaliOnly ? '/kibali/owner' : (ROLE_ROUTES[role] || '/dashboard')
-        const allowed = kibaliOnly ? KIBALI_ONLY_ADMIN : (ROLE_ALLOWED[role] || ['/dashboard'])
+        const kibaliShop = !modules.pos && modules.kibali
+        const kibaliOnly = isAdmin && kibaliShop
+        const staffOverride = kibaliShop && !isAdmin ? KIBALI_ONLY_STAFF[role] : null
+        const homeRoute = kibaliOnly ? '/kibali/owner' : staffOverride ? (role === 'cashier' ? '/kibali/shop' : '/kibali') : (ROLE_ROUTES[role] || '/dashboard')
+        const allowed = kibaliOnly ? KIBALI_ONLY_ADMIN : (staffOverride || ROLE_ALLOWED[role] || ['/dashboard'])
 
         // Redirect from login page to home
         if (router.pathname === '/auth/login') {

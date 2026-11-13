@@ -12,7 +12,7 @@ const NAV = [
   { href:'/kibali/owner', icon:'🧾', label:'Kibali (Stoo)', module:'kibali' },
   { href:'/stock',      icon:'📦', label:'Stock' },
   { href:'/warehouse',  icon:'🏭', label:'Warehouse', module:'pos' },
-  { href:'/customers',  icon:'👥', label:'Customers' },
+  { href:'/customers',  icon:'👥', label:'Customers', module:'pos' },
   { href:'/expenses',   icon:'💸', label:'Expenses', module:'pos' },
   { href:'/credit',     icon:'🤝', label:'Credit', module:'pos' },
   { href:'/loans',      icon:'💳', label:'Loans', module:'pos' },

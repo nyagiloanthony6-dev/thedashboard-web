@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt, fmtK } from '../../lib/supabase'
-import { loadModules } from '../../lib/kibali'
+import { loadModules, ownedShop } from '../../lib/kibali'
 
 export default function Team() {
   const [profile,setProfile]=useState(null)
@@ -19,15 +19,17 @@ export default function Team() {
   const [commForm,setCommForm]=useState({monthly_target:'',commission_type:'flat',commission_rate:'5',tiered_rate_1:'2',tiered_rate_2:'4',tiered_rate_3:'7'})
   const [togglingId,setTogglingId]=useState(null)
   const [kibaliOn,setKibaliOn]=useState(false)
+  const [posOn,setPosOn]=useState(true)
 
   useEffect(()=>{loadData()},[])
 
   const loadData=async()=>{
     const {data:{user}}=await supabase.auth.getUser()
     const {data:prof}=await supabase.from('app_users').select('*,shops(*)').eq('id',user.id).single()
-    setProfile(prof);setShop(prof.shops)
-    const shopId=prof.shops.id
-    loadModules(shopId).then(m=>setKibaliOn(m.kibali))
+    const shopData=prof.shops||await ownedShop(user.id)
+    setProfile(prof);setShop(shopData)
+    const shopId=shopData.id
+    loadModules(shopId).then(m=>{setKibaliOn(m.kibali);setPosOn(m.pos);if(m.kibali&&!m.pos)setForm(f=>({...f,role:'shop_clerk'}))})
     const now=new Date()
     const mStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString()
     const [tr,fo,rs]=await Promise.all([
@@ -52,7 +54,7 @@ export default function Team() {
     if(!uid){setError('Failed to create account.');setSaving(false);return}
     await supabase.from('app_users').insert({id:uid,email,full_name:form.fullName.trim(),role:form.role,shop_id:shopId,phone:form.pin})
     setSaving(false);setShowModal(false)
-    setForm({fullName:'',username:'',pin:'',role:'cashier',email:''})
+    setForm({fullName:'',username:'',pin:'',role:kibaliOn&&!posOn?'shop_clerk':'cashier',email:''})
     alert(`Added!\nUsername: ${form.username}\nPIN: ${form.pin}`)
     loadData()
   }
@@ -83,6 +85,9 @@ export default function Team() {
 
   const cashiers=team.filter(m=>m.role==='cashier')
   const kibaliStaff=team.filter(m=>m.role==='shop_clerk'||m.role==='storekeeper')
+  // Kibali-only shops: hide cashier / sales rep sections unless someone is still in them
+  const showCashiers=posOn||!kibaliOn||cashiers.length>0
+  const showReps=posOn||!kibaliOn||salesReps.length>0
   const salesReps=team.filter(m=>m.role==='sales_rep')
   const card={background:'#161b22',border:'1px solid #30363d',borderRadius:12,padding:16}
 
@@ -109,8 +114,9 @@ export default function Team() {
       <Layout title="Team Management" shop={shop} profile={profile}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
           <div style={{display:'flex',gap:12}}>
-            <div style={card}><span style={{fontSize:20}}>👤</span><p style={{fontSize:20,fontWeight:900,color:'#2196F3',marginTop:4}}>{cashiers.length}</p><p style={{fontSize:10,color:'#7d8590'}}>CASHIERS</p></div>
-            <div style={card}><span style={{fontSize:20}}>🏃</span><p style={{fontSize:20,fontWeight:900,color:'#a78bfa',marginTop:4}}>{salesReps.length}</p><p style={{fontSize:10,color:'#7d8590'}}>SALES REPS</p></div>
+            {showCashiers&&<div style={card}><span style={{fontSize:20}}>👤</span><p style={{fontSize:20,fontWeight:900,color:'#2196F3',marginTop:4}}>{cashiers.length}</p><p style={{fontSize:10,color:'#7d8590'}}>CASHIERS</p></div>}
+            {showReps&&<div style={card}><span style={{fontSize:20}}>🏃</span><p style={{fontSize:20,fontWeight:900,color:'#a78bfa',marginTop:4}}>{salesReps.length}</p><p style={{fontSize:10,color:'#7d8590'}}>SALES REPS</p></div>}
+            {kibaliOn&&<div style={card}><span style={{fontSize:20}}>🧾</span><p style={{fontSize:20,fontWeight:900,color:'#f0b429',marginTop:4}}>{kibaliStaff.length}</p><p style={{fontSize:10,color:'#7d8590'}}>KIBALI STAFF</p></div>}
           </div>
           <button onClick={()=>setShowModal(true)} style={{padding:'10px 20px',borderRadius:8,background:'#2196F3',color:'#000',fontWeight:700,fontSize:13,border:'none'}}>+ Add Team Member</button>
         </div>
@@ -121,8 +127,8 @@ export default function Team() {
           <p style={{fontSize:12,color:'#7d8590'}}><span style={{color:'#25d366',fontWeight:700}}>Brought By</span> — toggle to control which team members appear in the cashier's "Brought By" dropdown at POS.</p>
         </div>
 
-        <h2 style={{fontSize:11,color:'#7d8590',letterSpacing:0.8,marginBottom:12}}>CASHIERS</h2>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12,marginBottom:28}}>
+        <h2 style={{fontSize:11,color:'#7d8590',letterSpacing:0.8,marginBottom:12,display:showCashiers?'block':'none'}}>CASHIERS</h2>
+        <div style={{display:showCashiers?'grid':'none',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12,marginBottom:28}}>
           {cashiers.map(m=>(
             <div key={m.id} style={card}>
               <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
@@ -160,8 +166,8 @@ export default function Team() {
         </div>
         </>}
 
-        <h2 style={{fontSize:11,color:'#7d8590',letterSpacing:0.8,marginBottom:12}}>SALES REPS — THIS MONTH</h2>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:12}}>
+        <h2 style={{fontSize:11,color:'#7d8590',letterSpacing:0.8,marginBottom:12,display:showReps?'block':'none'}}>SALES REPS — THIS MONTH</h2>
+        <div style={{display:showReps?'grid':'none',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:12}}>
           {salesReps.map(rep=>{
             const rSet=repSettings.find(s=>s.user_id===rep.id)
             const target=Number(rSet?.monthly_target)||0
@@ -224,7 +230,7 @@ export default function Team() {
               <div style={{marginBottom:14}}>
                 <label>Role</label>
                 <div style={{display:'flex',gap:8}}>
-                  {[{k:'cashier',l:'Cashier'},{k:'sales_rep',l:'Sales Rep'},...(kibaliOn?[{k:'shop_clerk',l:'Shop clerk'},{k:'storekeeper',l:'Storekeeper'}]:[])].map(r=>(
+                  {[...(posOn||!kibaliOn?[{k:'cashier',l:'Cashier'},{k:'sales_rep',l:'Sales Rep'}]:[]),...(kibaliOn?[{k:'shop_clerk',l:'Shop clerk'},{k:'storekeeper',l:'Storekeeper'}]:[])].map(r=>(
                     <button key={r.k} onClick={()=>setForm(p=>({...p,role:r.k}))} style={{flex:1,padding:'9px',borderRadius:8,border:'1px solid',borderColor:form.role===r.k?'#2196F3':'#30363d',background:form.role===r.k?'rgba(33,150,243,0.15)':'transparent',color:form.role===r.k?'#2196F3':'#7d8590',fontSize:12,fontWeight:700}}>{r.l}</button>
                   ))}
                 </div>

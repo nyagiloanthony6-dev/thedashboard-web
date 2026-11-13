@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt } from '../../lib/supabase'
+import { loadModules, ownedShop } from '../../lib/kibali'
 
 export default function Stock() {
   const [profile,setProfile]=useState(null)
@@ -9,6 +10,7 @@ export default function Stock() {
   const [products,setProducts]=useState([])
   const [customFields,setCustomFields]=useState([])
   const [categories,setCategories]=useState([])
+  const [kibaliOn,setKibaliOn]=useState(false)
   const [loading,setLoading]=useState(true)
   const [search,setSearch]=useState('')
   const [showModal,setShowModal]=useState(false)
@@ -77,8 +79,10 @@ export default function Stock() {
   const loadData=async()=>{
     const {data:{user}}=await supabase.auth.getUser()
     const {data:prof}=await supabase.from('app_users').select('*,shops(*)').eq('id',user.id).single()
-    setProfile(prof);setShop(prof.shops)
-    const shopId=prof.shops.id
+    const shopData=prof.shops||await ownedShop(user.id)
+    setProfile(prof);setShop(shopData)
+    const shopId=shopData.id
+    loadModules(shopId).then(m=>setKibaliOn(m.kibali))
     const [pr,cf,cat]=await Promise.all([
       supabase.from('products').select('*').eq('shop_id',shopId).eq('is_active',true).order('name'),
       supabase.from('product_custom_fields').select('*').eq('shop_id',shopId),
@@ -249,7 +253,7 @@ export default function Stock() {
         const isWholesale = samePriceMatch.product_type==='wholesale' || samePriceMatch.wholesale_stock > 0
         const curStock = isWholesale ? (samePriceMatch.wholesale_stock||0) : (samePriceMatch.retail_stock||samePriceMatch.stock||0)
         stockUpdates.push({
-          id: samePriceMatch.id,
+          id: samePriceMatch.id, _qty: qtyBoxes, _kind: isWholesale ? 'wholesale' : 'retail', _ref: 'Bulk import ' + batchRef,
           fields: isWholesale
             ? {wholesale_stock: curStock + qtyBoxes}
             : {retail_stock: curStock + qtyBoxes, stock: curStock + qtyBoxes}
@@ -274,15 +278,30 @@ export default function Stock() {
     // ── STEP 3: Save to database ──────────────────────────────────
     setBulkStatus('Saving to database...')
 
+    // Kibali shops: every quantity goes through Kibali so it is recorded
+    // as a delivery (who, when, reference) in the stock movement history.
+    const kibaliErrors = []
+    const kibaliReceive = async (id, qty, kind, ref) => {
+      if (!qty) return
+      const { error } = await supabase.rpc('kibali_receive_stock', { p_product_id: String(id), p_qty: qty, p_reference: ref, p_kind: kind })
+      if (error) kibaliErrors.push(ref + ': ' + error.message)
+    }
+
     // Run stock updates in parallel
-    await Promise.all(stockUpdates.map(u =>
-      supabase.from('products').update(u.fields).eq('id', u.id)
-    ))
+    if (kibaliOn) {
+      for (const u of stockUpdates) await kibaliReceive(u.id, u._qty, u._kind, u._ref)
+    } else {
+      await Promise.all(stockUpdates.map(u =>
+        supabase.from('products').update(u.fields).eq('id', u.id)
+      ))
+    }
 
     // Insert new products one by one (need their IDs for batch records)
     for (const ins of stockInserts) {
       const {_item,_qtyBoxes,_unitCostTZS,_itemLanded,_landedPerPc,_batchRef,_pcsPerBox,_totalPcs,_unitCostRMB,...prodData} = ins
+      if (kibaliOn) prodData.wholesale_stock = 0
       const {data:newProd} = await supabase.from('products').insert(prodData).select('id').single()
+      if (kibaliOn && newProd?.id) await kibaliReceive(newProd.id, _qtyBoxes, 'wholesale', 'Bulk import ' + _batchRef)
       if (newProd?.id && _item.part_number && partField) {
         pfvInserts.push({product_id:newProd.id, field_id:partField.id, value:_item.part_number})
       }
@@ -306,13 +325,18 @@ export default function Stock() {
     setBulkModal(false); setBulkText(''); setBulkParsed([]); setBulkDate('')
     setBulkExRate(''); setBulkClearing(''); setBulkTransport(''); setBulkOther('')
     loadData()
-    alert('✅ ' + (stockUpdates.length + stockInserts.length) + ' products saved!')
+    alert('✅ ' + (stockUpdates.length + stockInserts.length) + ' products saved!' + (kibaliErrors.length ? '\n\n⚠️ Kibali could not record ' + kibaliErrors.length + ' deliveries:\n' + kibaliErrors.slice(0, 5).join('\n') : ''))
   }
 
   const save=async()=>{
     if(!form.name.trim()){alert('Enter product name');return}
     setSaving(true)
     const d={name:form.name.trim(),category:form.category,image_emoji:form.image_emoji,buy_price:parseFloat(form.buy_price)||0,sell_price:parseFloat(form.sell_price)||0,wholesale_price:parseFloat(form.wholesale_price)||0,stock:parseInt(form.retail_stock)||0,retail_stock:parseInt(form.retail_stock)||0,wholesale_stock:parseInt(form.wholesale_stock)||0,box_qty:parseInt(form.box_qty)||1,unit:form.unit,product_type:form.product_type,low_stock_alert:parseInt(form.low_stock_alert)||10,is_active:true,shop_id:shop.id,min_sell_price:form.min_sell_price?parseFloat(form.min_sell_price):null}
+    // Kibali shops: quantities only change through Kibali (Pokea / Hesabu)
+    if(kibaliOn){
+      if(editProd){delete d.stock;delete d.retail_stock;delete d.wholesale_stock}
+      else{d.stock=0;d.retail_stock=0;d.wholesale_stock=0}
+    }
     let prodId=editProd?.id
     if(editProd){const {data}=await supabase.from('products').update(d).eq('id',editProd.id).select().single();setProducts(p=>p.map(x=>x.id===editProd.id?{...x,...data,_cfv:{...x._cfv,...customFieldValues}}:x))}
     else{const {data}=await supabase.from('products').insert(d).select().single();if(data){prodId=data.id;setProducts(p=>[...p,{...data,_cfv:{}}])}}
@@ -540,8 +564,9 @@ export default function Stock() {
                 <div><label>Retail Sell Price</label><input value={form.sell_price} onChange={set('sell_price')} type="number" placeholder="0"/></div>
                 <div><label style={{color:'#f59e0b'}}>Min Sell Price (Floor)</label><input value={form.min_sell_price} onChange={set('min_sell_price')} type="number" placeholder="Optional — cashier can't go below this"/></div>
                 <div><label>Wholesale Price</label><input value={form.wholesale_price} onChange={set('wholesale_price')} type="number" placeholder="0"/></div>
-                <div><label>Retail Stock (pcs)</label><input value={form.retail_stock} onChange={set('retail_stock')} type="number" placeholder="0"/></div>
-                <div><label>Warehouse Stock (boxes)</label><input value={form.wholesale_stock} onChange={set('wholesale_stock')} type="number" placeholder="0"/></div>
+                <div><label>Retail Stock (pcs)</label><input value={kibaliOn&&!editProd?'0':form.retail_stock} onChange={set('retail_stock')} type="number" placeholder="0" disabled={kibaliOn} style={kibaliOn?{opacity:0.5,cursor:'not-allowed'}:undefined}/></div>
+                <div><label>Warehouse Stock (boxes)</label><input value={kibaliOn&&!editProd?'0':form.wholesale_stock} onChange={set('wholesale_stock')} type="number" placeholder="0" disabled={kibaliOn} style={kibaliOn?{opacity:0.5,cursor:'not-allowed'}:undefined}/></div>
+                {kibaliOn&&<div style={{gridColumn:'1/-1',padding:'8px 12px',borderRadius:8,background:'rgba(240,180,41,0.08)',border:'1px solid rgba(240,180,41,0.3)',color:'#f0b429',fontSize:12}}>Kibali iko ON: idadi ya stoo inabadilishwa kupitia Kibali tu — <b>Pokea mzigo</b> kwa mzigo unaoingia, <b>Hesabu / rekebisha</b> kwa marekebisho. Hivyo kila mabadiliko yanarekodiwa.</div>}
                 <div><label>Pieces per Box</label><input value={form.box_qty} onChange={set('box_qty')} type="number" placeholder="1"/></div>
                 <div><label>Unit</label><input value={form.unit} onChange={set('unit')} placeholder="unit"/></div>
                 <div style={{gridColumn:'1/-1'}}>
