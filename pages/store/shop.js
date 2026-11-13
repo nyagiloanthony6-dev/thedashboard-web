@@ -132,7 +132,7 @@ export default function StoreShop() {
                       </div>
                     )}
                     {p && (hasBoth(p)) && (
-                      <div role="group" aria-label="Aina ya stoo" style={{ display: 'flex', background: T.tint, borderRadius: 999, padding: 3, width: 'fit-content' }}>
+                      <div role="group" aria-label="Aina ya stock" style={{ display: 'flex', background: T.tint, borderRadius: 999, padding: 3, width: 'fit-content' }}>
                         {['retail', 'wholesale'].map(kd => {
                           const on = l.kind === kd
                           return (
@@ -152,11 +152,11 @@ export default function StoreShop() {
           </div>
 
           {error && <div style={ui.banner('#B93A16')}>{error}</div>}
-          {short && <div style={ui.banner(T.warning)}>Stoo haina za kutosha kwa baadhi ya bidhaa. Unaweza kuendelea, lakini stoo itatoa kilichopo tu.</div>}
+          {short && <div style={ui.banner(T.warning)}>Store haina za kutosha kwa baadhi ya bidhaa. Unaweza kuendelea, lakini store itatoa kilichopo tu.</div>}
           <div style={{ position: 'sticky', bottom: 84, zIndex: 5, background: T.raised, border: `1px solid ${T.line}`, borderTop: `2px solid ${T.green}`, borderRadius: 12, padding: 12, display: 'grid', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: T.muted }}>
               <span>Bidhaa {lines.filter(l => l.product_id && Number(l.qty) > 0).length} · Vipimo vyote {totalUnits}</span>
-              {short && <span style={{ color: T.danger, fontWeight: 600 }}>Stoo haitoshi</span>}
+              {short && <span style={{ color: T.danger, fontWeight: 600 }}>Stock haitoshi</span>}
             </div>
             <button disabled={saving} onClick={create} style={{ ...ui.primary, height: 54, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <Icon name="print" size={20} />{saving ? 'Inahifadhi…' : 'Tengeneza oda na chapisha'}

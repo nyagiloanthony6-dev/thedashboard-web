@@ -85,7 +85,7 @@ export default function OrderModal({ k, orderId, onClose, onChanged, autoPrint }
                       s={`${fmtTime(r.created_at)} · ${r.released_by_name} → ${r.collector_name}${r.collector_phone ? ' · ' + r.collector_phone : ''}`} />
                   ))}
                   {o.status === 'CANCELLED' && <Event c="#5B607E" t={'Imesitishwa: ' + (o.cancel_reason || '')} s={`${fmtTime(o.updated_at)} · ${o.cancelled_by_name || ''}`} />}
-                  {(o.status === 'PENDING' || o.status === 'PARTIAL') && <Event c="#9A5B00" t="Inasubiri kuchukuliwa stoo" s="Bidhaa zimehifadhiwa kwa oda hii" hollow />}
+                  {(o.status === 'PENDING' || o.status === 'PARTIAL') && <Event c="#9A5B00" t="Inasubiri kuchukuliwa store" s="Bidhaa zimehifadhiwa kwa oda hii" hollow />}
                 </div>
               </div>
             </div>

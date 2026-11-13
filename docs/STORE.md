@@ -56,7 +56,7 @@ The owner opens **Team → + Add Team Member** and picks a role:
 
 | Role | Lands on | Can do |
 |---|---|---|
-| Owner (shop_admin) | Kibali (Stoo) in the sidebar | Everything, plus alerts, order history, stock adjustments, clearing flags |
+| Owner (shop_admin) | Store in the sidebar | Everything, plus alerts, order history, stock adjustments, clearing flags |
 | Shop clerk | `/store/shop` | Create orders, print receipts, cancel orders not yet released |
 | Storekeeper | `/store/release` | Scan / open orders, release goods, report paper mismatch, receive stock |
 | Cashier | `/cashier` (+ `/store/shop` when Kibali is on) | POS, plus creating release orders |
@@ -66,7 +66,7 @@ like cashiers.
 
 ## Kibali-only shops
 
-- Owner sidebar: Kibali (Stoo), Stock, Team, Settings. All POS pages and
+- Owner sidebar: Store, Stock, Team, Settings. All POS pages and
   Customers are hidden and blocked.
 - Team offers only Shop clerk and Storekeeper. An existing cashier account
   works as a shop clerk; a sales rep account has no Kibali screen.
@@ -84,7 +84,7 @@ import also records each quantity as a Kibali delivery.
 | | POS only | Store only | POS + Store |
 |---|---|---|---|
 | Stock in | Stock page, bulk import, vendors, warehouse (direct) | Pokea mzigo, + Bidhaa mpya, bulk import (recorded) | All recorded: Pokea, bulk import, Vendors receiving, Warehouse transfers |
-| Stock out | POS sales, credit, field orders (direct) | Store releases only (recorded) | POS sales / credit / field orders recorded as SALE; "Chukua stoo" sales create a release order and stock comes off when the store releases |
+| Stock out | POS sales, credit, field orders (direct) | Store releases only (recorded) | POS sales / credit / field orders recorded as SALE; "Chukua store" sales create a release order and stock comes off when the store releases |
 | Corrections | Stock page | Hesabu / rekebisha (owner, reason, alert) | Hesabu / rekebisha (owner, reason, alert) |
 | History | none | full | full |
 

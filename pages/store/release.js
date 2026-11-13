@@ -18,7 +18,7 @@ export default function StoreRelease() {
 
   return (
     <Shell k={k} title={{ scan: 'Skani risiti', waiting: 'Zinasubiri', receive: 'Pokea mzigo' }[tab]} tabs={TABS}>
-      {k.modules.kibali && !k.can('order.release') && <div style={ui.banner('#9A5B00')}>Akaunti yako haina ruhusa ya kutoa mzigo stoo.</div>}
+      {k.modules.kibali && !k.can('order.release') && <div style={ui.banner('#9A5B00')}>Akaunti yako haina ruhusa ya kutoa mzigo store.</div>}
       {k.can('order.release') && tab === 'scan' && <ScanRelease k={k} initialNo={router.query.no || ''} />}
       {k.can('order.release') && tab === 'waiting' && <Waiting onPick={no => router.push('/store/release?no=' + encodeURIComponent(no))} />}
       {k.can('stock.receive') && tab === 'receive' && <Receive k={k} />}
@@ -303,7 +303,7 @@ function Receive({ k }) {
     setBusy(true)
     try {
       const bal = await rpc('kibali_receive_stock', { p_product_id: String(p.id), p_qty: q, p_reference: ref, p_kind: kind })
-      setMsg({ c: '#0B7A6C', t: `${p.name} (${KIND[kind].sw}): +${q} → ${bal} stoo` }); setQty(''); setRef(''); load()
+      setMsg({ c: '#0B7A6C', t: `${p.name} (${KIND[kind].sw}): +${q} → ${bal} stock` }); setQty(''); setRef(''); load()
     } catch (e) { setMsg({ c: '#B93A16', t: e.message }) }
     setBusy(false)
   }
@@ -321,11 +321,11 @@ function Receive({ k }) {
             ))}
           </select></div>
         {p && (
-          <div><label>Aina ya stoo</label>
+          <div><label>Aina ya stock</label>
             <div style={{ display: 'flex', gap: 8 }}>
               {['retail', 'wholesale'].map(kd => (
                 <button key={kd} type="button" onClick={() => setKind(kd)} style={{ flex: 1, padding: 10, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: kind === kd ? KIND[kd].c : '#DCDFEC', background: kind === kd ? KIND[kd].c + '22' : 'transparent', color: kind === kd ? KIND[kd].c : '#5B607E' }}>
-                  {KIND[kd].sw} · {kd === 'wholesale' ? p.wholesale : p.retail} stoo
+                  {KIND[kd].sw} · {kd === 'wholesale' ? p.wholesale : p.retail} stock
                 </button>
               ))}
             </div>
@@ -338,7 +338,7 @@ function Receive({ k }) {
         <div><label>Msambazaji / namba ya delivery note</label><input value={ref} onChange={e => setRef(e.target.value)} placeholder="mf. Twiga Cement · DN 4471" /></div>
         {p && q > 0 && <div style={ui.banner('#0B7A6C')}>Baada ya kupokea ({KIND[kind].sw}): <b style={ui.mono}>{cur} → {cur + q}</b></div>}
         {msg && <div style={ui.banner(msg.c)}>{msg.t}</div>}
-        <button disabled={busy} onClick={save} style={{ ...ui.primary, height: 54 }}>{busy ? 'Inahifadhi…' : 'Ongeza kwenye stoo'}</button>
+        <button disabled={busy} onClick={save} style={{ ...ui.primary, height: 54 }}>{busy ? 'Inahifadhi…' : 'Ongeza kwenye store'}</button>
       </div>
       <div style={ui.card}>
         <p style={{ fontWeight: 800, marginBottom: 8 }}>Zilizopokelewa leo</p>

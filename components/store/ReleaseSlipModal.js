@@ -1,6 +1,6 @@
 import Receipt from './Receipt'
 
-// Shown after a POS sale marked "Chukua stoo": the release slip the customer
+// Shown after a POS sale marked "Chukua store": the release slip the customer
 // takes to the store (order number, QR, release code).
 export default function ReleaseSlipModal({ slip, shopName, onClose }) {
   if (!slip) return null

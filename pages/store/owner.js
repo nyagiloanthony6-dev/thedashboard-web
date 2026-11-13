@@ -41,7 +41,7 @@ export default function StoreOwner() {
 
   const openAlerts = alerts.filter(a => !a.resolved_at && a.type !== 'cancel')
   const TABS = [{ href: '/store/owner?tab=alerts', label: 'Tahadhari', badge: openAlerts.length || null }]
-  const TITLE = { home: 'Habari, bosi', alerts: 'Tahadhari', orders: 'Oda zote', stock: 'Stoo' }[tab]
+  const TITLE = { home: 'Habari, bosi', alerts: 'Tahadhari', orders: 'Oda zote', stock: 'Stock' }[tab]
 
   return (
     <Shell k={k} title={TITLE} tabs={TABS}>
@@ -84,8 +84,8 @@ function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
     <div style={{ display: 'grid', gap: 22 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
         <Stat l="Oda za leo" v={orders.filter(o => isToday(o.created_at)).length} href="/store/owner?tab=orders" />
-        <Stat l="Vipimo vilivyotoka leo (stoo + POS)" v={todayOut} />
-        <Stat l="Zinasubiri stoo" v={waiting.length} href="/store/release?tab=waiting" />
+        <Stat l="Vipimo vilivyotoka leo (store + POS)" v={todayOut} />
+        <Stat l="Zinasubiri store" v={waiting.length} href="/store/release?tab=waiting" />
         <Stat l="Tahadhari" v={openAlerts.length} red={openAlerts.length > 0} href="/store/owner?tab=alerts" />
       </div>
 
@@ -106,7 +106,7 @@ function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
         </section>
 
         <section>
-          <SecHead t="Stoo inakaribia kuisha" href="/store/owner?tab=stock" />
+          <SecHead t="Stock inakaribia kuisha" href="/store/owner?tab=stock" />
           {low.length === 0 ? <Empty t="Hakuna bidhaa inayokaribia kuisha." icon="box" /> : (
             <div style={{ ...ui.card, padding: 0 }}>
               {low.map((p, i) => (
@@ -125,7 +125,7 @@ function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
 
       <section>
         <SecHead t="Zinasubiri kuchukuliwa" href="/store/release?tab=waiting" />
-        {waiting.length === 0 ? <Empty t="Hakuna oda inayosubiri stoo." icon="clock" /> : (
+        {waiting.length === 0 ? <Empty t="Hakuna oda inayosubiri store." icon="clock" /> : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 8 }}>
             {waiting.slice(0, 6).map(o => (
               <button key={o.id} className="kb-card-btn" onClick={() => onOpen(o.id)} style={{ ...ui.card, textAlign: 'left', color: T.ink, display: 'grid', gap: 4, width: '100%' }}>
@@ -260,7 +260,7 @@ function Stock({ products, reserved, onChanged }) {
         <Link href="/store/release?tab=receive" style={{ ...ui.primary, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}><Icon name="down" size={18} />Pokea mzigo</Link>
         <button onClick={() => setAdding(true)} style={ui.btn}>+ Bidhaa mpya</button>
       </div>
-      <p style={ui.muted}>Kila aina inaonyesha: <b>stoo</b> (zilizopo ndani) na <b>zipo</b> (stoo kasoro zilizohifadhiwa kwa oda ambazo hazijachukuliwa).</p>
+      <p style={ui.muted}>Kila aina inaonyesha: <b>stock</b> (zilizopo ndani) na <b>zipo</b> (stock kasoro zilizohifadhiwa kwa oda ambazo hazijachukuliwa).</p>
       <div style={{ ...ui.card, padding: 0, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 660 }}>
           <thead>
@@ -271,7 +271,7 @@ function Stock({ products, reserved, onChanged }) {
               <th style={{ padding: '10px 12px 2px', fontSize: 11, textAlign: 'center', color: KIND.wholesale.c }} colSpan={2}>JUMLA</th>
               <th rowSpan={2} />
             </tr>
-            <tr style={{ color: '#5B607E' }}>{['Stoo', 'Zipo', 'Stoo', 'Zipo'].map((h, i) => <th key={i} style={{ padding: '2px 12px 8px', fontSize: 10, textAlign: 'right' }}>{h}</th>)}</tr>
+            <tr style={{ color: '#5B607E' }}>{['Stock', 'Zipo', 'Stock', 'Zipo'].map((h, i) => <th key={i} style={{ padding: '2px 12px 8px', fontSize: 10, textAlign: 'right' }}>{h}</th>)}</tr>
           </thead>
           <tbody>{list.map(r => (
             <tr key={r.id} onClick={() => setSel(r.id)} style={{ borderTop: '1px solid #DCDFEC', cursor: 'pointer' }}>
@@ -286,7 +286,7 @@ function Stock({ products, reserved, onChanged }) {
           </tbody>
           {catTotals && list.length > 0 && (
             <tfoot><tr style={{ borderTop: '2px solid #DCDFEC' }}>
-              <td style={{ padding: '10px 12px', fontWeight: 800 }} colSpan={2}>Kundi {cat}: bidhaa {list.length} · stoo yote</td>
+              <td style={{ padding: '10px 12px', fontWeight: 800 }} colSpan={2}>Kundi {cat}: bidhaa {list.length} · stock yote</td>
               <td style={num}>{catTotals.retail}</td><td />
               <td style={num}>{catTotals.wholesale}</td><td /><td />
             </tr></tfoot>
@@ -327,7 +327,7 @@ function ItemPanel({ p, onClose, onChanged }) {
     } catch (e) { setErr(e.message) }
     setBusy(false)
   }
-  const label = { IN: ['Imepokelewa', '#0B7A6C'], OUT: ['Imetoka stoo', '#B93A16'], SALE: ['Imeuzwa (POS)', '#2D2F8F'], ADJ: ['Marekebisho', '#9A5B00'] }
+  const label = { IN: ['Imepokelewa', '#0B7A6C'], OUT: ['Imetoka store', '#B93A16'], SALE: ['Imeuzwa (POS)', '#2D2F8F'], ADJ: ['Marekebisho', '#9A5B00'] }
   const lab = (t) => label[t] || [t, '#5B607E']
   const shown = (moves || []).filter(m => !filter || (m.kind || 'retail') === filter)
   const curFor = (kd) => kd === 'wholesale' ? p.wholesale : p.retail
@@ -342,7 +342,7 @@ function ItemPanel({ p, onClose, onChanged }) {
             <div key={kd} style={{ border: '1px solid ' + KIND[kd].c + '55', borderRadius: 10, padding: 12 }}>
               <p style={{ fontSize: 11, fontWeight: 800, color: KIND[kd].c, marginBottom: 6 }}>{KIND[kd].sw.toUpperCase()} ({KIND[kd].en})</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
-                <Mini l="Stoo" v={curFor(kd)} /><Mini l="Kwenye oda" v={kd === 'wholesale' ? p.rw : p.rr} /><Mini l="Zipo" v={kd === 'wholesale' ? p.aw : p.ar} />
+                <Mini l="Stock" v={curFor(kd)} /><Mini l="Kwenye oda" v={kd === 'wholesale' ? p.rw : p.rr} /><Mini l="Zipo" v={kd === 'wholesale' ? p.aw : p.ar} />
               </div>
             </div>
           ))}
@@ -361,7 +361,7 @@ function ItemPanel({ p, onClose, onChanged }) {
               ))}
             </div>
             {mode === 'adj' && <select value={f.adj} onChange={e => setF({ ...f, adj: e.target.value })}>
-              <option value="count">Hesabu ya stoo — weka salio jipya</option>
+              <option value="count">Hesabu ya stock — weka salio jipya</option>
               <option value="remove">Ondoa (zimeharibika / zimepotea)</option>
               <option value="add">Ongeza (zimepatikana / zimerudishwa)</option>
             </select>}
@@ -443,8 +443,8 @@ function NewItem({ cats, existing, onClose, onSaved }) {
         is_active: true, image_emoji: '📦',
       }).select('id').single()
       if (error) throw new Error(error.message)
-      if (oR > 0) await rpc('kibali_receive_stock', { p_product_id: String(prod.id), p_qty: oR, p_reference: 'Stoo ya mwanzo', p_kind: 'retail' })
-      if (oW > 0) await rpc('kibali_receive_stock', { p_product_id: String(prod.id), p_qty: oW, p_reference: 'Stoo ya mwanzo', p_kind: 'wholesale' })
+      if (oR > 0) await rpc('kibali_receive_stock', { p_product_id: String(prod.id), p_qty: oR, p_reference: 'Stock ya mwanzo', p_kind: 'retail' })
+      if (oW > 0) await rpc('kibali_receive_stock', { p_product_id: String(prod.id), p_qty: oW, p_reference: 'Stock ya mwanzo', p_kind: 'wholesale' })
       onSaved()
     } catch (e) { setErr(e.message); setBusy(false) }
   }
@@ -473,11 +473,11 @@ function NewItem({ cats, existing, onClose, onSaved }) {
           {showW && <div><label>Bei jumla</label><input type="number" value={f.whs} onChange={set('whs')} placeholder="0" /></div>}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-          {showR && <div><label style={{ color: KIND.retail.c }}>Stoo ya mwanzo · Rejareja</label><input type="number" min="0" step="1" value={f.openR} onChange={set('openR')} placeholder="0" /></div>}
-          {showW && <div><label style={{ color: KIND.wholesale.c }}>Stoo ya mwanzo · Jumla</label><input type="number" min="0" step="1" value={f.openW} onChange={set('openW')} placeholder="0" /></div>}
+          {showR && <div><label style={{ color: KIND.retail.c }}>Stock ya mwanzo · Rejareja</label><input type="number" min="0" step="1" value={f.openR} onChange={set('openR')} placeholder="0" /></div>}
+          {showW && <div><label style={{ color: KIND.wholesale.c }}>Stock ya mwanzo · Jumla</label><input type="number" min="0" step="1" value={f.openW} onChange={set('openW')} placeholder="0" /></div>}
           <div><label>Agiza ikifika</label><input type="number" min="0" value={f.low} onChange={set('low')} /></div>
         </div>
-        <p style={ui.muted}>Stoo ya mwanzo inarekodiwa kama "Imepokelewa" kwenye historia ya bidhaa.</p>
+        <p style={ui.muted}>Stock ya mwanzo inarekodiwa kama "Imepokelewa" kwenye historia ya bidhaa.</p>
         {err && <div style={ui.banner('#B93A16')}>{err}</div>}
         <div style={{ display: 'flex', gap: 8 }}><button disabled={busy} onClick={save} style={ui.primary}>{busy ? 'Inahifadhi…' : 'Hifadhi bidhaa'}</button><button onClick={onClose} style={ui.btn}>Acha</button></div>
       </div>

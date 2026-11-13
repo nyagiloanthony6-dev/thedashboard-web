@@ -24,7 +24,7 @@ export default function Shell({ k, title, tabs = [], children }) {
   const inactive = !k.modules.kibali && (
     <div style={{ maxWidth: 520, margin: '48px auto', background: T.raised, border: `1px solid ${T.line}`, borderRadius: 16, padding: 28, textAlign: 'center' }}>
       <p style={{ fontFamily: T.display, fontSize: 22, fontWeight: 700, marginBottom: 8 }}>TheDashboard Store bado haijawashwa</p>
-      <p style={{ color: T.muted }}>TheDashboard Store (oda za kutoa stoo na stoo yako) ni huduma ya ziada. Wasiliana na Serengeti Labs: +255 754 711 063.</p>
+      <p style={{ color: T.muted }}>TheDashboard Store (oda za kutoa store na stock yako) ni huduma ya ziada. Wasiliana na Serengeti Labs: +255 754 711 063.</p>
     </div>
   )
 
@@ -62,7 +62,7 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
     { href: '/store/owner', label: 'Nyumbani', icon: 'home' },
     { href: '/store/owner?tab=alerts', label: 'Tahadhari', icon: 'bell' },
     { href: '/store/owner?tab=orders', label: 'Oda', icon: 'list' },
-    { href: '/store/owner?tab=stock', label: 'Stoo', icon: 'box' },
+    { href: '/store/owner?tab=stock', label: 'Stock', icon: 'box' },
   ]
   const work = [
     { href: '/store/release?tab=receive', label: 'Pokea mzigo', icon: 'down' },
