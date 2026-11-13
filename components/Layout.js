@@ -48,7 +48,7 @@ export default function Layout({ children, title, shop, profile }) {
           <SLMark size={36} />
           {!col && (
             <div style={{ minWidth:0 }}>
-              <p style={{ fontFamily:'var(--display)', fontWeight:700, fontSize:15, letterSpacing:'-0.02em', whiteSpace:'nowrap' }}>TheDashboard</p>
+              <p style={{ fontFamily:'var(--display)', fontWeight: 600, fontSize:15, letterSpacing:'-0.02em', whiteSpace:'nowrap' }}>TheDashboard</p>
               <p style={{ fontSize:11, color:C.muted, marginTop:2 }}>by <SLWordmark size={11} /></p>
             </div>
           )}
@@ -85,7 +85,7 @@ export default function Layout({ children, title, shop, profile }) {
 
       <main style={{ flex:1, overflow:'auto', minWidth:0 }}>
         <div style={{ padding:'14px 24px', borderBottom:`1px solid ${C.line}`, display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(246,247,251,0.92)', backdropFilter:'blur(8px)', position:'sticky', top:0, zIndex:10 }}>
-          <h1 style={{ fontFamily:'var(--display)', fontSize:18, fontWeight:700, letterSpacing:'-0.02em' }}>{title}</h1>
+          <h1 style={{ fontFamily:'var(--display)', fontSize:18, fontWeight: 600, letterSpacing:'-0.02em' }}>{title}</h1>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {profile && <span style={{ fontSize:14, color:C.muted }}>{profile.full_name}</span>}
             <div style={{ width:34, height:34, background:C.indigo, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700, color:'#FFFFFF' }}>

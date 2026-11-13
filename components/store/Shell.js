@@ -23,7 +23,7 @@ export default function Shell({ k, title, tabs = [], children }) {
 
   const inactive = !k.modules.kibali && (
     <div style={{ maxWidth: 520, margin: '48px auto', background: T.raised, border: `1px solid ${T.line}`, borderRadius: 16, padding: 28, textAlign: 'center' }}>
-      <p style={{ fontFamily: T.display, fontSize: 22, fontWeight: 700, marginBottom: 8 }}>TheDashboard Store bado haijawashwa</p>
+      <p style={{ fontFamily: T.display, fontSize: 22, fontWeight: 600, marginBottom: 8 }}>TheDashboard Store bado haijawashwa</p>
       <p style={{ color: T.muted }}>TheDashboard Store (oda za kutoa store na stock yako) ni huduma ya ziada. Wasiliana na Serengeti Labs: +255 754 711 063.</p>
     </div>
   )
@@ -42,7 +42,7 @@ export default function Shell({ k, title, tabs = [], children }) {
       <header style={{ position: 'sticky', top: 0, zIndex: 10, background: T.surface, borderBottom: `1px solid ${T.line}`, padding: '14px 16px 12px' }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ minWidth: 0 }}>
-            <p style={{ fontFamily: T.display, fontSize: 20, lineHeight: '28px', fontWeight: 700, letterSpacing: '-0.02em' }}>{title}</p>
+            <p style={{ fontFamily: T.display, fontSize: 20, lineHeight: '28px', fontWeight: 600, letterSpacing: '-0.02em' }}>{title}</p>
             <p style={{ fontSize: 13, color: T.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Store · {k.shop?.name}</p>
           </div>
           <UserChip k={k} />
@@ -98,7 +98,7 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
         <div className="kb-main">
           <header className="kb-top">
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontFamily: T.display, fontSize: 20, lineHeight: '28px', fontWeight: 700, letterSpacing: '-0.02em' }}>{title}</p>
+              <p style={{ fontFamily: T.display, fontSize: 20, lineHeight: '28px', fontWeight: 600, letterSpacing: '-0.02em' }}>{title}</p>
               <p className="kb-top-shop" style={{ fontSize: 13, color: T.muted }}>Store · {k.shop?.name}</p>
             </div>
             <div className="kb-top-user"><UserChip k={k} /></div>
@@ -210,7 +210,7 @@ function Brand() {
       <SLMark size={38} />
       <div style={{ minWidth: 0 }}>
         <p style={{ fontFamily: T.display, fontSize: 13, fontWeight: 600, lineHeight: '16px', letterSpacing: '-0.01em' }}>TheDashboard</p>
-        <p style={{ fontFamily: T.display, fontSize: 19, fontWeight: 700, lineHeight: '22px', color: T.green, letterSpacing: '-0.02em' }}>Store</p>
+        <p style={{ fontFamily: T.display, fontSize: 19, fontWeight: 600, lineHeight: '22px', color: T.green, letterSpacing: '-0.02em' }}>Store</p>
         <p style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>by <SLWordmark size={12} /></p>
       </div>
     </div>
