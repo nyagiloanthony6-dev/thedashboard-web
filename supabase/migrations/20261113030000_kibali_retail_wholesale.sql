@@ -10,21 +10,21 @@ begin;
 
 -- 1. kind columns ------------------------------------------------------
 alter table public.release_order_items add column if not exists kind text not null default 'retail';
-alter table public.stock_movements     add column if not exists kind text not null default 'retail';
+alter table public.store_movements     add column if not exists kind text not null default 'retail';
 
 do $$ begin
   if not exists (select 1 from pg_constraint where conname = 'release_order_items_kind_check') then
     alter table public.release_order_items add constraint release_order_items_kind_check check (kind in ('retail','wholesale'));
   end if;
-  if not exists (select 1 from pg_constraint where conname = 'stock_movements_kind_check') then
-    alter table public.stock_movements add constraint stock_movements_kind_check check (kind in ('retail','wholesale'));
+  if not exists (select 1 from pg_constraint where conname = 'store_movements_kind_check') then
+    alter table public.store_movements add constraint store_movements_kind_check check (kind in ('retail','wholesale'));
   end if;
 end $$;
 
 -- Rows written before this change: wholesale items moved wholesale stock
 update public.release_order_items i set kind = 'wholesale'
   from public.products p where p.id = i.product_id and p.product_type = 'wholesale' and i.kind <> 'wholesale';
-update public.stock_movements m set kind = 'wholesale'
+update public.store_movements m set kind = 'wholesale'
   from public.products p where p.id = m.product_id and p.product_type = 'wholesale' and m.kind <> 'wholesale';
 
 -- 2. helpers -----------------------------------------------------------
@@ -75,7 +75,7 @@ begin
     update public.products set retail_stock = v_new, stock = v_new where id::text = p_product_id;
   end if;
 
-  insert into public.stock_movements
+  insert into public.store_movements
     (shop_id, product_id, product_name, unit, kind, type, qty, balance_after, reference, note, order_id, created_by, created_by_name)
   select p_shop, p.id, v_name, v_unit, p_kind, p_type, p_delta, v_new, p_reference, p_note, p_order, auth.uid(), public.kibali_my_name()
   from public.products p where p.id::text = p_product_id;

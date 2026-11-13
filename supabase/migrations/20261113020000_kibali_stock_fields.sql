@@ -44,7 +44,7 @@ begin
     update public.products set retail_stock = v_new, stock = v_new where id::text = p_product_id;
   end if;
 
-  insert into public.stock_movements
+  insert into public.store_movements
     (shop_id, product_id, product_name, unit, type, qty, balance_after, reference, note, order_id, created_by, created_by_name)
   select p_shop, p.id, v_name, v_unit, p_type, p_delta, v_new, p_reference, p_note, p_order, auth.uid(), public.kibali_my_name()
   from public.products p where p.id::text = p_product_id;

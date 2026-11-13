@@ -286,7 +286,7 @@ function Receive({ k }) {
     const since = new Date(); since.setHours(0, 0, 0, 0)
     const [p, m] = await Promise.all([
       loadProducts(k.shop.id),
-      supabase.from('stock_movements').select('*').eq('type', 'IN').gte('created_at', since.toISOString()).order('created_at', { ascending: false }),
+      supabase.from('store_movements').select('*').eq('type', 'IN').gte('created_at', since.toISOString()).order('created_at', { ascending: false }),
     ])
     setProducts(p); setMoves(m.data || [])
   }, [k.shop?.id])

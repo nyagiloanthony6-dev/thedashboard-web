@@ -27,7 +27,7 @@ export default function StoreOwner() {
       supabase.from('kibali_alerts').select('*').order('created_at', { ascending: false }).limit(200),
       loadProducts(k.shop.id),
       loadReserved(),
-      supabase.from('stock_movements').select('qty').in('type', ['OUT', 'SALE']).gte('created_at', since.toISOString()),
+      supabase.from('store_movements').select('qty').in('type', ['OUT', 'SALE']).gte('created_at', since.toISOString()),
     ])
     setOrders(o.data || []); setAlerts(a.data || []); setProducts(p)
     setReserved(r)
@@ -308,7 +308,7 @@ function ItemPanel({ p, onClose, onChanged }) {
   const [filter, setFilter] = useState('')
 
   const load = async () => {
-    const { data } = await supabase.from('stock_movements').select('*').eq('product_id', p.id).order('created_at', { ascending: false }).limit(300)
+    const { data } = await supabase.from('store_movements').select('*').eq('product_id', p.id).order('created_at', { ascending: false }).limit(300)
     setMoves(data || [])
   }
   useEffect(() => { load() }, [p.id])

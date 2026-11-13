@@ -6,7 +6,7 @@
 --   * shop_modules       which modules a shop has paid for (pos, kibali)
 --   * two new roles      shop_clerk (creates orders), storekeeper (releases)
 --   * release orders     orders, items, releases, private release codes
---   * stock_movements    append-only ledger of every IN / OUT / ADJ
+--   * store_movements    append-only ledger of every IN / OUT / ADJ
 --   * kibali_alerts      tamper, wrong code, unknown order, adjustments…
 --   * RPC functions      the ONLY way to write Kibali data. Each checks
 --                        the caller's role + module, then does the work
@@ -165,7 +165,7 @@ create table if not exists public.release_order_releases (
 );
 create index if not exists release_order_releases_order_idx on public.release_order_releases (order_id);
 
-create table if not exists public.stock_movements (
+create table if not exists public.store_movements (
   id               bigint      generated always as identity primary key,
   shop_id          uuid        not null,
   product_name     text        not null,
@@ -207,12 +207,12 @@ begin
     execute format('alter table public.release_order_items add column product_id %s not null references public.products(id)', t);
   end if;
   if not exists (select 1 from information_schema.columns
-                 where table_schema='public' and table_name='stock_movements' and column_name='product_id') then
-    execute format('alter table public.stock_movements add column product_id %s not null references public.products(id)', t);
+                 where table_schema='public' and table_name='store_movements' and column_name='product_id') then
+    execute format('alter table public.store_movements add column product_id %s not null references public.products(id)', t);
   end if;
 end $$;
-create index if not exists stock_movements_product_idx on public.stock_movements (product_id, created_at desc);
-create index if not exists stock_movements_shop_idx on public.stock_movements (shop_id, created_at desc);
+create index if not exists store_movements_product_idx on public.store_movements (product_id, created_at desc);
+create index if not exists store_movements_shop_idx on public.store_movements (shop_id, created_at desc);
 
 -- ---------------------------------------------------------------------
 -- 5. Row level security: reads only. There are NO insert/update/delete
@@ -222,7 +222,7 @@ alter table public.release_orders          enable row level security;
 alter table public.release_order_secrets   enable row level security;
 alter table public.release_order_items     enable row level security;
 alter table public.release_order_releases  enable row level security;
-alter table public.stock_movements         enable row level security;
+alter table public.store_movements         enable row level security;
 alter table public.kibali_alerts           enable row level security;
 
 drop policy if exists shop_modules_read on public.shop_modules;
@@ -246,8 +246,8 @@ drop policy if exists release_order_secrets_read on public.release_order_secrets
 create policy release_order_secrets_read on public.release_order_secrets
   for select using (shop_id = public.kibali_my_shop() and public.kibali_can('order.create'));
 
-drop policy if exists stock_movements_read on public.stock_movements;
-create policy stock_movements_read on public.stock_movements
+drop policy if exists store_movements_read on public.store_movements;
+create policy store_movements_read on public.store_movements
   for select using (shop_id = public.kibali_my_shop() and public.kibali_can('stock.receive'));
 
 drop policy if exists kibali_alerts_read on public.kibali_alerts;
@@ -297,7 +297,7 @@ begin
 
   update public.products set stock = v_new, retail_stock = v_new where id::text = p_product_id;
 
-  insert into public.stock_movements
+  insert into public.store_movements
     (shop_id, product_id, product_name, unit, type, qty, balance_after, reference, note, order_id, created_by, created_by_name)
   select p_shop, p.id, v_name, v_unit, p_type, p_delta, v_new, p_reference, p_note, p_order, auth.uid(), public.kibali_my_name()
   from public.products p where p.id::text = p_product_id;
@@ -556,7 +556,7 @@ grant execute on function public.kibali_resolve_alert(uuid)                     
 
 grant select on public.shop_modules, public.release_orders, public.release_order_secrets,
                 public.release_order_items, public.release_order_releases,
-                public.stock_movements, public.kibali_alerts, public.kibali_reserved to authenticated;
+                public.store_movements, public.kibali_alerts, public.kibali_reserved to authenticated;
 
 commit;
 

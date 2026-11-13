@@ -2,6 +2,8 @@
 
 > Code and database use the internal name `kibali` (tables, `kibali_*` functions,
 > the `kibali` row in `shop_modules`). Screens live under `/store`.
+> Store's movement history is in `store_movements`. It never uses the mobile
+> app's `stock_movements` table.
 
 Store stops order-paper tampering ("1 box" changed to "11"). The shop creates
 the order in the system and prints a receipt with an order number, QR code and
@@ -86,8 +88,9 @@ import also records each quantity as a Kibali delivery.
 | Corrections | Stock page | Hesabu / rekebisha (owner, reason, alert) | Hesabu / rekebisha (owner, reason, alert) |
 | History | none | full | full |
 
-Run `supabase/migrations/20261113040000_store_sales.sql` for the SALE movement type
-and the `kibali_sell` function.
+Run `supabase/migrations/20261113040000_store_sales.sql`: it creates `store_movements`,
+adds the SALE movement type and `kibali_sell`, and restores `stock_movements` on
+databases where an earlier Store version had modified it.
 
 ## How it is protected
 
