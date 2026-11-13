@@ -144,7 +144,7 @@ function Frame({ title, children }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content={T.surface} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Geist:wght@500;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
       </Head>
       <style jsx global>{`
         body { background: ${T.surface} !important; color: ${T.ink} !important; font-family: ${T.sans}; font-size: 16px; }
@@ -186,18 +186,30 @@ function Frame({ title, children }) {
   )
 }
 
+// Serengeti Labs logo: "s/" mark + serengeti/labs wordmark (Geist), as on serengetilabs site
+export function SLMark({ size = 34 }) {
+  return (
+    <span aria-hidden="true" style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), background: '#2D2F8F', color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none', fontFamily: 'Geist, system-ui, sans-serif', fontWeight: 800, fontSize: Math.round(size * 0.55), letterSpacing: '-0.05em', lineHeight: 1 }}>
+      s<b style={{ color: '#F2A007', fontWeight: 500 }}>/</b>
+    </span>
+  )
+}
+
+export function SLWordmark({ size = 13 }) {
+  return (
+    <span style={{ fontFamily: 'Geist, system-ui, sans-serif', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1, whiteSpace: 'nowrap', color: '#15183A', fontSize: size }}>
+      serengeti<b style={{ color: '#E4572E', fontWeight: 500 }}>/</b><em style={{ fontStyle: 'normal', color: '#2D2F8F', fontWeight: 500 }}>labs</em>
+    </span>
+  )
+}
+
 function Brand() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
-        <rect width="34" height="34" rx="9" fill={T.green} />
-        <rect x="7" y="9" width="20" height="6" rx="3" fill={T.gold} />
-        <path d="M17 15v10M17 20l-4-3M17 19l4-3" stroke={T.surface} strokeWidth="2" strokeLinecap="round" />
-        <path d="M7 26h20" stroke={T.surface} strokeWidth="2" strokeLinecap="round" />
-      </svg>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} aria-label="Kibali by Serengeti Labs">
+      <SLMark size={36} />
       <div>
-        <p style={{ fontFamily: T.display, fontSize: 20, fontWeight: 700, lineHeight: '22px' }}>Kibali</p>
-        <p style={{ fontSize: 11, color: T.muted }}>TheDashboard · by Serengeti Labs</p>
+        <p style={{ fontFamily: T.display, fontSize: 21, fontWeight: 700, lineHeight: '22px' }}>Kibali</p>
+        <p style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>by <SLWordmark size={12} /></p>
       </div>
     </div>
   )
