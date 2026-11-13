@@ -28,12 +28,7 @@ export default function Shell({ k, title, tabs = [], children }) {
     </div>
   )
 
-  const path = router.asPath
-  const isOn = (href) => {
-    const [p, q] = href.split('?')
-    const [cp, cq] = path.split('?')
-    return p === cp && (q || '') === (cq || '').split('&').filter(x => x.startsWith('tab=')).join('&')
-  }
+  const isOn = makeIsOn(router.asPath)
 
   if (owner) return <OwnerFrame k={k} title={title} tabs={tabs} isOn={isOn}>{inactive || children}</OwnerFrame>
 
@@ -52,6 +47,19 @@ export default function Shell({ k, title, tabs = [], children }) {
       {tabs.length > 0 && !inactive && <BottomTabs tabs={tabs} isOn={isOn} />}
     </Frame>
   )
+}
+
+const makeIsOn = (path) => (href) => {
+  const [p, q] = href.split('?')
+  const [cp, cq] = path.split('?')
+  return p === cp && (q || '') === (cq || '').split('&').filter(x => x.startsWith('tab=')).join('&')
+}
+
+// Store-only shops: the shared pages (Bidhaa, Wafanyakazi, Mipangilio) render inside
+// the same Store frame so owners never see the POS layout.
+export function StoreFrame({ k, title, children }) {
+  const router = useRouter()
+  return <OwnerFrame k={k} title={title} tabs={[]} isOn={makeIsOn(router.asPath)}>{children}</OwnerFrame>
 }
 
 // ---------------------------------------------------------------------
@@ -90,7 +98,7 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
             <p style={sideHead}>KAZI</p>
             {work.map(n => <SideLink key={n.href} n={n} on={isOn(n.href) || (n.href === '/store/shop' && isOn('/store/shop?tab=orders')) || (n.href === '/store/release' && isOn('/store/release?tab=waiting'))} />)}
             <p style={sideHead}>USIMAMIZI</p>
-            {admin.map(n => <SideLink key={n.href} n={n} on={false} />)}
+            {admin.map(n => <SideLink key={n.href} n={n} on={isOn(n.href)} />)}
           </nav>
           <div style={{ marginTop: 'auto', padding: 14, borderTop: `1px solid ${T.line}` }}><UserChip k={k} wide /></div>
         </aside>
@@ -126,7 +134,7 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
               <p style={{ ...sideHead, margin: '0 0 6px' }}>KAZI</p>
               {work.map(n => <SideLink key={n.href} n={n} on={false} onClick={() => setMore(false)} />)}
               <p style={{ ...sideHead, margin: '12px 0 6px' }}>USIMAMIZI</p>
-              {admin.map(n => <SideLink key={n.href} n={n} on={false} onClick={() => setMore(false)} />)}
+              {admin.map(n => <SideLink key={n.href} n={n} on={isOn(n.href)} onClick={() => setMore(false)} />)}
               <button onClick={signOut} style={{ ...sideLink, color: T.danger, border: 'none', background: 'none', width: '100%', textAlign: 'left' }}><Icon name="logout" size={20} />Toka</button>
             </div>
           </div>

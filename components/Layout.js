@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
-import { loadModules } from '../lib/store'
+import { loadModules, cachedModules, isStoreOnly } from '../lib/store'
 import Icon from './store/Icon'
-import { SLMark, SLWordmark } from './store/Shell'
+import { SLMark, SLWordmark, StoreFrame } from './store/Shell'
 
 // Serengeti Labs brand: white sidebar, indigo active state, saffron highlight.
 // module: 'pos' items are hidden for Store-only shops; 'kibali' (Store) items
@@ -30,16 +30,25 @@ const NAV = [
   { href:'/settings',   icon:'gear',      label:'Settings' },
 ]
 
+// Store-only shops see these pages under their Store (Swahili) names
+const STORE_TITLES = { '/stock': 'Bidhaa', '/team': 'Wafanyakazi', '/settings': 'Mipangilio' }
+
 const C = { bg:'#F6F7FB', surface:'#FFFFFF', sunk:'#ECEEF7', ink:'#15183A', muted:'#5B607E', line:'#DCDFEC', indigo:'#2D2F8F', saffron:'#F2A007', coral:'#B93A16' }
 
 export default function Layout({ children, title, shop, profile }) {
   const router = useRouter()
   const [col, setCol] = useState(false)
-  const [modules, setModules] = useState({ pos: true, kibali: false })
+  const [modules, setModules] = useState(cachedModules)
   useEffect(() => { if (shop?.id) loadModules(shop.id).then(setModules) }, [shop?.id])
-  const nav = NAV.filter(n => !n.module || modules[n.module])
+  const nav = NAV.filter(n => !n.module || (modules && modules[n.module]))
 
   const active = (href) => router.pathname === href || (href !== '/reports' && router.pathname.startsWith(href + '/')) || (href === '/store/owner' && router.pathname.startsWith('/store'))
+
+  if (isStoreOnly(modules)) return (
+    <StoreFrame k={{ loading: false, shop, profile, role: profile?.role || 'shop_admin', modules }} title={STORE_TITLES[router.pathname] || title}>
+      {children}
+    </StoreFrame>
+  )
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:C.bg }}>
