@@ -18,6 +18,7 @@ export default function StoreOwner() {
   const [reserved, setReserved] = useState({})
   const [todayOut, setTodayOut] = useState(0)
   const [openId, setOpenId] = useState(null)
+  const [loadErr, setLoadErr] = useState('')
 
   const load = useCallback(async () => {
     if (!k.shop?.id) return
@@ -25,7 +26,7 @@ export default function StoreOwner() {
     const [o, a, p, r, m] = await Promise.all([
       supabase.from('release_orders').select('*,release_order_items(*)').order('created_at', { ascending: false }).limit(300),
       supabase.from('kibali_alerts').select('*').order('created_at', { ascending: false }).limit(200),
-      loadProducts(k.shop.id),
+      loadProducts(k.shop.id).then(r => { setLoadErr(''); return r }).catch(e => { setLoadErr(e.message); return [] }),
       loadReserved(),
       supabase.from('store_movements').select('qty').in('type', ['OUT', 'SALE']).gte('created_at', since.toISOString()),
     ])
@@ -48,6 +49,7 @@ export default function StoreOwner() {
       {k.modules.kibali && !k.can('kibali.audit') && <div style={ui.banner('#9A5B00')}>Ukurasa huu ni wa mmiliki tu.</div>}
       {k.can('kibali.audit') && (
         <>
+          {loadErr && <div style={{ ...ui.banner(T.danger), marginBottom: 14 }}>{loadErr}</div>}
           {tab === 'home' && <Home k={k} orders={orders} openAlerts={openAlerts} products={products} reserved={reserved} todayOut={todayOut} onOpen={setOpenId} />}
           {tab === 'alerts' && <Alerts alerts={alerts} onOpen={setOpenId} onChanged={load} />}
           {tab === 'orders' && <Orders orders={orders} onOpen={setOpenId} />}

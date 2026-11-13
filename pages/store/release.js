@@ -275,6 +275,7 @@ function Waiting({ onPick }) {
 function Receive({ k }) {
   const [products, setProducts] = useState([])
   const [moves, setMoves] = useState([])
+  const [loadErr, setLoadErr] = useState('')
   const [pid, setPid] = useState('')
   const [search, setSearch] = useState('')
   const [kind, setKind] = useState('retail')
@@ -286,7 +287,7 @@ function Receive({ k }) {
   const load = useCallback(async () => {
     const since = new Date(); since.setHours(0, 0, 0, 0)
     const [p, m] = await Promise.all([
-      loadProducts(k.shop.id),
+      loadProducts(k.shop.id).then(r => { setLoadErr(''); return r }).catch(e => { setLoadErr(e.message); return [] }),
       supabase.from('store_movements').select('*').eq('type', 'IN').gte('created_at', since.toISOString()).order('created_at', { ascending: false }),
     ])
     setProducts(p); setMoves(m.data || [])
@@ -324,6 +325,7 @@ function Receive({ k }) {
           <p style={ui.h}>Chagua bidhaa</p>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tafuta kwa jina, part number au kundi…" autoComplete="off" aria-label="Tafuta bidhaa" />
           <p style={ui.muted}>Bidhaa {list.length} kati ya {products.length}</p>
+          {loadErr && <div style={ui.banner(T.danger)}>{loadErr}</div>}
         </div>
         <div style={{ maxHeight: 560, overflowY: 'auto' }}>
           <table style={{ width: '100%', fontSize: 14 }}>

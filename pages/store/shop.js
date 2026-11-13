@@ -26,13 +26,14 @@ export default function StoreShop() {
   const [error, setError] = useState('')
   const [openId, setOpenId] = useState(null)
   const [cat, setCat] = useState('')
+  const [loadErr, setLoadErr] = useState('')
   const [justCreated, setJustCreated] = useState(null)
 
   const load = useCallback(async () => {
     if (!k.shop?.id) return
     const since = new Date(); since.setHours(0, 0, 0, 0)
     const [p, r, o] = await Promise.all([
-      loadProducts(k.shop.id),
+      loadProducts(k.shop.id).then(r => { setLoadErr(''); return r }).catch(e => { setLoadErr(e.message); return [] }),
       loadReserved(),
       supabase.from('release_orders').select('*,release_order_items(*)').gte('created_at', since.toISOString()).order('created_at', { ascending: false }),
     ])
@@ -153,6 +154,7 @@ export default function StoreShop() {
           </div>
 
           {error && <div style={ui.banner('#B93A16')}>{error}</div>}
+          {loadErr && <div style={ui.banner(T.danger)}>{loadErr}</div>}
           {short && <div style={ui.banner(T.warning)}>Store haina za kutosha kwa baadhi ya bidhaa. Unaweza kuendelea, lakini store itatoa kilichopo tu.</div>}
           <div style={{ position: 'sticky', bottom: 84, zIndex: 5, background: T.raised, border: `1px solid ${T.line}`, borderTop: `2px solid ${T.green}`, borderRadius: 12, padding: 12, display: 'grid', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: T.muted }}>
