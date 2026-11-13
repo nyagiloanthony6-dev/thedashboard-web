@@ -8,8 +8,8 @@ export default function ReleaseSlipModal({ slip, shopName, onClose }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,24,58,0.55)', zIndex: 200, overflowY: 'auto', padding: '24px 12px' }}>
       <div style={{ background: '#FFFFFF', borderRadius: 16, maxWidth: 380, margin: '0 auto', padding: 20, display: 'grid', gap: 14, justifyItems: 'center', fontFamily: 'var(--body)', color: '#15183A' }}>
         <div style={{ textAlign: 'center' }}>
-          <p style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 18 }}>Kibali cha kutoa stoo</p>
-          <p style={{ fontSize: 14, color: '#5B607E', marginTop: 4 }}>Mpe mteja karatasi hii. Stoo itatoa mzigo baada ya kuskani na namba ya siri <b style={{ fontFamily: 'var(--mono)', color: '#15183A', letterSpacing: 2 }}>{slip.code}</b>.</p>
+          <p style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 18 }}>Kibali cha kutoa store</p>
+          <p style={{ fontSize: 14, color: '#5B607E', marginTop: 4 }}>Mpe mteja karatasi hii. Store itatoa mzigo baada ya kuskani na namba ya siri <b style={{ fontFamily: 'var(--mono)', color: '#15183A', letterSpacing: 2 }}>{slip.code}</b>.</p>
         </div>
         <Receipt order={slip.order} items={slip.items} code={slip.code} shopName={shopName} />
         <div style={{ display: 'flex', gap: 10, width: '100%' }}>

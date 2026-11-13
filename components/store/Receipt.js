@@ -25,7 +25,7 @@ export default function Receipt({ order, items, code, shopName }) {
         }
       `}</style>
       <div style={{ textAlign: 'center', fontWeight: 800, fontSize: 15, fontFamily: 'system-ui, sans-serif' }}>{(shopName || 'SHOP').toUpperCase()}</div>
-      <div style={S.title}>KIBALI CHA KUTOA STOO</div>
+      <div style={S.title}>KIBALI CHA KUTOA STORE</div>
       {cancelled && <div style={S.void}>IMESITISHWA — USITOE</div>}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ flex: 1 }}>
@@ -52,7 +52,7 @@ export default function Receipt({ order, items, code, shopName }) {
       <div style={{ borderTop: '2px solid #000', margin: '8px 0 6px' }} />
       <div>Mistari {items.length} · Vipimo vyote {total} ({swWords(total)})</div>
       <div style={{ textAlign: 'center', fontSize: 10, lineHeight: '14px', marginTop: 8 }}>
-        STOO: TOA KILE TU KINACHOONEKANA KWENYE MFUMO. MABADILIKO YOYOTE KWENYE KARATASI HII HAYAKUBALIKI.
+        STORE: TOA KILE TU KINACHOONEKANA KWENYE MFUMO. MABADILIKO YOYOTE KWENYE KARATASI HII HAYAKUBALIKI.
       </div>
     </div>
   )
