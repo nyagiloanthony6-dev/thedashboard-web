@@ -44,7 +44,7 @@ export default function Login() {
   const redirectByRole = async (userId) => {
     const { data: prof } = await supabase.from('app_users').select('role').eq('id', userId).single()
     const role = prof?.role || 'shop_admin'
-    const routes = { shop_admin:'/dashboard', super_admin:'/dashboard', cashier:'/cashier', sales_rep:'/rep' }
+    const routes = { shop_admin:'/dashboard', super_admin:'/dashboard', cashier:'/cashier', sales_rep:'/rep', shop_clerk:'/kibali/shop', storekeeper:'/kibali/store' }
     router.push(routes[role] || '/dashboard')
   }
 

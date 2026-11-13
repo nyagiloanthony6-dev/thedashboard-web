@@ -1,33 +1,40 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
+import { loadModules } from '../lib/kibali'
 
+// module: 'pos' items are hidden for Kibali-only shops; 'kibali' items show
+// only when the shop has the Kibali add-on.
 const NAV = [
-  { href:'/dashboard',  icon:'📊', label:'Dashboard' },
-  { href:'/sales',      icon:'💰', label:'Sales / POS' },
+  { href:'/dashboard',  icon:'📊', label:'Dashboard', module:'pos' },
+  { href:'/sales',      icon:'💰', label:'Sales / POS', module:'pos' },
+  { href:'/kibali/owner', icon:'🧾', label:'Kibali (Stoo)', module:'kibali' },
   { href:'/stock',      icon:'📦', label:'Stock' },
-  { href:'/warehouse',  icon:'🏭', label:'Warehouse' },
+  { href:'/warehouse',  icon:'🏭', label:'Warehouse', module:'pos' },
   { href:'/customers',  icon:'👥', label:'Customers' },
-  { href:'/expenses',   icon:'💸', label:'Expenses' },
-  { href:'/credit',     icon:'🤝', label:'Credit' },
-  { href:'/loans',      icon:'💳', label:'Loans' },
-  { href:'/orders',     icon:'📋', label:'Field Orders' },
-  { href:'/reports',    icon:'📈', label:'Reports' },
-  { href:'/reports/monthly', icon:'📅', label:'Monthly Sales' },
+  { href:'/expenses',   icon:'💸', label:'Expenses', module:'pos' },
+  { href:'/credit',     icon:'🤝', label:'Credit', module:'pos' },
+  { href:'/loans',      icon:'💳', label:'Loans', module:'pos' },
+  { href:'/orders',     icon:'📋', label:'Field Orders', module:'pos' },
+  { href:'/reports',    icon:'📈', label:'Reports', module:'pos' },
+  { href:'/reports/monthly', icon:'📅', label:'Monthly Sales', module:'pos' },
   { href:'/team',       icon:'👤', label:'Team' },
-  { href:'/whatsapp',   icon:'💬', label:'WhatsApp' },
-  { href:'/vendors',    icon:'🏢', label:'Vendors' },
-  { href:'/investors', icon:'💰', label:'Investor Fund' },
-  { href:'/batches', icon:'📦', label:'Stock Batches' },
+  { href:'/whatsapp',   icon:'💬', label:'WhatsApp', module:'pos' },
+  { href:'/vendors',    icon:'🏢', label:'Vendors', module:'pos' },
+  { href:'/investors', icon:'💰', label:'Investor Fund', module:'pos' },
+  { href:'/batches', icon:'📦', label:'Stock Batches', module:'pos' },
   { href:'/settings',   icon:'⚙️',  label:'Settings' },
 ]
 
 export default function Layout({ children, title, shop, profile }) {
   const router = useRouter()
   const [col, setCol] = useState(false)
+  const [modules, setModules] = useState({ pos: true, kibali: false })
+  useEffect(() => { if (shop?.id) loadModules(shop.id).then(setModules) }, [shop?.id])
+  const nav = NAV.filter(n => !n.module || modules[n.module])
 
-  const active = (href) => router.pathname === href || router.pathname.startsWith(href + '/')
+  const active = (href) => router.pathname === href || router.pathname.startsWith(href + '/') || (href === '/kibali/owner' && router.pathname.startsWith('/kibali'))
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#0d1117' }}>
@@ -47,7 +54,7 @@ export default function Layout({ children, title, shop, profile }) {
         )}
         {/* Nav */}
         <nav style={{ flex:1, padding:'8px 6px', overflowY:'auto' }}>
-          {NAV.map(n => {
+          {nav.map(n => {
             const isActive = active(n.href)
             return (
               <Link key={n.href} href={n.href} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 8px', borderRadius:8, marginBottom:1, background:isActive?'#2196F315':'transparent', color:isActive?'#2196F3':'#7d8590', textDecoration:'none', fontSize:12, fontWeight:isActive?700:400, borderLeft:isActive?'2px solid #2196F3':'2px solid transparent', whiteSpace:'nowrap', transition:'all 0.1s' }}>

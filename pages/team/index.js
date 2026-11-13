@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt, fmtK } from '../../lib/supabase'
+import { loadModules } from '../../lib/kibali'
 
 export default function Team() {
   const [profile,setProfile]=useState(null)
@@ -17,6 +18,7 @@ export default function Team() {
   const [commModal,setCommModal]=useState(null)
   const [commForm,setCommForm]=useState({monthly_target:'',commission_type:'flat',commission_rate:'5',tiered_rate_1:'2',tiered_rate_2:'4',tiered_rate_3:'7'})
   const [togglingId,setTogglingId]=useState(null)
+  const [kibaliOn,setKibaliOn]=useState(false)
 
   useEffect(()=>{loadData()},[])
 
@@ -25,10 +27,11 @@ export default function Team() {
     const {data:prof}=await supabase.from('app_users').select('*,shops(*)').eq('id',user.id).single()
     setProfile(prof);setShop(prof.shops)
     const shopId=prof.shops.id
+    loadModules(shopId).then(m=>setKibaliOn(m.kibali))
     const now=new Date()
     const mStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString()
     const [tr,fo,rs]=await Promise.all([
-      supabase.from('app_users').select('*').eq('shop_id',shopId).in('role',['cashier','sales_rep']).order('full_name'),
+      supabase.from('app_users').select('*').eq('shop_id',shopId).in('role',['cashier','sales_rep','shop_clerk','storekeeper']).order('full_name'),
       supabase.from('field_orders').select('*').eq('shop_id',shopId).eq('status','fulfilled').gte('created_at',mStart),
       supabase.from('sales_rep_settings').select('*').eq('shop_id',shopId),
     ])
@@ -79,6 +82,7 @@ export default function Team() {
   }
 
   const cashiers=team.filter(m=>m.role==='cashier')
+  const kibaliStaff=team.filter(m=>m.role==='shop_clerk'||m.role==='storekeeper')
   const salesReps=team.filter(m=>m.role==='sales_rep')
   const card={background:'#161b22',border:'1px solid #30363d',borderRadius:12,padding:16}
 
@@ -135,6 +139,26 @@ export default function Team() {
           ))}
           {!cashiers.length&&<p style={{color:'#484f58',fontSize:13}}>No cashiers yet.</p>}
         </div>
+
+        {(kibaliOn||kibaliStaff.length>0)&&<>
+        <h2 style={{fontSize:11,color:'#7d8590',letterSpacing:0.8,marginBottom:12}}>KIBALI — SHOP CLERKS & STOREKEEPERS</h2>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12,marginBottom:28}}>
+          {kibaliStaff.map(m=>(
+            <div key={m.id} style={card}>
+              <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
+                <div style={{width:42,height:42,background:'rgba(240,180,41,0.15)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,color:'#f0b429',border:'1px solid rgba(240,180,41,0.25)'}}>{m.full_name.charAt(0)}</div>
+                <div style={{flex:1}}>
+                  <p style={{fontWeight:700,fontSize:14}}>{m.full_name}</p>
+                  <p style={{fontSize:11,color:'#7d8590',marginTop:2}}>{m.role==='storekeeper'?'Storekeeper — releases goods, receives stock':'Shop clerk — creates release orders'}</p>
+                  <p style={{fontSize:11,color:'#7d8590',marginTop:1}}>@{m.email?.split('@')[0]?.split('.').slice(0,-1).join('.')}</p>
+                </div>
+              </div>
+              <button onClick={()=>remove(m)} style={{width:'100%',padding:'7px',borderRadius:6,border:'1px solid rgba(255,77,109,0.3)',background:'transparent',color:'#ff4d6d',fontSize:11,fontWeight:600}}>Remove</button>
+            </div>
+          ))}
+          {!kibaliStaff.length&&<p style={{color:'#484f58',fontSize:13}}>No Kibali staff yet. Add a shop clerk or storekeeper with "+ Add Team Member".</p>}
+        </div>
+        </>}
 
         <h2 style={{fontSize:11,color:'#7d8590',letterSpacing:0.8,marginBottom:12}}>SALES REPS — THIS MONTH</h2>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:12}}>
@@ -200,7 +224,7 @@ export default function Team() {
               <div style={{marginBottom:14}}>
                 <label>Role</label>
                 <div style={{display:'flex',gap:8}}>
-                  {[{k:'cashier',l:'Cashier'},{k:'sales_rep',l:'Sales Rep'}].map(r=>(
+                  {[{k:'cashier',l:'Cashier'},{k:'sales_rep',l:'Sales Rep'},...(kibaliOn?[{k:'shop_clerk',l:'Shop clerk'},{k:'storekeeper',l:'Storekeeper'}]:[])].map(r=>(
                     <button key={r.k} onClick={()=>setForm(p=>({...p,role:r.k}))} style={{flex:1,padding:'9px',borderRadius:8,border:'1px solid',borderColor:form.role===r.k?'#2196F3':'#30363d',background:form.role===r.k?'rgba(33,150,243,0.15)':'transparent',color:form.role===r.k?'#2196F3':'#7d8590',fontSize:12,fontWeight:700}}>{r.l}</button>
                   ))}
                 </div>
