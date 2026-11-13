@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
-import { swWords, KIND } from '../../lib/kibali'
+import { swWords, KIND } from '../../lib/store'
 
 // Thermal-receipt style release order (80mm). Printed with window.print();
 // the @media print rules below print ONLY the receipt.

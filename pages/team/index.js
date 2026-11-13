@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt, fmtK } from '../../lib/supabase'
-import { loadModules, ownedShop } from '../../lib/kibali'
+import { loadModules, ownedShop } from '../../lib/store'
 
 export default function Team() {
   const [profile,setProfile]=useState(null)
@@ -85,7 +85,7 @@ export default function Team() {
 
   const cashiers=team.filter(m=>m.role==='cashier')
   const kibaliStaff=team.filter(m=>m.role==='shop_clerk'||m.role==='storekeeper')
-  // Kibali-only shops: hide cashier / sales rep sections unless someone is still in them
+  // Store-only shops: hide cashier / sales rep sections unless someone is still in them
   const showCashiers=posOn||!kibaliOn||cashiers.length>0
   const showReps=posOn||!kibaliOn||salesReps.length>0
   const salesReps=team.filter(m=>m.role==='sales_rep')
@@ -116,7 +116,7 @@ export default function Team() {
           <div style={{display:'flex',gap:12}}>
             {showCashiers&&<div style={card}><span style={{fontSize:20}}>👤</span><p style={{fontSize:20,fontWeight:900,color:'#2196F3',marginTop:4}}>{cashiers.length}</p><p style={{fontSize:10,color:'#7d8590'}}>CASHIERS</p></div>}
             {showReps&&<div style={card}><span style={{fontSize:20}}>🏃</span><p style={{fontSize:20,fontWeight:900,color:'#a78bfa',marginTop:4}}>{salesReps.length}</p><p style={{fontSize:10,color:'#7d8590'}}>SALES REPS</p></div>}
-            {kibaliOn&&<div style={card}><span style={{fontSize:20}}>🧾</span><p style={{fontSize:20,fontWeight:900,color:'#f0b429',marginTop:4}}>{kibaliStaff.length}</p><p style={{fontSize:10,color:'#7d8590'}}>KIBALI STAFF</p></div>}
+            {kibaliOn&&<div style={card}><span style={{fontSize:20}}>🧾</span><p style={{fontSize:20,fontWeight:900,color:'#f0b429',marginTop:4}}>{kibaliStaff.length}</p><p style={{fontSize:10,color:'#7d8590'}}>STORE STAFF</p></div>}
           </div>
           <button onClick={()=>setShowModal(true)} style={{padding:'10px 20px',borderRadius:8,background:'#2196F3',color:'#000',fontWeight:700,fontSize:13,border:'none'}}>+ Add Team Member</button>
         </div>
@@ -147,7 +147,7 @@ export default function Team() {
         </div>
 
         {(kibaliOn||kibaliStaff.length>0)&&<>
-        <h2 style={{fontSize:11,color:'#7d8590',letterSpacing:0.8,marginBottom:12}}>KIBALI — SHOP CLERKS & STOREKEEPERS</h2>
+        <h2 style={{fontSize:11,color:'#7d8590',letterSpacing:0.8,marginBottom:12}}>STORE — SHOP CLERKS & STOREKEEPERS</h2>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12,marginBottom:28}}>
           {kibaliStaff.map(m=>(
             <div key={m.id} style={card}>
@@ -162,7 +162,7 @@ export default function Team() {
               <button onClick={()=>remove(m)} style={{width:'100%',padding:'7px',borderRadius:6,border:'1px solid rgba(255,77,109,0.3)',background:'transparent',color:'#ff4d6d',fontSize:11,fontWeight:600}}>Remove</button>
             </div>
           ))}
-          {!kibaliStaff.length&&<p style={{color:'#484f58',fontSize:13}}>No Kibali staff yet. Add a shop clerk or storekeeper with "+ Add Team Member".</p>}
+          {!kibaliStaff.length&&<p style={{color:'#484f58',fontSize:13}}>No Store staff yet. Add a shop clerk or storekeeper with "+ Add Team Member".</p>}
         </div>
         </>}
 

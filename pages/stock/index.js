@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt } from '../../lib/supabase'
-import { loadModules, ownedShop } from '../../lib/kibali'
+import { loadModules, ownedShop } from '../../lib/store'
 
 export default function Stock() {
   const [profile,setProfile]=useState(null)
@@ -278,7 +278,7 @@ export default function Stock() {
     // ── STEP 3: Save to database ──────────────────────────────────
     setBulkStatus('Saving to database...')
 
-    // Kibali shops: every quantity goes through Kibali so it is recorded
+    // Store shops: every quantity goes through Store so it is recorded
     // as a delivery (who, when, reference) in the stock movement history.
     const kibaliErrors = []
     const kibaliReceive = async (id, qty, kind, ref) => {
@@ -325,14 +325,14 @@ export default function Stock() {
     setBulkModal(false); setBulkText(''); setBulkParsed([]); setBulkDate('')
     setBulkExRate(''); setBulkClearing(''); setBulkTransport(''); setBulkOther('')
     loadData()
-    alert('✅ ' + (stockUpdates.length + stockInserts.length) + ' products saved!' + (kibaliErrors.length ? '\n\n⚠️ Kibali could not record ' + kibaliErrors.length + ' deliveries:\n' + kibaliErrors.slice(0, 5).join('\n') : ''))
+    alert('✅ ' + (stockUpdates.length + stockInserts.length) + ' products saved!' + (kibaliErrors.length ? '\n\n⚠️ Store could not record ' + kibaliErrors.length + ' deliveries:\n' + kibaliErrors.slice(0, 5).join('\n') : ''))
   }
 
   const save=async()=>{
     if(!form.name.trim()){alert('Enter product name');return}
     setSaving(true)
     const d={name:form.name.trim(),category:form.category,image_emoji:form.image_emoji,buy_price:parseFloat(form.buy_price)||0,sell_price:parseFloat(form.sell_price)||0,wholesale_price:parseFloat(form.wholesale_price)||0,stock:parseInt(form.retail_stock)||0,retail_stock:parseInt(form.retail_stock)||0,wholesale_stock:parseInt(form.wholesale_stock)||0,box_qty:parseInt(form.box_qty)||1,unit:form.unit,product_type:form.product_type,low_stock_alert:parseInt(form.low_stock_alert)||10,is_active:true,shop_id:shop.id,min_sell_price:form.min_sell_price?parseFloat(form.min_sell_price):null}
-    // Kibali shops: quantities only change through Kibali (Pokea / Hesabu)
+    // Store shops: quantities only change through Store (Pokea / Hesabu)
     if(kibaliOn){
       if(editProd){delete d.stock;delete d.retail_stock;delete d.wholesale_stock}
       else{d.stock=0;d.retail_stock=0;d.wholesale_stock=0}
@@ -566,7 +566,7 @@ export default function Stock() {
                 <div><label>Wholesale Price</label><input value={form.wholesale_price} onChange={set('wholesale_price')} type="number" placeholder="0"/></div>
                 <div><label>Retail Stock (pcs)</label><input value={kibaliOn&&!editProd?'0':form.retail_stock} onChange={set('retail_stock')} type="number" placeholder="0" disabled={kibaliOn} style={kibaliOn?{opacity:0.5,cursor:'not-allowed'}:undefined}/></div>
                 <div><label>Warehouse Stock (boxes)</label><input value={kibaliOn&&!editProd?'0':form.wholesale_stock} onChange={set('wholesale_stock')} type="number" placeholder="0" disabled={kibaliOn} style={kibaliOn?{opacity:0.5,cursor:'not-allowed'}:undefined}/></div>
-                {kibaliOn&&<div style={{gridColumn:'1/-1',padding:'8px 12px',borderRadius:8,background:'rgba(240,180,41,0.08)',border:'1px solid rgba(240,180,41,0.3)',color:'#f0b429',fontSize:12}}>Kibali iko ON: idadi ya stoo inabadilishwa kupitia Kibali tu — <b>Pokea mzigo</b> kwa mzigo unaoingia, <b>Hesabu / rekebisha</b> kwa marekebisho. Hivyo kila mabadiliko yanarekodiwa.</div>}
+                {kibaliOn&&<div style={{gridColumn:'1/-1',padding:'8px 12px',borderRadius:8,background:'rgba(240,180,41,0.08)',border:'1px solid rgba(240,180,41,0.3)',color:'#f0b429',fontSize:12}}>Store iko ON: idadi ya stoo inabadilishwa kupitia Store tu — <b>Pokea mzigo</b> kwa mzigo unaoingia, <b>Hesabu / rekebisha</b> kwa marekebisho. Hivyo kila mabadiliko yanarekodiwa.</div>}
                 <div><label>Pieces per Box</label><input value={form.box_qty} onChange={set('box_qty')} type="number" placeholder="1"/></div>
                 <div><label>Unit</label><input value={form.unit} onChange={set('unit')} placeholder="unit"/></div>
                 <div style={{gridColumn:'1/-1'}}>

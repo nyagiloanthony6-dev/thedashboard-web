@@ -1,6 +1,9 @@
-# Kibali — shop-to-store release orders
+# TheDashboard Store (module: Store)
 
-Kibali stops order-paper tampering ("1 box" changed to "11"). The shop creates
+> Code and database use the internal name `kibali` (tables, `kibali_*` functions,
+> the `kibali` row in `shop_modules`). Screens live under `/store`.
+
+Store stops order-paper tampering ("1 box" changed to "11"). The shop creates
 the order in the system and prints a receipt with an order number, QR code and
 4-digit release code. The store releases **only what the system shows** for
 that order, never what the paper says. Every release deducts stock and is
@@ -27,15 +30,15 @@ both ways the clerk / storekeeper picks with one tap.
 It only **adds** tables and functions. Every existing shop gets the `pos`
 module, so nothing changes for current clients. It is safe to run twice.
 
-## 2. Switch Kibali on for a client
+## 2. Switch Store on for a client
 
 ```sql
--- POS + Kibali
+-- POS + Store
 insert into shop_modules (shop_id, module, active)
 values ('<shop uuid>', 'kibali', true)
 on conflict (shop_id, module) do update set active = true, updated_at = now();
 
--- Kibali only (hides POS pages for that shop)
+-- Store only (hides POS pages for that shop)
 update shop_modules set active = false where shop_id = '<shop uuid>' and module = 'pos';
 
 -- Subscription end date (optional)
@@ -52,9 +55,9 @@ The owner opens **Team → + Add Team Member** and picks a role:
 | Role | Lands on | Can do |
 |---|---|---|
 | Owner (shop_admin) | Kibali (Stoo) in the sidebar | Everything, plus alerts, order history, stock adjustments, clearing flags |
-| Shop clerk | `/kibali/shop` | Create orders, print receipts, cancel orders not yet released |
-| Storekeeper | `/kibali/store` | Scan / open orders, release goods, report paper mismatch, receive stock |
-| Cashier | `/cashier` (+ `/kibali/shop` when Kibali is on) | POS, plus creating release orders |
+| Shop clerk | `/store/shop` | Create orders, print receipts, cancel orders not yet released |
+| Storekeeper | `/store/release` | Scan / open orders, release goods, report paper mismatch, receive stock |
+| Cashier | `/cashier` (+ `/store/shop` when Kibali is on) | POS, plus creating release orders |
 
 Clerks and storekeepers sign in with their username email and 4-digit PIN,
 like cashiers.
@@ -88,9 +91,9 @@ import also records each quantity as a Kibali delivery.
 
 ## Pages
 
-- `/kibali/shop` — new order with live "available" check, receipt (80mm print), today's orders
-- `/kibali/store` — QR scan (Chrome on Android) or type number + code, release / partial release, paper mismatch, waiting list, receive stock
-- `/kibali/owner` — alerts, all orders with full history, stock (on hand / reserved / available), movement history, receive and adjust
+- `/store/shop` — new order with live "available" check, receipt (80mm print), today's orders
+- `/store/release` — QR scan (Chrome on Android) or type number + code, release / partial release, paper mismatch, waiting list, receive stock
+- `/store/owner` — alerts, all orders with full history, stock (on hand / reserved / available), movement history, receive and adjust
 
 ## Not yet done
 

@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
-import { loadModules } from '../lib/kibali'
+import { loadModules } from '../lib/store'
 
-// module: 'pos' items are hidden for Kibali-only shops; 'kibali' items show
-// only when the shop has the Kibali add-on.
+// module: 'pos' items are hidden for Store-only shops; 'kibali' items show
+// only when the shop has the Store add-on.
 const NAV = [
   { href:'/dashboard',  icon:'📊', label:'Dashboard', module:'pos' },
   { href:'/sales',      icon:'💰', label:'Sales / POS', module:'pos' },
-  { href:'/kibali/owner', icon:'🧾', label:'Kibali (Stoo)', module:'kibali' },
+  { href:'/store/owner', icon:'🏬', label:'Store', module:'kibali' },
   { href:'/stock',      icon:'📦', label:'Stock' },
   { href:'/warehouse',  icon:'🏭', label:'Warehouse', module:'pos' },
   { href:'/customers',  icon:'👥', label:'Customers', module:'pos' },
@@ -34,7 +34,7 @@ export default function Layout({ children, title, shop, profile }) {
   useEffect(() => { if (shop?.id) loadModules(shop.id).then(setModules) }, [shop?.id])
   const nav = NAV.filter(n => !n.module || modules[n.module])
 
-  const active = (href) => router.pathname === href || router.pathname.startsWith(href + '/') || (href === '/kibali/owner' && router.pathname.startsWith('/kibali'))
+  const active = (href) => router.pathname === href || router.pathname.startsWith(href + '/') || (href === '/store/owner' && router.pathname.startsWith('/store'))
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#0d1117' }}>

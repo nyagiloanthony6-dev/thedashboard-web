@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T } from '../../lib/kibali'
-import Shell from '../../components/kibali/Shell'
-import Icon from '../../components/kibali/Icon'
-import OrderModal from '../../components/kibali/OrderModal'
+import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T } from '../../lib/store'
+import Shell from '../../components/store/Shell'
+import Icon from '../../components/store/Icon'
+import OrderModal from '../../components/store/OrderModal'
 
-export default function KibaliOwner() {
+export default function StoreOwner() {
   const k = useKibali()
   const router = useRouter()
   const tab = ['alerts', 'orders', 'stock'].includes(router.query.tab) ? router.query.tab : 'home'
@@ -40,12 +40,12 @@ export default function KibaliOwner() {
   }, [load, k.role, k.modules.kibali])
 
   const openAlerts = alerts.filter(a => !a.resolved_at && a.type !== 'cancel')
-  const TABS = [{ href: '/kibali/owner?tab=alerts', label: 'Tahadhari', badge: openAlerts.length || null }]
+  const TABS = [{ href: '/store/owner?tab=alerts', label: 'Tahadhari', badge: openAlerts.length || null }]
   const TITLE = { home: 'Habari, bosi', alerts: 'Tahadhari', orders: 'Oda zote', stock: 'Stoo' }[tab]
 
   return (
     <Shell k={k} title={TITLE} tabs={TABS}>
-      {k.modules.kibali && !k.can('kibali.audit') && <div style={ui.banner('#8a5a00')}>Ukurasa huu ni wa mmiliki tu.</div>}
+      {k.modules.kibali && !k.can('kibali.audit') && <div style={ui.banner('#9A5B00')}>Ukurasa huu ni wa mmiliki tu.</div>}
       {k.can('kibali.audit') && (
         <>
           {tab === 'home' && <Home k={k} orders={orders} openAlerts={openAlerts} products={products} reserved={reserved} todayOut={todayOut} onOpen={setOpenId} />}
@@ -61,7 +61,7 @@ export default function KibaliOwner() {
 
 function Stat({ l, v, red, href }) {
   const body = (
-    <div className={href ? 'kb-card-btn' : ''} style={{ ...ui.card, background: red ? T.dangerBg : T.raised, borderColor: red ? '#f0c3be' : T.line, height: '100%' }}>
+    <div className={href ? 'kb-card-btn' : ''} style={{ ...ui.card, background: red ? T.dangerBg : T.raised, borderColor: red ? '#F3C3B2' : T.line, height: '100%' }}>
       <p style={{ fontSize: 13, color: red ? T.danger : T.muted, fontWeight: red ? 600 : 400 }}>{red ? '! ' : ''}{l}</p>
       <p style={{ fontFamily: T.mono, fontSize: 30, lineHeight: '38px', fontWeight: 500, color: red ? T.danger : T.ink }}>{v}</p>
     </div>
@@ -83,15 +83,15 @@ function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
   return (
     <div style={{ display: 'grid', gap: 22 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
-        <Stat l="Oda za leo" v={orders.filter(o => isToday(o.created_at)).length} href="/kibali/owner?tab=orders" />
+        <Stat l="Oda za leo" v={orders.filter(o => isToday(o.created_at)).length} href="/store/owner?tab=orders" />
         <Stat l="Vipimo vilivyotoka leo" v={todayOut} />
-        <Stat l="Zinasubiri stoo" v={waiting.length} href="/kibali/store?tab=waiting" />
-        <Stat l="Tahadhari" v={openAlerts.length} red={openAlerts.length > 0} href="/kibali/owner?tab=alerts" />
+        <Stat l="Zinasubiri stoo" v={waiting.length} href="/store/release?tab=waiting" />
+        <Stat l="Tahadhari" v={openAlerts.length} red={openAlerts.length > 0} href="/store/owner?tab=alerts" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 22, alignItems: 'start' }}>
         <section>
-          <SecHead t="Tahadhari mpya" href="/kibali/owner?tab=alerts" />
+          <SecHead t="Tahadhari mpya" href="/store/owner?tab=alerts" />
           {openAlerts.length === 0 ? <Empty t="Hakuna tahadhari. Kila kitu kiko sawa." icon="check" /> : (
             <div style={{ display: 'grid', gap: 8 }}>
               {openAlerts.slice(0, 4).map(a => (
@@ -106,7 +106,7 @@ function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
         </section>
 
         <section>
-          <SecHead t="Stoo inakaribia kuisha" href="/kibali/owner?tab=stock" />
+          <SecHead t="Stoo inakaribia kuisha" href="/store/owner?tab=stock" />
           {low.length === 0 ? <Empty t="Hakuna bidhaa inayokaribia kuisha." icon="box" /> : (
             <div style={{ ...ui.card, padding: 0 }}>
               {low.map((p, i) => (
@@ -124,7 +124,7 @@ function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
       </div>
 
       <section>
-        <SecHead t="Zinasubiri kuchukuliwa" href="/kibali/store?tab=waiting" />
+        <SecHead t="Zinasubiri kuchukuliwa" href="/store/release?tab=waiting" />
         {waiting.length === 0 ? <Empty t="Hakuna oda inayosubiri stoo." icon="clock" /> : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 8 }}>
             {waiting.slice(0, 6).map(o => (
@@ -164,14 +164,14 @@ function Empty({ t, icon }) {
 function Alerts({ alerts, onOpen, onChanged }) {
   const [all, setAll] = useState(false)
   const list = alerts.filter(a => all || !a.resolved_at)
-  const color = (t) => ['tamper', 'unknown', 'reuse', 'negative', 'locked'].includes(t) ? '#b3261e' : t === 'cancel' ? '#5f5a50' : '#8a5a00'
+  const color = (t) => ['tamper', 'unknown', 'reuse', 'negative', 'locked'].includes(t) ? '#B93A16' : t === 'cancel' ? '#5B607E' : '#9A5B00'
   return (
     <div style={{ display: 'grid', gap: 8 }}>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={() => setAll(false)} style={{ ...ui.btn, borderColor: !all ? '#1f4d3a' : '#d9cfbd', color: !all ? '#1f4d3a' : '#5f5a50' }}>Hazijashughulikiwa</button>
-        <button onClick={() => setAll(true)} style={{ ...ui.btn, borderColor: all ? '#1f4d3a' : '#d9cfbd', color: all ? '#1f4d3a' : '#5f5a50' }}>Zote</button>
+        <button onClick={() => setAll(false)} style={{ ...ui.btn, borderColor: !all ? '#2D2F8F' : '#DCDFEC', color: !all ? '#2D2F8F' : '#5B607E' }}>Hazijashughulikiwa</button>
+        <button onClick={() => setAll(true)} style={{ ...ui.btn, borderColor: all ? '#2D2F8F' : '#DCDFEC', color: all ? '#2D2F8F' : '#5B607E' }}>Zote</button>
       </div>
-      {list.length === 0 && <div style={{ ...ui.card, textAlign: 'center', color: '#5f5a50' }}>Hakuna tahadhari. Kila kitu kiko sawa.</div>}
+      {list.length === 0 && <div style={{ ...ui.card, textAlign: 'center', color: '#5B607E' }}>Hakuna tahadhari. Kila kitu kiko sawa.</div>}
       {list.map(a => (
         <div key={a.id} style={{ ...ui.card, borderLeft: `4px solid ${color(a.type)}`, opacity: a.resolved_at ? 0.6 : 1, display: 'grid', gap: 4 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
@@ -209,17 +209,17 @@ function Orders({ orders, onOpen }) {
       </div>
       <div style={{ ...ui.card, padding: 0, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 640 }}>
-          <thead><tr style={{ color: '#5f5a50', textAlign: 'left' }}>{['Oda', 'Muda', 'Mteja', 'Bidhaa', 'Aliyetoa', 'Hali'].map(h => <th key={h} style={{ padding: '10px 12px', fontSize: 11 }}>{h}</th>)}</tr></thead>
+          <thead><tr style={{ color: '#5B607E', textAlign: 'left' }}>{['Oda', 'Muda', 'Mteja', 'Bidhaa', 'Aliyetoa', 'Hali'].map(h => <th key={h} style={{ padding: '10px 12px', fontSize: 11 }}>{h}</th>)}</tr></thead>
           <tbody>
-            {list.length === 0 && <tr><td colSpan={6} style={{ padding: 20, textAlign: 'center', color: '#5f5a50' }}>Hakuna oda.</td></tr>}
+            {list.length === 0 && <tr><td colSpan={6} style={{ padding: 20, textAlign: 'center', color: '#5B607E' }}>Hakuna oda.</td></tr>}
             {list.map(o => (
-              <tr key={o.id} onClick={() => onOpen(o.id)} style={{ borderTop: '1px solid #d9cfbd', cursor: 'pointer' }}>
+              <tr key={o.id} onClick={() => onOpen(o.id)} style={{ borderTop: '1px solid #DCDFEC', cursor: 'pointer' }}>
                 <td style={{ padding: '10px 12px', ...ui.mono, fontWeight: 800 }}>{o.order_no}</td>
                 <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{fmtTime(o.created_at)}</td>
                 <td style={{ padding: '10px 12px' }}>{o.customer_name || '—'}</td>
-                <td style={{ padding: '10px 12px', color: '#5f5a50' }}>{itemSummary(o.release_order_items)}</td>
+                <td style={{ padding: '10px 12px', color: '#5B607E' }}>{itemSummary(o.release_order_items)}</td>
                 <td style={{ padding: '10px 12px' }}>{o.created_by_name}</td>
-                <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}><span style={ui.pill(o.status)}>{STATUS[o.status].label}</span>{o.flagged && <span style={{ color: '#b3261e', fontWeight: 800, marginLeft: 6 }}>FLAG</span>}</td>
+                <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}><span style={ui.pill(o.status)}>{STATUS[o.status].label}</span>{o.flagged && <span style={{ color: '#B93A16', fontWeight: 800, marginLeft: 6 }}>FLAG</span>}</td>
               </tr>
             ))}
           </tbody>
@@ -256,35 +256,35 @@ function Stock({ products, reserved, onChanged }) {
           <option value="">Makundi yote ({cats.length})</option>
           {cats.map(c => <option key={c} value={c}>{c} ({rows.filter(r => r.category === c).length})</option>)}
         </select>
-        <button onClick={() => setLow(v => !v)} style={{ ...ui.btn, borderColor: low ? '#8a5a00' : '#d9cfbd', color: low ? '#8a5a00' : '#5f5a50' }}>Zinazokaribia kuisha ({rows.filter(r => r.isLow).length})</button>
+        <button onClick={() => setLow(v => !v)} style={{ ...ui.btn, borderColor: low ? '#9A5B00' : '#DCDFEC', color: low ? '#9A5B00' : '#5B607E' }}>Zinazokaribia kuisha ({rows.filter(r => r.isLow).length})</button>
         <button onClick={() => setAdding(true)} style={ui.primary}>+ Bidhaa mpya</button>
       </div>
       <p style={ui.muted}>Kila aina inaonyesha: <b>stoo</b> (zilizopo ndani) na <b>zipo</b> (stoo kasoro zilizohifadhiwa kwa oda ambazo hazijachukuliwa).</p>
       <div style={{ ...ui.card, padding: 0, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 660 }}>
           <thead>
-            <tr style={{ color: '#5f5a50' }}>
+            <tr style={{ color: '#5B607E' }}>
               <th style={{ padding: '10px 12px', fontSize: 11, textAlign: 'left' }} rowSpan={2}>Bidhaa</th>
               <th style={{ padding: '10px 12px', fontSize: 11, textAlign: 'left' }} rowSpan={2}>Kundi</th>
               <th style={{ padding: '10px 12px 2px', fontSize: 11, textAlign: 'center', color: KIND.retail.c }} colSpan={2}>REJAREJA</th>
               <th style={{ padding: '10px 12px 2px', fontSize: 11, textAlign: 'center', color: KIND.wholesale.c }} colSpan={2}>JUMLA</th>
               <th rowSpan={2} />
             </tr>
-            <tr style={{ color: '#5f5a50' }}>{['Stoo', 'Zipo', 'Stoo', 'Zipo'].map((h, i) => <th key={i} style={{ padding: '2px 12px 8px', fontSize: 10, textAlign: 'right' }}>{h}</th>)}</tr>
+            <tr style={{ color: '#5B607E' }}>{['Stoo', 'Zipo', 'Stoo', 'Zipo'].map((h, i) => <th key={i} style={{ padding: '2px 12px 8px', fontSize: 10, textAlign: 'right' }}>{h}</th>)}</tr>
           </thead>
           <tbody>{list.map(r => (
-            <tr key={r.id} onClick={() => setSel(r.id)} style={{ borderTop: '1px solid #d9cfbd', cursor: 'pointer' }}>
+            <tr key={r.id} onClick={() => setSel(r.id)} style={{ borderTop: '1px solid #DCDFEC', cursor: 'pointer' }}>
               <td style={{ padding: '10px 12px' }}><b>{r.name}</b></td>
-              <td style={{ padding: '10px 12px', color: '#5f5a50', fontSize: 12 }}>{r.category || '—'}</td>
-              <td style={{ ...num, color: r.product_type === 'wholesale' && !r.retail ? '#8c8273' : '#1b211d' }}>{r.retail}</td>
-              <td style={{ ...num, color: r.ar < 0 ? '#b3261e' : '#5f5a50' }}>{r.ar}</td>
-              <td style={{ ...num, color: r.product_type === 'retail' && !r.wholesale ? '#8c8273' : '#1b211d' }}>{r.wholesale}</td>
-              <td style={{ ...num, color: r.aw < 0 ? '#b3261e' : '#5f5a50' }}>{r.aw}</td>
-              <td style={{ padding: '10px 12px' }}>{r.isOut ? <span style={{ color: '#b3261e', fontWeight: 800, fontSize: 11 }}>IMEISHA</span> : r.isLow ? <span style={{ color: '#8a5a00', fontWeight: 800, fontSize: 11 }}>INAKARIBIA</span> : null}</td>
+              <td style={{ padding: '10px 12px', color: '#5B607E', fontSize: 12 }}>{r.category || '—'}</td>
+              <td style={{ ...num, color: r.product_type === 'wholesale' && !r.retail ? '#8A8FAE' : '#15183A' }}>{r.retail}</td>
+              <td style={{ ...num, color: r.ar < 0 ? '#B93A16' : '#5B607E' }}>{r.ar}</td>
+              <td style={{ ...num, color: r.product_type === 'retail' && !r.wholesale ? '#8A8FAE' : '#15183A' }}>{r.wholesale}</td>
+              <td style={{ ...num, color: r.aw < 0 ? '#B93A16' : '#5B607E' }}>{r.aw}</td>
+              <td style={{ padding: '10px 12px' }}>{r.isOut ? <span style={{ color: '#B93A16', fontWeight: 800, fontSize: 11 }}>IMEISHA</span> : r.isLow ? <span style={{ color: '#9A5B00', fontWeight: 800, fontSize: 11 }}>INAKARIBIA</span> : null}</td>
             </tr>))}
           </tbody>
           {catTotals && list.length > 0 && (
-            <tfoot><tr style={{ borderTop: '2px solid #d9cfbd' }}>
+            <tfoot><tr style={{ borderTop: '2px solid #DCDFEC' }}>
               <td style={{ padding: '10px 12px', fontWeight: 800 }} colSpan={2}>Kundi {cat}: bidhaa {list.length} · stoo yote</td>
               <td style={num}>{catTotals.retail}</td><td />
               <td style={num}>{catTotals.wholesale}</td><td /><td />
@@ -326,14 +326,14 @@ function ItemPanel({ p, onClose, onChanged }) {
     } catch (e) { setErr(e.message) }
     setBusy(false)
   }
-  const label = { IN: ['Imepokelewa', '#2f6b4c'], OUT: ['Imetoka', '#b3261e'], ADJ: ['Marekebisho', '#8a5a00'] }
+  const label = { IN: ['Imepokelewa', '#0B7A6C'], OUT: ['Imetoka', '#B93A16'], ADJ: ['Marekebisho', '#9A5B00'] }
   const shown = (moves || []).filter(m => !filter || (m.kind || 'retail') === filter)
   const curFor = (kd) => kd === 'wholesale' ? p.wholesale : p.retail
 
   return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(27,33,29,0.5)', zIndex: 50, overflowY: 'auto', padding: '24px 12px' }}>
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(21,24,58,0.5)', zIndex: 50, overflowY: 'auto', padding: '24px 12px' }}>
       <div style={{ ...ui.card, maxWidth: 680, margin: '0 auto', position: 'relative', display: 'grid', gap: 12 }}>
-        <button onClick={onClose} aria-label="Funga" style={{ position: 'absolute', right: 10, top: 8, background: 'none', border: 'none', color: '#5f5a50', fontSize: 26 }}>×</button>
+        <button onClick={onClose} aria-label="Funga" style={{ position: 'absolute', right: 10, top: 8, background: 'none', border: 'none', color: '#5B607E', fontSize: 26 }}>×</button>
         <div><p style={{ fontSize: 20, fontWeight: 800 }}>{p.name}</p><p style={ui.muted}>{p.category ? p.category + ' · ' : ''}{p.unit || 'unit'} · aina: {p.product_type || 'retail'} · agiza ikifika {p.low_stock_alert ?? 10}</p></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 10 }}>
           {['retail', 'wholesale'].map(kd => (
@@ -350,10 +350,10 @@ function ItemPanel({ p, onClose, onChanged }) {
           <button onClick={() => open('adj')} style={ui.btn}>Hesabu / rekebisha</button>
         </div>}
         {mode && (
-          <div style={{ border: '1px solid #d9cfbd', borderRadius: 10, padding: 12, display: 'grid', gap: 8 }}>
+          <div style={{ border: '1px solid #DCDFEC', borderRadius: 10, padding: 12, display: 'grid', gap: 8 }}>
             <div style={{ display: 'flex', gap: 8 }}>
               {['retail', 'wholesale'].map(kd => (
-                <button key={kd} type="button" onClick={() => setF({ ...f, kind: kd })} style={{ flex: 1, padding: 9, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: f.kind === kd ? KIND[kd].c : '#d9cfbd', background: f.kind === kd ? KIND[kd].c + '22' : 'transparent', color: f.kind === kd ? KIND[kd].c : '#5f5a50' }}>
+                <button key={kd} type="button" onClick={() => setF({ ...f, kind: kd })} style={{ flex: 1, padding: 9, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: f.kind === kd ? KIND[kd].c : '#DCDFEC', background: f.kind === kd ? KIND[kd].c + '22' : 'transparent', color: f.kind === kd ? KIND[kd].c : '#5B607E' }}>
                   {KIND[kd].sw} · {curFor(kd)}
                 </button>
               ))}
@@ -367,7 +367,7 @@ function ItemPanel({ p, onClose, onChanged }) {
               placeholder={mode === 'in' ? 'Idadi iliyopokelewa' : f.adj === 'count' ? 'Idadi uliyohesabu' : 'Idadi'} style={{ ...ui.mono, fontSize: 18, fontWeight: 800 }} autoFocus />
             <input value={f.ref} onChange={e => setF({ ...f, ref: e.target.value })} placeholder={mode === 'in' ? 'Msambazaji / delivery note' : 'Sababu (lazima)'} />
             {mode === 'adj' && <p style={ui.muted}>Kila marekebisho yanaonekana kwenye tahadhari na historia.</p>}
-            {err && <div style={ui.banner('#b3261e')}>{err}</div>}
+            {err && <div style={ui.banner('#B93A16')}>{err}</div>}
             <div style={{ display: 'flex', gap: 8 }}><button disabled={busy} onClick={save} style={ui.primary}>Hifadhi ({KIND[f.kind].sw})</button><button onClick={() => setMode(null)} style={ui.btn}>Acha</button></div>
           </div>
         )}
@@ -378,10 +378,10 @@ function ItemPanel({ p, onClose, onChanged }) {
               <option value="">Zote</option><option value="retail">Rejareja</option><option value="wholesale">Jumla</option>
             </select>
           </div>
-          {!moves ? <p style={ui.muted}>Inapakia…</p> : shown.length === 0 ? <p style={ui.muted}>Bado hakuna mzunguko uliorekodiwa na Kibali.</p> : shown.map(m => (
-            <div key={m.id} style={{ display: 'grid', gridTemplateColumns: '1fr 64px 64px', gap: 8, padding: '8px 0', borderTop: '1px solid #d9cfbd', alignItems: 'center' }}>
+          {!moves ? <p style={ui.muted}>Inapakia…</p> : shown.length === 0 ? <p style={ui.muted}>Bado hakuna mzunguko uliorekodiwa na Store.</p> : shown.map(m => (
+            <div key={m.id} style={{ display: 'grid', gridTemplateColumns: '1fr 64px 64px', gap: 8, padding: '8px 0', borderTop: '1px solid #DCDFEC', alignItems: 'center' }}>
               <div>
-                <p style={{ fontWeight: 700, color: label[m.type][1] }}>{label[m.type][0]} <span style={{ fontSize: 11, color: KIND[m.kind || 'retail'].c }}>{KIND[m.kind || 'retail'].sw}</span>{m.reference ? <span style={{ color: '#1b211d', fontWeight: 400 }}> · {m.reference}</span> : null}</p>
+                <p style={{ fontWeight: 700, color: label[m.type][1] }}>{label[m.type][0]} <span style={{ fontSize: 11, color: KIND[m.kind || 'retail'].c }}>{KIND[m.kind || 'retail'].sw}</span>{m.reference ? <span style={{ color: '#15183A', fontWeight: 400 }}> · {m.reference}</span> : null}</p>
                 <p style={ui.muted}>{fmtTime(m.created_at)} · {m.created_by_name}{m.note && m.type !== 'ADJ' ? ' · ' + m.note : ''}</p>
               </div>
               <span style={{ ...num, padding: 0, color: label[m.type][1] }}>{m.qty > 0 ? '+' : ''}{m.qty}</span>
@@ -395,12 +395,12 @@ function ItemPanel({ p, onClose, onChanged }) {
 }
 
 function Mini({ l, v }) {
-  return <div><p style={{ fontSize: 10, color: '#5f5a50', fontWeight: 700 }}>{l.toUpperCase()}</p><p style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 20, fontWeight: 800 }}>{v}</p></div>
+  return <div><p style={{ fontSize: 10, color: '#5B607E', fontWeight: 700 }}>{l.toUpperCase()}</p><p style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 20, fontWeight: 800 }}>{v}</p></div>
 }
 
 // ---------------------------------------------------------------------
-// New item from inside Kibali. Created with 0 stock; the opening quantity
-// is then received through Kibali so it is in the movement history.
+// New item from inside Store. Created with 0 stock; the opening quantity
+// is then received through Store so it is in the movement history.
 function NewItem({ cats, existing, onClose, onSaved }) {
   const [shopCats, setShopCats] = useState([])
   const [shopId, setShopId] = useState(null)
@@ -448,9 +448,9 @@ function NewItem({ cats, existing, onClose, onSaved }) {
   }
 
   return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(27,33,29,0.5)', zIndex: 50, overflowY: 'auto', padding: '24px 12px' }}>
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(21,24,58,0.5)', zIndex: 50, overflowY: 'auto', padding: '24px 12px' }}>
       <div style={{ ...ui.card, maxWidth: 560, margin: '0 auto', position: 'relative', display: 'grid', gap: 10 }}>
-        <button onClick={onClose} aria-label="Funga" style={{ position: 'absolute', right: 10, top: 8, background: 'none', border: 'none', color: '#5f5a50', fontSize: 26 }}>×</button>
+        <button onClick={onClose} aria-label="Funga" style={{ position: 'absolute', right: 10, top: 8, background: 'none', border: 'none', color: '#5B607E', fontSize: 26 }}>×</button>
         <p style={{ fontSize: 18, fontWeight: 800 }}>Bidhaa mpya</p>
         <div><label>Jina la bidhaa *</label><input value={f.name} onChange={set('name')} placeholder="mf. Shock Absorber Buffer" autoFocus /></div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -462,7 +462,7 @@ function NewItem({ cats, existing, onClose, onSaved }) {
         <div><label>Aina ya uuzaji</label>
           <div style={{ display: 'flex', gap: 8 }}>
             {[['retail', 'Rejareja'], ['wholesale', 'Jumla'], ['both', 'Zote mbili']].map(([v, l]) => (
-              <button key={v} type="button" onClick={() => setF({ ...f, type: v })} style={{ flex: 1, padding: 9, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: f.type === v ? '#1f4d3a' : '#d9cfbd', background: f.type === v ? 'rgba(31,77,58,0.10)' : 'transparent', color: f.type === v ? '#1f4d3a' : '#5f5a50' }}>{l}</button>
+              <button key={v} type="button" onClick={() => setF({ ...f, type: v })} style={{ flex: 1, padding: 9, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: f.type === v ? '#2D2F8F' : '#DCDFEC', background: f.type === v ? 'rgba(45,47,143,0.10)' : 'transparent', color: f.type === v ? '#2D2F8F' : '#5B607E' }}>{l}</button>
             ))}
           </div></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
@@ -476,7 +476,7 @@ function NewItem({ cats, existing, onClose, onSaved }) {
           <div><label>Agiza ikifika</label><input type="number" min="0" value={f.low} onChange={set('low')} /></div>
         </div>
         <p style={ui.muted}>Stoo ya mwanzo inarekodiwa kama "Imepokelewa" kwenye historia ya bidhaa.</p>
-        {err && <div style={ui.banner('#b3261e')}>{err}</div>}
+        {err && <div style={ui.banner('#B93A16')}>{err}</div>}
         <div style={{ display: 'flex', gap: 8 }}><button disabled={busy} onClick={save} style={ui.primary}>{busy ? 'Inahifadhi…' : 'Hifadhi bidhaa'}</button><button onClick={onClose} style={ui.btn}>Acha</button></div>
       </div>
     </div>

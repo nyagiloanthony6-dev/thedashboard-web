@@ -2,7 +2,7 @@ import '../styles/globals.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
-import { loadModules, ownedShop } from '../lib/kibali'
+import { loadModules, ownedShop } from '../lib/store'
 
 const PUBLIC = ['/', '/auth/login', '/auth/register', '/invest']
 
@@ -11,24 +11,24 @@ const ROLE_ROUTES = {
   super_admin: '/dashboard',
   cashier:     '/cashier',
   sales_rep:   '/rep',
-  shop_clerk:  '/kibali/shop',
-  storekeeper: '/kibali/store',
+  shop_clerk:  '/store/shop',
+  storekeeper: '/store/release',
 }
 
 // Pages each role is allowed to access. A path ending in '$' must match
 // exactly; any other path also allows its sub-pages.
 const ROLE_ALLOWED = {
-  shop_admin:  ['/dashboard', '/sales', '/stock', '/warehouse', '/customers', '/orders', '/expenses', '/credit', '/loans', '/whatsapp', '/reports', '/reports/monthly', '/team', '/settings', '/vendors', '/batches', '/investors', '/kibali'],
-  super_admin: ['/dashboard', '/sales', '/stock', '/warehouse', '/customers', '/orders', '/expenses', '/credit', '/loans', '/whatsapp', '/reports', '/reports/monthly', '/team', '/settings', '/vendors', '/batches', '/investors', '/kibali'],
-  cashier:     ['/cashier', '/kibali$', '/kibali/shop'],
+  shop_admin:  ['/dashboard', '/sales', '/stock', '/warehouse', '/customers', '/orders', '/expenses', '/credit', '/loans', '/whatsapp', '/reports', '/reports/monthly', '/team', '/settings', '/vendors', '/batches', '/investors', '/store'],
+  super_admin: ['/dashboard', '/sales', '/stock', '/warehouse', '/customers', '/orders', '/expenses', '/credit', '/loans', '/whatsapp', '/reports', '/reports/monthly', '/team', '/settings', '/vendors', '/batches', '/investors', '/store'],
+  cashier:     ['/cashier', '/store$', '/store/shop'],
   sales_rep:   ['/rep'],
-  shop_clerk:  ['/kibali$', '/kibali/shop'],
-  storekeeper: ['/kibali$', '/kibali/store'],
+  shop_clerk:  ['/store$', '/store/shop'],
+  storekeeper: ['/store$', '/store/release'],
 }
-// Owner pages for a shop that has Kibali but not POS
-const KIBALI_ONLY_ADMIN = ['/kibali', '/stock', '/team', '/settings']
-// Staff in a Kibali-only shop: a cashier works as a shop clerk; sales reps have no Kibali screen
-const KIBALI_ONLY_STAFF = { cashier: ['/kibali$', '/kibali/shop'], sales_rep: ['/kibali$'] }
+// Owner pages for a shop that has Store but not POS
+const KIBALI_ONLY_ADMIN = ['/store', '/stock', '/team', '/settings']
+// Staff in a Store-only shop: a cashier works as a shop clerk; sales reps have no Store screen
+const KIBALI_ONLY_STAFF = { cashier: ['/store$', '/store/shop'], sales_rep: ['/store$'] }
 
 // Role + modules are cached per user so route changes don't re-query
 let access = null
@@ -61,7 +61,7 @@ export default function App({ Component, pageProps }) {
         const kibaliShop = !modules.pos && modules.kibali
         const kibaliOnly = isAdmin && kibaliShop
         const staffOverride = kibaliShop && !isAdmin ? KIBALI_ONLY_STAFF[role] : null
-        const homeRoute = kibaliOnly ? '/kibali/owner' : staffOverride ? (role === 'cashier' ? '/kibali/shop' : '/kibali') : (ROLE_ROUTES[role] || '/dashboard')
+        const homeRoute = kibaliOnly ? '/store/owner' : staffOverride ? (role === 'cashier' ? '/store/shop' : '/store') : (ROLE_ROUTES[role] || '/dashboard')
         const allowed = kibaliOnly ? KIBALI_ONLY_ADMIN : (staffOverride || ROLE_ALLOWED[role] || ['/dashboard'])
 
         // Redirect from login page to home

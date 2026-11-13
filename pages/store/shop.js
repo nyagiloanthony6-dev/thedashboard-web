@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T } from '../../lib/kibali'
-import Shell from '../../components/kibali/Shell'
-import Icon from '../../components/kibali/Icon'
-import OrderModal from '../../components/kibali/OrderModal'
+import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T } from '../../lib/store'
+import Shell from '../../components/store/Shell'
+import Icon from '../../components/store/Icon'
+import OrderModal from '../../components/store/OrderModal'
 
 const TABS = [
-  { href: '/kibali/shop', label: 'Oda mpya', icon: 'plus' },
-  { href: '/kibali/shop?tab=orders', label: 'Oda', icon: 'list' },
+  { href: '/store/shop', label: 'Oda mpya', icon: 'plus' },
+  { href: '/store/shop?tab=orders', label: 'Oda', icon: 'list' },
 ]
 const blankLine = () => ({ key: Math.random().toString(36).slice(2), product_id: '', search: '', qty: '', kind: 'retail' })
 
-export default function KibaliShop() {
+export default function StoreShop() {
   const k = useKibali()
   const router = useRouter()
   const tab = router.query.tab === 'orders' ? 'orders' : 'new'
@@ -89,7 +89,7 @@ export default function KibaliShop() {
 
   return (
     <Shell k={k} title={tab === 'new' ? 'Oda mpya' : 'Oda za leo'} tabs={TABS}>
-      {k.modules.kibali && !k.can('order.create') && <div style={ui.banner('#8a5a00')}>Akaunti yako haina ruhusa ya kutengeneza oda za Kibali.</div>}
+      {k.modules.kibali && !k.can('order.create') && <div style={ui.banner('#9A5B00')}>Akaunti yako haina ruhusa ya kutengeneza oda za Store.</div>}
       {tab === 'new' && k.can('order.create') && (
         <div style={{ display: 'grid', gap: 14, maxWidth: 640 }}>
           <div style={{ ...ui.card, display: 'grid', gap: 10 }}>
@@ -151,7 +151,7 @@ export default function KibaliShop() {
             <button onClick={() => setLines(ls => [...ls, blankLine()])} style={{ ...ui.btn, width: '100%', marginTop: 12, borderStyle: 'dashed', color: T.green, height: 46 }}>+ Ongeza bidhaa</button>
           </div>
 
-          {error && <div style={ui.banner('#b3261e')}>{error}</div>}
+          {error && <div style={ui.banner('#B93A16')}>{error}</div>}
           {short && <div style={ui.banner(T.warning)}>Stoo haina za kutosha kwa baadhi ya bidhaa. Unaweza kuendelea, lakini stoo itatoa kilichopo tu.</div>}
           <div style={{ position: 'sticky', bottom: 84, zIndex: 5, background: T.raised, border: `1px solid ${T.line}`, borderTop: `2px solid ${T.green}`, borderRadius: 12, padding: 12, display: 'grid', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: T.muted }}>
@@ -167,12 +167,12 @@ export default function KibaliShop() {
 
       {tab === 'orders' && (
         <div style={{ display: 'grid', gap: 8, maxWidth: 720 }}>
-          {orders.length === 0 && <div style={{ ...ui.card, textAlign: 'center', color: '#5f5a50' }}>Hakuna oda leo bado.</div>}
+          {orders.length === 0 && <div style={{ ...ui.card, textAlign: 'center', color: '#5B607E' }}>Hakuna oda leo bado.</div>}
           {orders.map(o => (
             <button key={o.id} className="kb-card-btn" onClick={() => setOpenId(o.id)} style={{ ...ui.card, textAlign: 'left', color: T.ink, display: 'grid', gap: 4, width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                 <span style={{ ...ui.mono, fontSize: 16, fontWeight: 700, textDecoration: o.status === 'CANCELLED' ? 'line-through' : 'none' }}>{o.order_no}</span>
-                <span>{o.flagged && <span style={{ ...ui.pill('CANCELLED'), color: '#b3261e', background: '#fbe9e7', marginRight: 6 }}>FLAG</span>}<span style={ui.pill(o.status)}>{STATUS[o.status].label}</span></span>
+                <span>{o.flagged && <span style={{ ...ui.pill('CANCELLED'), color: '#B93A16', background: '#FBE1D8', marginRight: 6 }}>FLAG</span>}<span style={ui.pill(o.status)}>{STATUS[o.status].label}</span></span>
               </div>
               <span style={{ fontWeight: 700 }}>{o.customer_name || 'Mteja wa papo hapo'}</span>
               <span style={ui.muted}>{itemSummary(o.release_order_items)}</span>

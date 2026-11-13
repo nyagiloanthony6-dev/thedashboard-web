@@ -3,10 +3,10 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { ROLE_LABELS, T } from '../../lib/kibali'
+import { ROLE_LABELS, T } from '../../lib/store'
 import Icon from './Icon'
 
-// Kibali layout in the Serengeti Labs look (light, warm, phone-first).
+// Store layout in the Serengeti Labs look (light, warm, phone-first).
 // - Owners: sidebar on desktop, bottom tabs + "Zaidi" sheet on phones
 // - Shop clerks / storekeepers: header + big bottom tabs
 export default function Shell({ k, title, tabs = [], children }) {
@@ -23,8 +23,8 @@ export default function Shell({ k, title, tabs = [], children }) {
 
   const inactive = !k.modules.kibali && (
     <div style={{ maxWidth: 520, margin: '48px auto', background: T.raised, border: `1px solid ${T.line}`, borderRadius: 16, padding: 28, textAlign: 'center' }}>
-      <p style={{ fontFamily: T.display, fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Kibali bado haijawashwa</p>
-      <p style={{ color: T.muted }}>Kibali (oda za kutoa stoo) ni huduma ya ziada. Wasiliana na Serengeti Labs: +255 754 711 063.</p>
+      <p style={{ fontFamily: T.display, fontSize: 22, fontWeight: 700, marginBottom: 8 }}>TheDashboard Store bado haijawashwa</p>
+      <p style={{ color: T.muted }}>TheDashboard Store (oda za kutoa stoo na stoo yako) ni huduma ya ziada. Wasiliana na Serengeti Labs: +255 754 711 063.</p>
     </div>
   )
 
@@ -42,8 +42,8 @@ export default function Shell({ k, title, tabs = [], children }) {
       <header style={{ position: 'sticky', top: 0, zIndex: 10, background: T.surface, borderBottom: `1px solid ${T.line}`, padding: '14px 16px 12px' }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ minWidth: 0 }}>
-            <p style={{ fontFamily: T.display, fontSize: 24, lineHeight: '30px', fontWeight: 700 }}>{title}</p>
-            <p style={{ fontSize: 13, color: T.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Kibali · {k.shop?.name}</p>
+            <p style={{ fontFamily: T.display, fontSize: 20, lineHeight: '28px', fontWeight: 700, letterSpacing: '-0.02em' }}>{title}</p>
+            <p style={{ fontSize: 13, color: T.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Store · {k.shop?.name}</p>
           </div>
           <UserChip k={k} />
         </div>
@@ -59,14 +59,14 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
   const [more, setMore] = useState(false)
   const pos = k.modules.pos
   const main = [
-    { href: '/kibali/owner', label: 'Nyumbani', icon: 'home' },
-    { href: '/kibali/owner?tab=alerts', label: 'Tahadhari', icon: 'bell' },
-    { href: '/kibali/owner?tab=orders', label: 'Oda', icon: 'list' },
-    { href: '/kibali/owner?tab=stock', label: 'Stoo', icon: 'box' },
+    { href: '/store/owner', label: 'Nyumbani', icon: 'home' },
+    { href: '/store/owner?tab=alerts', label: 'Tahadhari', icon: 'bell' },
+    { href: '/store/owner?tab=orders', label: 'Oda', icon: 'list' },
+    { href: '/store/owner?tab=stock', label: 'Stoo', icon: 'box' },
   ]
   const work = [
-    { href: '/kibali/shop', label: 'Oda mpya (duka)', icon: 'plus' },
-    { href: '/kibali/store', label: 'Skrini ya stoo', icon: 'scan' },
+    { href: '/store/shop', label: 'Oda mpya (duka)', icon: 'plus' },
+    { href: '/store/release', label: 'Skrini ya stoo', icon: 'scan' },
   ]
   const admin = [
     { href: '/stock', label: 'Bidhaa', icon: 'tag' },
@@ -74,7 +74,7 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
     { href: '/settings', label: 'Mipangilio', icon: 'gear' },
     ...(pos ? [{ href: '/dashboard', label: 'TheDashboard POS', icon: 'back' }] : []),
   ]
-  const onShopOrStore = /^\/kibali\/(shop|store)/.test(useRouter().pathname)
+  const onShopOrStore = /^\/store\/(shop|store)/.test(useRouter().pathname)
 
   return (
     <Frame title={title}>
@@ -87,7 +87,7 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
           <nav style={{ padding: 10, display: 'grid', gap: 2 }}>
             {main.map(n => <SideLink key={n.href} n={n} on={isOn(n.href)} />)}
             <p style={sideHead}>KAZI</p>
-            {work.map(n => <SideLink key={n.href} n={n} on={isOn(n.href.split('?')[0]) || (n.href === '/kibali/shop' && onShopOrStore && isOn('/kibali/shop?tab=orders'))} />)}
+            {work.map(n => <SideLink key={n.href} n={n} on={isOn(n.href.split('?')[0]) || (n.href === '/store/shop' && onShopOrStore && isOn('/store/shop?tab=orders'))} />)}
             <p style={sideHead}>USIMAMIZI</p>
             {admin.map(n => <SideLink key={n.href} n={n} on={false} />)}
           </nav>
@@ -97,8 +97,8 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
         <div className="kb-main">
           <header className="kb-top">
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontFamily: T.display, fontSize: 24, lineHeight: '30px', fontWeight: 700 }}>{title}</p>
-              <p className="kb-top-shop" style={{ fontSize: 13, color: T.muted }}>Kibali · {k.shop?.name}</p>
+              <p style={{ fontFamily: T.display, fontSize: 20, lineHeight: '28px', fontWeight: 700, letterSpacing: '-0.02em' }}>{title}</p>
+              <p className="kb-top-shop" style={{ fontSize: 13, color: T.muted }}>Store · {k.shop?.name}</p>
             </div>
             <div className="kb-top-user"><UserChip k={k} /></div>
           </header>
@@ -120,7 +120,7 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
           <BottomTabs tabs={[...main.map(n => n.label === 'Tahadhari' ? { ...n, badge: tabs.find(t => t.badge)?.badge } : n), { href: '#more', label: 'Zaidi', icon: 'more', onClick: () => setMore(true) }]} isOn={isOn} />
         </div>
         {more && (
-          <div onClick={e => e.target === e.currentTarget && setMore(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(27,33,29,0.45)', zIndex: 40, display: 'flex', alignItems: 'flex-end' }}>
+          <div onClick={e => e.target === e.currentTarget && setMore(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(21,24,58,0.45)', zIndex: 40, display: 'flex', alignItems: 'flex-end' }}>
             <div style={{ background: T.surface, width: '100%', borderRadius: '16px 16px 0 0', padding: '18px 16px 28px', display: 'grid', gap: 4 }}>
               <p style={{ ...sideHead, margin: '0 0 6px' }}>KAZI</p>
               {work.map(n => <SideLink key={n.href} n={n} on={false} onClick={() => setMore(false)} />)}
@@ -140,11 +140,11 @@ function Frame({ title, children }) {
   return (
     <>
       <Head>
-        <title>{title ? title + ' — Kibali' : 'Kibali'}</title>
+        <title>{title ? title + ' — TheDashboard Store' : 'TheDashboard Store'}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content={T.surface} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Geist:wght@500;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700&family=Geist:wght@500;800&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
       </Head>
       <style jsx global>{`
         body { background: ${T.surface} !important; color: ${T.ink} !important; font-family: ${T.sans}; font-size: 16px; }
@@ -155,8 +155,8 @@ function Frame({ title, children }) {
           background: ${T.raised} !important; color: ${T.ink} !important; border: 1px solid ${T.lineStrong} !important;
           border-radius: 8px; padding: 11px 12px; font-size: 16px; font-family: ${T.sans}; width: 100%; outline: none;
         }
-        .kb input:focus, .kb select:focus, .kb textarea:focus { border-color: ${T.green} !important; box-shadow: 0 0 0 3px rgba(31,77,58,0.15); }
-        .kb input::placeholder, .kb textarea::placeholder { color: #8c8273; }
+        .kb input:focus, .kb select:focus, .kb textarea:focus { border-color: ${T.green} !important; box-shadow: 0 0 0 3px rgba(45,47,143,0.18); }
+        .kb input::placeholder, .kb textarea::placeholder { color: #8A8FAE; }
         .kb input:disabled { opacity: 0.6; }
         .kb label { display: block; font-size: 13px; font-weight: 600; color: ${T.muted}; margin: 0 0 6px; letter-spacing: 0; text-transform: none; }
         .kb button { font-family: ${T.sans}; cursor: pointer; }
@@ -205,10 +205,11 @@ export function SLWordmark({ size = 13 }) {
 
 function Brand() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} aria-label="Kibali by Serengeti Labs">
-      <SLMark size={36} />
-      <div>
-        <p style={{ fontFamily: T.display, fontSize: 21, fontWeight: 700, lineHeight: '22px' }}>Kibali</p>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} aria-label="TheDashboard Store by Serengeti Labs">
+      <SLMark size={38} />
+      <div style={{ minWidth: 0 }}>
+        <p style={{ fontFamily: T.display, fontSize: 13, fontWeight: 600, lineHeight: '16px', letterSpacing: '-0.01em' }}>TheDashboard</p>
+        <p style={{ fontFamily: T.display, fontSize: 19, fontWeight: 700, lineHeight: '22px', color: T.green, letterSpacing: '-0.02em' }}>Store</p>
         <p style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>by <SLWordmark size={12} /></p>
       </div>
     </div>
