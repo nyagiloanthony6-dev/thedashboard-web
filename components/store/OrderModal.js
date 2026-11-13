@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { rpc, STATUS, fmtTime, ui, KIND } from '../../lib/store'
+import { rpc, STATUS, fmtTime, ui, KIND, shopMode } from '../../lib/store'
 import Receipt from './Receipt'
 
 // Order details: receipt (with release code for people allowed to see it),
@@ -69,7 +69,7 @@ export default function OrderModal({ k, orderId, onClose, onChanged, autoPrint }
                   <thead><tr style={{ color: '#5B607E', textAlign: 'left' }}><th style={th}>Bidhaa</th><th style={thr}>Oda</th><th style={thr}>Imetoka</th><th style={thr}>Imebaki</th></tr></thead>
                   <tbody>{d.items.map(i => (
                     <tr key={i.id} style={{ borderTop: '1px solid #DCDFEC' }}>
-                      <td style={td}>{i.product_name} <span style={{ fontSize: 11, fontWeight: 700, color: KIND[i.kind || 'retail'].c }}>{KIND[i.kind || 'retail'].sw}</span></td>
+                      <td style={td}>{i.product_name} {shopMode() === 'both' && <span style={{ fontSize: 11, fontWeight: 700, color: KIND[i.kind || 'retail'].c }}>{KIND[i.kind || 'retail'].sw}</span>}</td>
                       <td style={tdr}>{i.qty}</td>
                       <td style={{ ...tdr, color: '#0B7A6C' }}>{i.released}</td>
                       <td style={{ ...tdr, color: i.qty - i.released ? '#9A5B00' : '#5B607E' }}>{i.qty - i.released}</td>

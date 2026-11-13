@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T } from '../../lib/store'
+import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T, shopMode, unitOf } from '../../lib/store'
 import Shell from '../../components/store/Shell'
 import Icon from '../../components/store/Icon'
 import OrderModal from '../../components/store/OrderModal'
@@ -113,7 +113,7 @@ export default function StoreShop() {
                 </select>
               )}
             </div>
-            <datalist id="kb-products">{pickable.map(p => <option key={p.id} value={p.name}>{[p.part_number, p.category].filter(Boolean).join(' · ')}{p.part_number || p.category ? ' · ' : ''}{p.product_type === 'wholesale' ? `Jumla ${avail(p, 'wholesale')}` : hasBoth(p) ? `Rejareja ${avail(p, 'retail')} · Jumla ${avail(p, 'wholesale')}` : `Rejareja ${avail(p, 'retail')}`}</option>)}</datalist>
+            <datalist id="kb-products">{pickable.map(p => <option key={p.id} value={p.name}>{[p.part_number, p.category].filter(Boolean).join(' · ')}{p.part_number || p.category ? ' · ' : ''}{shopMode() !== 'both' ? `${avail(p, shopMode())} ${unitOf(p, shopMode())} zipo` : p.product_type === 'wholesale' ? `Jumla ${avail(p, 'wholesale')}` : hasBoth(p) ? `Rejareja ${avail(p, 'retail')} · Jumla ${avail(p, 'wholesale')}` : `Rejareja ${avail(p, 'retail')}`}</option>)}</datalist>
             <div style={{ display: 'grid', gap: 10 }}>
               {lines.map((l, i) => {
                 const p = byId[String(l.product_id)]
@@ -130,7 +130,7 @@ export default function StoreShop() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', fontSize: 13 }}>
                         <span style={{ color: T.green, fontWeight: 700, letterSpacing: 0.2 }}>{q > 0 ? `${swWords(q)} (${q}) ${(p?.unit || '').toUpperCase()}` : ''}</span>
                         {l.search && !p && <span style={{ color: T.warning, fontWeight: 600 }}>Chagua kutoka kwenye orodha</span>}
-                        {p && <span style={{ color: q > a ? T.danger : T.success, fontWeight: 600 }}>{q > a ? `! ${KIND[l.kind].sw}: zipo ${a} tu` : `✓ ${KIND[l.kind].sw}: ${a} zipo`}</span>}
+                        {p && <span style={{ color: q > a ? T.danger : T.success, fontWeight: 600 }}>{(shopMode() === 'both' ? KIND[l.kind].sw + ': ' : '') + (q > a ? `! zipo ${a} tu` : `✓ ${a} zipo`)}</span>}
                       </div>
                     )}
                     {p && (hasBoth(p)) && (

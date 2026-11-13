@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
-import { swWords, KIND } from '../../lib/store'
+import { swWords, KIND, shopMode } from '../../lib/store'
 
 // Thermal-receipt style release order (80mm). Printed with window.print();
 // the @media print rules below print ONLY the receipt.
@@ -46,7 +46,7 @@ export default function Receipt({ order, items, code, shopName }) {
           <span>{i + 1}.</span>
           <span>{it.product_name}</span>
           <span style={S.qty}>{it.qty} {String(it.unit).toUpperCase()}</span>
-          <span style={{ gridColumn: '2 / 4', fontSize: 10.5, fontWeight: 700 }}>** {swWords(it.qty)} ({it.qty}) {String(it.unit).toUpperCase()} TU ** · {KIND[it.kind || 'retail'].sw.toUpperCase()}</span>
+          <span style={{ gridColumn: '2 / 4', fontSize: 10.5, fontWeight: 700 }}>** {swWords(it.qty)} ({it.qty}) {String(it.unit).toUpperCase()} TU **{shopMode() === 'both' ? ' · ' + KIND[it.kind || 'retail'].sw.toUpperCase() : ''}</span>
         </div>
       ))}
       <div style={{ borderTop: '2px solid #000', margin: '8px 0 6px' }} />

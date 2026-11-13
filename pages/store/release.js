@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory, T, stockText, matchProduct, usesPartNumbers } from '../../lib/store'
+import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory, T, stockText, matchProduct, usesPartNumbers, shopMode } from '../../lib/store'
 import Shell from '../../components/store/Shell'
 import Icon from '../../components/store/Icon'
 
@@ -179,7 +179,7 @@ function ScanRelease({ k, initialNo }) {
                   <div key={i.id} style={{ border: '1px solid #DCDFEC', borderRadius: 10, padding: 12, display: 'grid', gap: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                       <div>
-                        <p style={{ fontSize: 16, fontWeight: 800 }}>{i.product_name} <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, color: KIND[i.kind || 'retail'].c, background: KIND[i.kind || 'retail'].c + '22' }}>{KIND[i.kind || 'retail'].sw}</span></p>
+                        <p style={{ fontSize: 16, fontWeight: 800 }}>{i.product_name} {shopMode() === 'both' && <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, color: KIND[i.kind || 'retail'].c, background: KIND[i.kind || 'retail'].c + '22' }}>{KIND[i.kind || 'retail'].sw}</span>}</p>
                         <p style={{ fontSize: 11, fontWeight: 800, color: '#2D2F8F' }}>{swWords(i.qty)} ({i.qty}) {i.unit.toUpperCase()}</p>
                         {i.released > 0 && <p style={ui.muted}>Zilishatolewa {i.released} · zimebaki {rem}</p>}
                       </div>
@@ -240,7 +240,7 @@ function Waiting({ onPick }) {
   if (!rows) return <p style={ui.muted}>Inapakia…</p>
 
   const totals = {}
-  rows.forEach(o => o.release_order_items.forEach(i => { const n = i.product_name + ' (' + KIND[i.kind || 'retail'].sw + ')'; totals[n] = (totals[n] || 0) + i.qty - i.released }))
+  rows.forEach(o => o.release_order_items.forEach(i => { const n = i.product_name + (shopMode() === 'both' ? ' (' + KIND[i.kind || 'retail'].sw + ')' : ''); totals[n] = (totals[n] || 0) + i.qty - i.released }))
   const mins = (t) => Math.max(0, Math.round((Date.now() - new Date(t)) / 60000))
 
   return (
@@ -262,7 +262,7 @@ function Waiting({ onPick }) {
           </div>
           <span style={{ fontWeight: 700 }}>{o.customer_name || 'Mteja wa papo hapo'}</span>
           {o.release_order_items.filter(i => i.qty > i.released).map(i => (
-            <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}><span>{i.product_name} <span style={{ fontSize: 11, color: KIND[i.kind || 'retail'].c }}>{KIND[i.kind || 'retail'].sw}</span></span><span style={{ ...ui.mono, fontWeight: 800 }}>{i.qty - i.released}</span></div>
+            <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}><span>{i.product_name} {shopMode() === 'both' && <span style={{ fontSize: 11, color: KIND[i.kind || 'retail'].c }}>{KIND[i.kind || 'retail'].sw}</span>}</span><span style={{ ...ui.mono, fontWeight: 800 }}>{i.qty - i.released}</span></div>
           ))}
           {o.collector_name && <span style={ui.muted}>Atachukua: {o.collector_name}</span>}
         </button>
@@ -385,7 +385,7 @@ function Receive({ k }) {
             <input type="number" min="1" step="1" inputMode="numeric" value={qty} onChange={e => setQty(e.target.value)} style={{ fontFamily: T.mono, fontSize: 22, fontWeight: 700 }} />
             {q > 0 && <p style={{ fontSize: 12, fontWeight: 700, color: T.green, marginTop: 4 }}>{swWords(q)} ({q}) {(p?.unit || '').toUpperCase()}</p>}</div>
           <div><label>Msambazaji / namba ya delivery note</label><input value={ref} onChange={e => setRef(e.target.value)} placeholder="mf. Kuper · DN 4471" /></div>
-          {p && q > 0 && <div style={ui.banner(T.success)}>Baada ya kupokea ({KIND[kind].sw}): <b style={{ fontFamily: T.mono }}>{cur} → {cur + q}</b></div>}
+          {p && q > 0 && <div style={ui.banner(T.success)}>Baada ya kupokea{shopMode() === 'both' ? ` (${KIND[kind].sw})` : ''}: <b style={{ fontFamily: T.mono }}>{cur} → {cur + q}</b></div>}
           {msg && <div style={ui.banner(msg.c)}>{msg.t}</div>}
           <button disabled={busy || !p} onClick={save} style={{ ...ui.primary, height: 52 }}>{busy ? 'Inahifadhi…' : 'Ongeza kwenye store'}</button>
         </div>
@@ -394,7 +394,7 @@ function Receive({ k }) {
         {moves.length === 0 && <p style={ui.muted}>Bado hakuna.</p>}
         {moves.map(m => (
           <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid #DCDFEC' }}>
-            <div><p style={{ fontWeight: 700 }}>{m.product_name} <span style={{ fontSize: 11, color: KIND[m.kind || 'retail'].c }}>{KIND[m.kind || 'retail'].sw}</span></p><p style={ui.muted}>{fmtTime(m.created_at)} · {m.created_by_name}{m.reference ? ' · ' + m.reference : ''}</p></div>
+            <div><p style={{ fontWeight: 700 }}>{m.product_name} {shopMode() === 'both' && <span style={{ fontSize: 11, color: KIND[m.kind || 'retail'].c }}>{KIND[m.kind || 'retail'].sw}</span>}</p><p style={ui.muted}>{fmtTime(m.created_at)} · {m.created_by_name}{m.reference ? ' · ' + m.reference : ''}</p></div>
             <span style={{ ...ui.mono, color: '#0B7A6C', fontWeight: 800 }}>+{m.qty}</span>
           </div>
         ))}
