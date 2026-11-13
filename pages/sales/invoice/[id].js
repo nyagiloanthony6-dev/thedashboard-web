@@ -69,24 +69,24 @@ export default function Invoice() {
 
       <div className="no-print" style={{ maxWidth:780, margin:'0 auto 16px', display:'flex', gap:10 }}>
         <button onClick={() => router.back()} style={{ padding:'8px 18px', borderRadius:8, border:'1px solid #ccc', background:'#fff', cursor:'pointer', fontSize:13 }}>← Back</button>
-        <button onClick={() => window.print()} style={{ padding:'8px 20px', borderRadius:8, border:'none', background:'#2196F3', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:13 }}>🖨️ Print / Save PDF</button>
+        <button onClick={() => window.print()} style={{ padding:'8px 20px', borderRadius:8, border:'none', background:'#2D2F8F', color:'#fff', fontWeight:700, cursor:'pointer', fontSize:13 }}>🖨️ Print / Save PDF</button>
       </div>
 
       <div className="invoice" style={{ maxWidth:780, margin:'0 auto', background:'#fff', borderRadius:12, boxShadow:'0 4px 32px rgba(0,0,0,0.12)', padding:'44px 52px', color:'#111' }}>
 
         {/* Header */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:40, paddingBottom:24, borderBottom:'3px solid #1a1a2e' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:40, paddingBottom:24, borderBottom:'3px solid #FFFFFF' }}>
           <div>
-            <h1 style={{ fontSize:30, fontWeight:900, color:'#1a1a2e', margin:'0 0 6px', letterSpacing:-1 }}>{shop?.name}</h1>
+            <h1 style={{ fontSize:30, fontWeight:900, color:'#FFFFFF', margin:'0 0 6px', letterSpacing:-1 }}>{shop?.name}</h1>
             {shop?.address && <p style={{ fontSize:12, color:'#666', margin:'2px 0' }}>📍 {shop.address}</p>}
             {shop?.phone && <p style={{ fontSize:12, color:'#666', margin:'2px 0' }}>📞 {shop.phone}</p>}
             {shop?.email && <p style={{ fontSize:12, color:'#666', margin:'2px 0' }}>✉️ {shop.email}</p>}
           </div>
           <div style={{ textAlign:'right' }}>
-            <div style={{ background:'#1a1a2e', color:'#fff', borderRadius:8, padding:'6px 20px', marginBottom:10, display:'inline-block' }}>
+            <div style={{ background:'#2D2F8F', color:'#fff', borderRadius:8, padding:'6px 20px', marginBottom:10, display:'inline-block' }}>
               <p style={{ fontSize:13, letterSpacing:3, margin:0, fontWeight:700 }}>INVOICE</p>
             </div>
-            <p style={{ fontSize:20, fontWeight:900, color:'#1a1a2e', margin:'4px 0 2px' }}>{invoiceNo}</p>
+            <p style={{ fontSize:20, fontWeight:900, color:'#FFFFFF', margin:'4px 0 2px' }}>{invoiceNo}</p>
             <p style={{ fontSize:12, color:'#666', margin:0 }}>{new Date(sale.sale_date || sale.created_at).toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' })}</p>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function Invoice() {
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:32, marginBottom:32, padding:20, background:'#f7f8fa', borderRadius:10 }}>
           <div>
             <p style={{ fontSize:10, letterSpacing:2, color:'#999', fontWeight:700, marginBottom:8 }}>BILL TO</p>
-            <p style={{ fontSize:16, fontWeight:800, margin:'0 0 4px', color:'#1a1a2e' }}>{sale.customers?.name || 'Walk-in Customer'}</p>
+            <p style={{ fontSize:16, fontWeight:800, margin:'0 0 4px', color:'#FFFFFF' }}>{sale.customers?.name || 'Walk-in Customer'}</p>
             {sale.customers?.phone && <p style={{ fontSize:12, color:'#555', margin:'2px 0' }}>{sale.customers.phone}</p>}
             {sale.customers?.email && <p style={{ fontSize:12, color:'#555', margin:'2px 0' }}>{sale.customers.email}</p>}
             {sale.customers?.address && <p style={{ fontSize:12, color:'#555', margin:'2px 0' }}>{sale.customers.address}</p>}
@@ -119,7 +119,7 @@ export default function Invoice() {
         {/* Items */}
         <table style={{ width:'100%', borderCollapse:'collapse', marginBottom:28 }}>
           <thead>
-            <tr style={{ background:'#1a1a2e' }}>
+            <tr style={{ background:'#2D2F8F' }}>
               {['#','Description','Part No.','Qty','Unit Price','Amount'].map((h,i) => (
                 <th key={h} style={{ padding:'11px 14px', textAlign: i>=3?'right':'left', fontSize:10, letterSpacing:1, color:'#fff', fontWeight:700 }}>{h}</th>
               ))}
@@ -132,7 +132,7 @@ export default function Invoice() {
                 <tr key={i} style={{ borderBottom:'1px solid #eee', background:i%2===0?'#fff':'#fafafa' }}>
                   <td style={{ padding:'10px 14px', fontSize:12, color:'#aaa' }}>{i+1}</td>
                   <td style={{ padding:'10px 14px', fontSize:13, fontWeight:600 }}>{it.product_name}</td>
-                  <td style={{ padding:'10px 14px', fontSize:11, color:'#7b2cf7', fontFamily:'monospace' }}>{pn||'—'}</td>
+                  <td style={{ padding:'10px 14px', fontSize:11, color:'#0F7375', fontFamily:'monospace' }}>{pn||'—'}</td>
                   <td style={{ padding:'10px 14px', fontSize:13, textAlign:'right' }}>{it.qty}</td>
                   <td style={{ padding:'10px 14px', fontSize:13, textAlign:'right', color:'#555' }}>{fmt(it.unit_price)}</td>
                   <td style={{ padding:'10px 14px', fontSize:13, fontWeight:700, textAlign:'right' }}>{fmt(it.line_total || it.unit_price * it.qty)}</td>
@@ -147,7 +147,7 @@ export default function Invoice() {
           <div style={{ width:300 }}>
             {sale.discount > 0 && (
               <div style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', fontSize:13, color:'#666', borderBottom:'1px solid #eee' }}>
-                <span>Discount</span><span style={{ color:'#e05c00' }}>-{fmt(sale.discount)}</span>
+                <span>Discount</span><span style={{ color:'#B93A16' }}>-{fmt(sale.discount)}</span>
               </div>
             )}
             {sale.transport_fee > 0 && (
@@ -156,20 +156,20 @@ export default function Invoice() {
                 <span>{fmt(sale.transport_fee)}</span>
               </div>
             )}
-            <div style={{ display:'flex', justifyContent:'space-between', padding:'14px 0', fontSize:20, fontWeight:900, borderTop:'2px solid #1a1a2e', marginTop:6 }}>
-              <span>TOTAL</span><span style={{ color:'#1a1a2e' }}>{fmt(sale.total)}</span>
+            <div style={{ display:'flex', justifyContent:'space-between', padding:'14px 0', fontSize:20, fontWeight:900, borderTop:'2px solid #FFFFFF', marginTop:6 }}>
+              <span>TOTAL</span><span style={{ color:'#FFFFFF' }}>{fmt(sale.total)}</span>
             </div>
             {isSplit ? (
-              <div style={{ background:'#fff8f0', border:'1px solid #ffd0a0', borderRadius:8, padding:'10px 14px', marginTop:8 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, color:'#25a244', marginBottom:6 }}>
+              <div style={{ background:'#fff8f0', border:'1px solid #9A5B00', borderRadius:8, padding:'10px 14px', marginTop:8 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, color:'#0B7A6C', marginBottom:6 }}>
                   <span>Cash Paid</span><span style={{ fontWeight:700 }}>{fmt(sale.cash_paid||0)}</span>
                 </div>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:14, color:'#e05c00', fontWeight:800, borderTop:'1px dashed #ffd0a0', paddingTop:6 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:14, color:'#B93A16', fontWeight:800, borderTop:'1px dashed #9A5B00', paddingTop:6 }}>
                   <span>Balance Due</span><span>{fmt(sale.loan_balance||0)}</span>
                 </div>
               </div>
             ) : (
-              <div style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', fontSize:13, color:'#25a244' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', fontSize:13, color:'#0B7A6C' }}>
                 <span>Amount Paid ({sale.payment_method?.toUpperCase()})</span>
                 <span style={{ fontWeight:700 }}>{fmt(sale.total)}</span>
               </div>

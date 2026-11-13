@@ -92,8 +92,8 @@ export default function App({ Component, pageProps }) {
   }, [router.pathname])
 
   if (!ready) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#0d1117'}}>
-      <div style={{width:36,height:36,border:'3px solid #30363d',borderTopColor:'#2196F3',borderRadius:'50%',animation:'spin 0.8s linear infinite'}}/>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',background:'#F6F7FB'}}>
+      <div style={{width:36,height:36,border:'3px solid #DCDFEC',borderTopColor:'#2D2F8F',borderRadius:'50%',animation:'spin 0.8s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )

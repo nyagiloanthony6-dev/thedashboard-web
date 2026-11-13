@@ -32,7 +32,7 @@ export default function Warehouse() {
   const [transSaving, setTransSaving] = useState(false)
 
   useEffect(() => { loadData() }, [])
-  const showToast = (msg, c = '#25d366') => { setToast({ msg, c }); setTimeout(() => setToast(''), 3000) }
+  const showToast = (msg, c = '#0B7A6C') => { setToast({ msg, c }); setTimeout(() => setToast(''), 3000) }
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -138,30 +138,30 @@ export default function Warehouse() {
   const totalValue = wProds.reduce((a, p) => a + (p.buy_price || 0) * (p.stock || 0), 0)
 
   const C = {
-    card: { background: '#161b22', border: '1px solid #30363d', borderRadius: 12, padding: 16 },
-    input: { background: '#0d1117', border: '1.5px solid #30363d', borderRadius: 8, color: '#e6edf3', padding: '9px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit' },
-    label: { fontSize: 10, color: '#7d8590', letterSpacing: 0.8, display: 'block', marginBottom: 5 },
+    card: { background: '#FFFFFF', border: '1px solid #DCDFEC', borderRadius: 12, padding: 16 },
+    input: { background: '#F6F7FB', border: '1.5px solid #DCDFEC', borderRadius: 8, color: '#15183A', padding: '9px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit' },
+    label: { fontSize: 10, color: '#5B607E', letterSpacing: 0.8, display: 'block', marginBottom: 5 },
   }
 
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0d1117' }}><div style={{ width: 36, height: 36, border: '3px solid #30363d', borderTopColor: '#ffb547', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#F6F7FB' }}><div style={{ width: 36, height: 36, border: '3px solid #DCDFEC', borderTopColor: '#9A5B00', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>
 
   return (
     <>
       <Head><title>Warehouse — TheDashboard</title></Head>
       <Layout title="Warehouse" shop={shop} profile={profile}>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}} input::placeholder,select::placeholder{color:#484f58} select{background:#0d1117;border:1.5px solid #30363d;border-radius:8px;color:#e6edf3;padding:9px 12px;font-size:13px;width:100%;outline:none;font-family:inherit}`}</style>
-        {toast && <div style={{ position: 'fixed', top: 20, right: 20, background: toast.c, color: '#000', padding: '12px 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, zIndex: 9999 }}>{toast.msg}</div>}
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}} input::placeholder,select::placeholder{color:#8A8FAE} select{background:#F6F7FB;border:1.5px solid #DCDFEC;border-radius:8px;color:#15183A;padding:9px 12px;font-size:13px;width:100%;outline:none;font-family:inherit}`}</style>
+        {toast && <div style={{ position: 'fixed', top: 20, right: 20, background: toast.c, color: '#FFFFFF', padding: '12px 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, zIndex: 9999 }}>{toast.msg}</div>}
 
         {/* Summary */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
           {[
-            { l: 'Products', v: wProds.length, c: '#ffb547' },
-            { l: 'Total Stock Value', v: fmtK(totalValue), c: '#2196F3' },
-            { l: 'Total Boxes', v: wProds.reduce((a, p) => a + (p.stock || 0), 0), c: '#a78bfa' },
-            { l: 'Transfers', v: transfers.length, c: '#25d366' },
+            { l: 'Products', v: wProds.length, c: '#9A5B00' },
+            { l: 'Total Stock Value', v: fmtK(totalValue), c: '#2D2F8F' },
+            { l: 'Total Boxes', v: wProds.reduce((a, p) => a + (p.stock || 0), 0), c: '#0F7375' },
+            { l: 'Transfers', v: transfers.length, c: '#0B7A6C' },
           ].map(k => (
             <div key={k.l} style={C.card}>
-              <p style={{ fontSize: 10, color: '#7d8590', letterSpacing: 0.8 }}>{k.l.toUpperCase()}</p>
+              <p style={{ fontSize: 10, color: '#5B607E', letterSpacing: 0.8 }}>{k.l.toUpperCase()}</p>
               <p style={{ fontSize: 20, fontWeight: 900, color: k.c, marginTop: 6 }}>{k.v}</p>
             </div>
           ))}
@@ -170,7 +170,7 @@ export default function Warehouse() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           {[['stock', '📦 Stock'], ['transfers', '🔄 Transfer History']].map(([k, l]) => (
-            <button key={k} onClick={() => setTab(k)} style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid', borderColor: tab === k ? '#ffb547' : '#30363d', background: tab === k ? 'rgba(255,181,71,0.15)' : 'transparent', color: tab === k ? '#ffb547' : '#7d8590', fontWeight: tab === k ? 700 : 400, fontSize: 13, cursor: 'pointer' }}>{l}</button>
+            <button key={k} onClick={() => setTab(k)} style={{ padding: '9px 20px', borderRadius: 8, border: '1px solid', borderColor: tab === k ? '#9A5B00' : '#DCDFEC', background: tab === k ? 'rgba(242,160,7,0.15)' : 'transparent', color: tab === k ? '#9A5B00' : '#5B607E', fontWeight: tab === k ? 700 : 400, fontSize: 13, cursor: 'pointer' }}>{l}</button>
           ))}
         </div>
 
@@ -179,41 +179,41 @@ export default function Warehouse() {
           <div>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center' }}>
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..." style={{ ...C.input, flex: 1 }} />
-              <button onClick={() => { setEditProd(null); setForm({ name: '', category: '', image_emoji: '📦', buy_price: '', box_qty: '1', stock: '', unit: 'unit' }); setShowProdModal(true) }} style={{ padding: '9px 18px', borderRadius: 8, background: '#ffb547', color: '#000', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Add Product</button>
+              <button onClick={() => { setEditProd(null); setForm({ name: '', category: '', image_emoji: '📦', buy_price: '', box_qty: '1', stock: '', unit: 'unit' }); setShowProdModal(true) }} style={{ padding: '9px 18px', borderRadius: 8, background: '#9A5B00', color: '#FFFFFF', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Add Product</button>
             </div>
 
-            <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: 12, overflow: 'hidden' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #DCDFEC', borderRadius: 12, overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #30363d' }}>
+                  <tr style={{ borderBottom: '1px solid #DCDFEC' }}>
                     {['Product', 'Category', 'Buy Price / Box', 'Box Qty', 'Stock (Boxes)', 'Total Value', 'Actions'].map(h => (
-                      <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: 10, color: '#7d8590', letterSpacing: 0.8, fontWeight: 600 }}>{h}</th>
+                      <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: 10, color: '#5B607E', letterSpacing: 0.8, fontWeight: 600 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filtProds.map((p, i) => (
-                    <tr key={p.id} style={{ borderBottom: i < filtProds.length - 1 ? '1px solid #30363d' : 'none' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                    <tr key={p.id} style={{ borderBottom: i < filtProds.length - 1 ? '1px solid #DCDFEC' : 'none' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(21,24,58,0.02)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                       <td style={{ padding: '12px 14px' }}>
                         <p style={{ fontSize: 13, fontWeight: 600 }}>{p.image_emoji || '📦'} {p.name}</p>
                       </td>
-                      <td style={{ padding: '12px 14px', fontSize: 12, color: '#7d8590' }}>{p.category || '—'}</td>
-                      <td style={{ padding: '12px 14px', fontSize: 13, fontWeight: 600, color: '#ffb547' }}>{fmt(p.buy_price)}</td>
-                      <td style={{ padding: '12px 14px', fontSize: 12, color: '#7d8590' }}>{p.box_qty} pcs/box</td>
-                      <td style={{ padding: '12px 14px', fontSize: 14, fontWeight: 700, color: p.stock < 5 ? '#ff4d6d' : '#e6edf3' }}>{p.stock} boxes</td>
-                      <td style={{ padding: '12px 14px', fontSize: 13, fontWeight: 600, color: '#2196F3' }}>{fmtK((p.buy_price || 0) * (p.stock || 0))}</td>
+                      <td style={{ padding: '12px 14px', fontSize: 12, color: '#5B607E' }}>{p.category || '—'}</td>
+                      <td style={{ padding: '12px 14px', fontSize: 13, fontWeight: 600, color: '#9A5B00' }}>{fmt(p.buy_price)}</td>
+                      <td style={{ padding: '12px 14px', fontSize: 12, color: '#5B607E' }}>{p.box_qty} pcs/box</td>
+                      <td style={{ padding: '12px 14px', fontSize: 14, fontWeight: 700, color: p.stock < 5 ? '#B93A16' : '#15183A' }}>{p.stock} boxes</td>
+                      <td style={{ padding: '12px 14px', fontSize: 13, fontWeight: 600, color: '#2D2F8F' }}>{fmtK((p.buy_price || 0) * (p.stock || 0))}</td>
                       <td style={{ padding: '12px 14px' }}>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          <button onClick={() => openTransfer(p)} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(37,211,102,0.3)', background: 'rgba(37,211,102,0.1)', color: '#25d366', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>🔄 Transfer</button>
-                          <button onClick={() => openEdit(p)} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #30363d', background: 'transparent', color: '#2196F3', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Edit</button>
-                          <button onClick={() => delProd(p.id)} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(255,77,109,0.3)', background: 'transparent', color: '#ff4d6d', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Del</button>
+                          <button onClick={() => openTransfer(p)} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(11,122,108,0.3)', background: 'rgba(11,122,108,0.1)', color: '#0B7A6C', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>🔄 Transfer</button>
+                          <button onClick={() => openEdit(p)} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #DCDFEC', background: 'transparent', color: '#2D2F8F', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+                          <button onClick={() => delProd(p.id)} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(185,58,22,0.3)', background: 'transparent', color: '#B93A16', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Del</button>
                         </div>
                       </td>
                     </tr>
                   ))}
-                  {!filtProds.length && <tr><td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#484f58' }}>No products in warehouse</td></tr>}
+                  {!filtProds.length && <tr><td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#8A8FAE' }}>No products in warehouse</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -222,30 +222,30 @@ export default function Warehouse() {
 
         {/* TRANSFERS TAB */}
         {tab === 'transfers' && (
-          <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid #DCDFEC', borderRadius: 12, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #30363d' }}>
+                <tr style={{ borderBottom: '1px solid #DCDFEC' }}>
                   {['Date', 'Product', 'Shop', 'Boxes', 'Pieces', 'Whs Price', 'Retail Price'].map(h => (
-                    <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: 10, color: '#7d8590', letterSpacing: 0.8, fontWeight: 600 }}>{h}</th>
+                    <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: 10, color: '#5B607E', letterSpacing: 0.8, fontWeight: 600 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {transfers.map((t, i) => (
-                  <tr key={t.id} style={{ borderBottom: i < transfers.length - 1 ? '1px solid #30363d' : 'none' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                  <tr key={t.id} style={{ borderBottom: i < transfers.length - 1 ? '1px solid #DCDFEC' : 'none' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(21,24,58,0.02)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#7d8590' }}>{t.created_at?.split('T')[0]}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#5B607E' }}>{t.created_at?.split('T')[0]}</td>
                     <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600 }}>{t.image_emoji || '📦'} {t.product_name}</td>
-                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#2196F3' }}>{t.shops?.name || '—'}</td>
-                    <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#ffb547' }}>{t.qty_boxes}</td>
-                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#7d8590' }}>{t.qty_pieces}</td>
-                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#25d366' }}>{t.wholesale_price > 0 ? fmt(t.wholesale_price) : '—'}</td>
-                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#4da6ff' }}>{t.sell_price > 0 ? fmt(t.sell_price) : '—'}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#2D2F8F' }}>{t.shops?.name || '—'}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#9A5B00' }}>{t.qty_boxes}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#5B607E' }}>{t.qty_pieces}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#0B7A6C' }}>{t.wholesale_price > 0 ? fmt(t.wholesale_price) : '—'}</td>
+                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#2D2F8F' }}>{t.sell_price > 0 ? fmt(t.sell_price) : '—'}</td>
                   </tr>
                 ))}
-                {!transfers.length && <tr><td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#484f58' }}>No transfers yet</td></tr>}
+                {!transfers.length && <tr><td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#8A8FAE' }}>No transfers yet</td></tr>}
               </tbody>
             </table>
           </div>
@@ -253,11 +253,11 @@ export default function Warehouse() {
 
         {/* Add/Edit Product Modal */}
         {showProdModal && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }} onClick={e => e.target === e.currentTarget && setShowProdModal(false)}>
-            <div style={{ background: '#161b22', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 520, border: '1px solid #30363d' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,24,58,0.55)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }} onClick={e => e.target === e.currentTarget && setShowProdModal(false)}>
+            <div style={{ background: '#FFFFFF', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 520, border: '1px solid #DCDFEC' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 800 }}>{editProd ? 'Edit Product' : 'Add to Warehouse'}</h2>
-                <button onClick={() => setShowProdModal(false)} style={{ background: 'none', border: 'none', color: '#7d8590', fontSize: 20, cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setShowProdModal(false)} style={{ background: 'none', border: 'none', color: '#5B607E', fontSize: 20, cursor: 'pointer' }}>✕</button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div style={{ gridColumn: '1/-1' }}>
@@ -290,8 +290,8 @@ export default function Warehouse() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-                <button onClick={() => setShowProdModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid #30363d', background: 'transparent', color: '#e6edf3', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                <button onClick={saveProd} disabled={prodSaving} style={{ flex: 2, padding: '11px', borderRadius: 8, background: '#ffb547', color: '#000', fontWeight: 700, border: 'none', cursor: 'pointer' }}>{prodSaving ? 'Saving...' : 'Save Product'}</button>
+                <button onClick={() => setShowProdModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid #DCDFEC', background: 'transparent', color: '#15183A', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={saveProd} disabled={prodSaving} style={{ flex: 2, padding: '11px', borderRadius: 8, background: '#9A5B00', color: '#FFFFFF', fontWeight: 700, border: 'none', cursor: 'pointer' }}>{prodSaving ? 'Saving...' : 'Save Product'}</button>
               </div>
             </div>
           </div>
@@ -299,21 +299,21 @@ export default function Warehouse() {
 
         {/* Transfer Modal */}
         {showTransModal && transProd && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }} onClick={e => e.target === e.currentTarget && setShowTransModal(false)}>
-            <div style={{ background: '#161b22', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 480, border: '1px solid #30363d' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,24,58,0.55)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }} onClick={e => e.target === e.currentTarget && setShowTransModal(false)}>
+            <div style={{ background: '#FFFFFF', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 480, border: '1px solid #DCDFEC' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 800 }}>Transfer Stock</h2>
-                <button onClick={() => setShowTransModal(false)} style={{ background: 'none', border: 'none', color: '#7d8590', fontSize: 20, cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setShowTransModal(false)} style={{ background: 'none', border: 'none', color: '#5B607E', fontSize: 20, cursor: 'pointer' }}>✕</button>
               </div>
 
-              <div style={{ background: '#0d1117', borderRadius: 8, padding: 12, marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ background: '#F6F7FB', borderRadius: 8, padding: 12, marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
                 <div>
                   <p style={{ fontWeight: 700 }}>{transProd.image_emoji} {transProd.name}</p>
-                  <p style={{ fontSize: 11, color: '#7d8590', marginTop: 2 }}>{transProd.box_qty} pcs/box</p>
+                  <p style={{ fontSize: 11, color: '#5B607E', marginTop: 2 }}>{transProd.box_qty} pcs/box</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: '#ffb547' }}>{transProd.stock} boxes</p>
-                  <p style={{ fontSize: 10, color: '#7d8590' }}>available</p>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: '#9A5B00' }}>{transProd.stock} boxes</p>
+                  <p style={{ fontSize: 10, color: '#5B607E' }}>available</p>
                 </div>
               </div>
 
@@ -327,7 +327,7 @@ export default function Warehouse() {
               <div style={{ marginBottom: 12 }}>
                 <label style={C.label}>QUANTITY (BOXES) *</label>
                 <input value={transQty} onChange={e => setTransQty(e.target.value)} type="number" placeholder={`Max ${transProd.stock}`} style={C.input} />
-                {transQty && <p style={{ fontSize: 11, color: '#7d8590', marginTop: 4 }}>= {parseInt(transQty || 0) * (transProd.box_qty || 1)} pieces</p>}
+                {transQty && <p style={{ fontSize: 11, color: '#5B607E', marginTop: 4 }}>= {parseInt(transQty || 0) * (transProd.box_qty || 1)} pieces</p>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
                 <div>
@@ -340,8 +340,8 @@ export default function Warehouse() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowTransModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid #30363d', background: 'transparent', color: '#e6edf3', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                <button onClick={confirmTransfer} disabled={transSaving || !transShop || !transQty} style={{ flex: 2, padding: '11px', borderRadius: 8, background: !transShop || !transQty ? '#30363d' : '#25d366', color: !transShop || !transQty ? '#484f58' : '#000', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                <button onClick={() => setShowTransModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid #DCDFEC', background: 'transparent', color: '#15183A', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={confirmTransfer} disabled={transSaving || !transShop || !transQty} style={{ flex: 2, padding: '11px', borderRadius: 8, background: !transShop || !transQty ? '#DCDFEC' : '#0B7A6C', color: !transShop || !transQty ? '#8A8FAE' : '#000', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
                   {transSaving ? 'Transferring...' : '🔄 Transfer to Shop'}
                 </button>
               </div>

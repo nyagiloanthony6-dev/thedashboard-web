@@ -80,18 +80,18 @@ export default function MonthlyReport() {
   const maxMonthTotal = Math.max(...monthly.map(m => m.total), 1)
 
   const C = {
-    card: { background:'#161b22', border:'1px solid #30363d', borderRadius:12, padding:16 },
+    card: { background:'#FFFFFF', border:'1px solid #DCDFEC', borderRadius:12, padding:16 },
   }
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
-  if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0d1117' }}><div style={{ width:36, height:36, border:'3px solid #30363d', borderTopColor:'#2196F3', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>
+  if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#F6F7FB' }}><div style={{ width:36, height:36, border:'3px solid #DCDFEC', borderTopColor:'#2D2F8F', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>
 
   return (
     <>
       <Head><title>Monthly Sales — TheDashboard</title></Head>
       <Layout title="Monthly Sales Summary" shop={shop} profile={profile}>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}} select{background:#0d1117;border:1.5px solid #30363d;border-radius:8px;color:#e6edf3;padding:8px 12px;font-size:13px;outline:none;font-family:inherit}`}</style>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}} select{background:#F6F7FB;border:1.5px solid #DCDFEC;border-radius:8px;color:#15183A;padding:8px 12px;font-size:13px;outline:none;font-family:inherit}`}</style>
 
         {/* Controls */}
         <div style={{ display:'flex', gap:10, marginBottom:20, alignItems:'center', flexWrap:'wrap' }}>
@@ -105,7 +105,7 @@ export default function MonthlyReport() {
           )}
           <div style={{ display:'flex', gap:6 }}>
             {[['daily','📅 Daily'],['monthly','📊 Monthly']].map(([k,l]) => (
-              <button key={k} onClick={() => setViewMode(k)} style={{ padding:'8px 16px', borderRadius:8, border:'1px solid', borderColor:viewMode===k?'#2196F3':'#30363d', background:viewMode===k?'rgba(33,150,243,0.15)':'transparent', color:viewMode===k?'#2196F3':'#7d8590', fontWeight:viewMode===k?700:400, fontSize:13, cursor:'pointer' }}>{l}</button>
+              <button key={k} onClick={() => setViewMode(k)} style={{ padding:'8px 16px', borderRadius:8, border:'1px solid', borderColor:viewMode===k?'#2D2F8F':'#DCDFEC', background:viewMode===k?'rgba(45,47,143,0.15)':'transparent', color:viewMode===k?'#2D2F8F':'#5B607E', fontWeight:viewMode===k?700:400, fontSize:13, cursor:'pointer' }}>{l}</button>
             ))}
           </div>
         </div>
@@ -116,13 +116,13 @@ export default function MonthlyReport() {
             {/* Summary cards */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:12, marginBottom:20 }}>
               {[
-                { l:`${MONTH_NAMES[month]} Revenue`, v:fmtK(monthTotal), c:'#2196F3' },
-                { l:'Profit', v:fmtK(monthProfit), c:'#25d366' },
-                { l:'Transactions', v:monthCount, c:'#a78bfa' },
-                { l:'Active Days', v:daily.filter(d=>d.hasSales).length, c:'#ffb547' },
+                { l:`${MONTH_NAMES[month]} Revenue`, v:fmtK(monthTotal), c:'#2D2F8F' },
+                { l:'Profit', v:fmtK(monthProfit), c:'#0B7A6C' },
+                { l:'Transactions', v:monthCount, c:'#0F7375' },
+                { l:'Active Days', v:daily.filter(d=>d.hasSales).length, c:'#9A5B00' },
               ].map(k => (
                 <div key={k.l} style={C.card}>
-                  <p style={{ fontSize:10, color:'#7d8590', letterSpacing:0.8 }}>{k.l.toUpperCase()}</p>
+                  <p style={{ fontSize:10, color:'#5B607E', letterSpacing:0.8 }}>{k.l.toUpperCase()}</p>
                   <p style={{ fontSize:20, fontWeight:900, color:k.c, marginTop:6 }}>{k.v}</p>
                 </div>
               ))}
@@ -130,57 +130,57 @@ export default function MonthlyReport() {
 
             {/* Bar chart */}
             <div style={{ ...C.card, marginBottom:16 }}>
-              <p style={{ fontSize:11, color:'#7d8590', letterSpacing:0.8, marginBottom:14 }}>DAILY SALES — {MONTH_NAMES[month].toUpperCase()} {year}</p>
-              <div style={{ display:'flex', alignItems:'flex-end', gap:3, height:120, paddingBottom:20, position:'relative', borderBottom:'1px solid #30363d' }}>
+              <p style={{ fontSize:11, color:'#5B607E', letterSpacing:0.8, marginBottom:14 }}>DAILY SALES — {MONTH_NAMES[month].toUpperCase()} {year}</p>
+              <div style={{ display:'flex', alignItems:'flex-end', gap:3, height:120, paddingBottom:20, position:'relative', borderBottom:'1px solid #DCDFEC' }}>
                 {daily.map(d => (
                   <div key={d.day} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
-                    <div title={`Day ${d.day}: ${fmt(d.total)}`} style={{ width:'100%', background:d.hasSales?'#2196F3':'#30363d', height:Math.max(2, (d.total/maxDayTotal)*100) + 'px', borderRadius:'3px 3px 0 0', transition:'height 0.3s', cursor:'pointer' }}
-                      onMouseEnter={e => e.target.style.background = d.hasSales ? '#4da6ff' : '#30363d'}
-                      onMouseLeave={e => e.target.style.background = d.hasSales ? '#2196F3' : '#30363d'}/>
-                    <span style={{ fontSize:8, color:'#484f58' }}>{d.day}</span>
+                    <div title={`Day ${d.day}: ${fmt(d.total)}`} style={{ width:'100%', background:d.hasSales?'#2D2F8F':'#DCDFEC', height:Math.max(2, (d.total/maxDayTotal)*100) + 'px', borderRadius:'3px 3px 0 0', transition:'height 0.3s', cursor:'pointer' }}
+                      onMouseEnter={e => e.target.style.background = d.hasSales ? '#2D2F8F' : '#DCDFEC'}
+                      onMouseLeave={e => e.target.style.background = d.hasSales ? '#2D2F8F' : '#DCDFEC'}/>
+                    <span style={{ fontSize:8, color:'#8A8FAE' }}>{d.day}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Daily table */}
-            <div style={{ background:'#161b22', border:'1px solid #30363d', borderRadius:12, overflow:'hidden' }}>
+            <div style={{ background:'#FFFFFF', border:'1px solid #DCDFEC', borderRadius:12, overflow:'hidden' }}>
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom:'1px solid #30363d' }}>
+                  <tr style={{ borderBottom:'1px solid #DCDFEC' }}>
                     {['Date','Sales','Revenue','Profit','Cash','M-Pesa/Mobile','Loan'].map(h => (
-                      <th key={h} style={{ padding:'10px 14px', textAlign:'left', fontSize:10, color:'#7d8590', letterSpacing:0.8, fontWeight:600 }}>{h}</th>
+                      <th key={h} style={{ padding:'10px 14px', textAlign:'left', fontSize:10, color:'#5B607E', letterSpacing:0.8, fontWeight:600 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {daily.filter(d => d.hasSales).map((d, i) => (
-                    <tr key={d.day} style={{ borderBottom:'1px solid #30363d' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                    <tr key={d.day} style={{ borderBottom:'1px solid #DCDFEC' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(21,24,58,0.02)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                       <td style={{ padding:'10px 14px', fontSize:13, fontWeight:600 }}>
                         {new Date(d.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
                       </td>
-                      <td style={{ padding:'10px 14px', fontSize:13, color:'#7d8590' }}>{d.count}</td>
-                      <td style={{ padding:'10px 14px', fontSize:13, fontWeight:700, color:'#2196F3' }}>{fmtK(d.total)}</td>
-                      <td style={{ padding:'10px 14px', fontSize:13, color:'#25d366' }}>{fmtK(d.profit)}</td>
-                      <td style={{ padding:'10px 14px', fontSize:12, color:'#7d8590' }}>{d.cash > 0 ? fmtK(d.cash) : '—'}</td>
-                      <td style={{ padding:'10px 14px', fontSize:12, color:'#7d8590' }}>{d.mpesa > 0 ? fmtK(d.mpesa) : '—'}</td>
-                      <td style={{ padding:'10px 14px', fontSize:12, color: d.loan > 0 ? '#ffb547' : '#7d8590' }}>{d.loan > 0 ? fmtK(d.loan) : '—'}</td>
+                      <td style={{ padding:'10px 14px', fontSize:13, color:'#5B607E' }}>{d.count}</td>
+                      <td style={{ padding:'10px 14px', fontSize:13, fontWeight:700, color:'#2D2F8F' }}>{fmtK(d.total)}</td>
+                      <td style={{ padding:'10px 14px', fontSize:13, color:'#0B7A6C' }}>{fmtK(d.profit)}</td>
+                      <td style={{ padding:'10px 14px', fontSize:12, color:'#5B607E' }}>{d.cash > 0 ? fmtK(d.cash) : '—'}</td>
+                      <td style={{ padding:'10px 14px', fontSize:12, color:'#5B607E' }}>{d.mpesa > 0 ? fmtK(d.mpesa) : '—'}</td>
+                      <td style={{ padding:'10px 14px', fontSize:12, color: d.loan > 0 ? '#9A5B00' : '#5B607E' }}>{d.loan > 0 ? fmtK(d.loan) : '—'}</td>
                     </tr>
                   ))}
                   {/* Totals row */}
-                  <tr style={{ background:'rgba(33,150,243,0.08)', borderTop:'2px solid #30363d' }}>
+                  <tr style={{ background:'rgba(45,47,143,0.08)', borderTop:'2px solid #DCDFEC' }}>
                     <td style={{ padding:'12px 14px', fontWeight:800, fontSize:13 }}>TOTAL</td>
                     <td style={{ padding:'12px 14px', fontWeight:700, fontSize:13 }}>{monthCount}</td>
-                    <td style={{ padding:'12px 14px', fontWeight:900, fontSize:14, color:'#2196F3' }}>{fmtK(monthTotal)}</td>
-                    <td style={{ padding:'12px 14px', fontWeight:800, fontSize:13, color:'#25d366' }}>{fmtK(monthProfit)}</td>
+                    <td style={{ padding:'12px 14px', fontWeight:900, fontSize:14, color:'#2D2F8F' }}>{fmtK(monthTotal)}</td>
+                    <td style={{ padding:'12px 14px', fontWeight:800, fontSize:13, color:'#0B7A6C' }}>{fmtK(monthProfit)}</td>
                     <td style={{ padding:'12px 14px', fontWeight:700, fontSize:13 }}>{fmtK(daily.reduce((a,d)=>a+d.cash,0))}</td>
                     <td style={{ padding:'12px 14px', fontWeight:700, fontSize:13 }}>{fmtK(daily.reduce((a,d)=>a+d.mpesa,0))}</td>
-                    <td style={{ padding:'12px 14px', fontWeight:700, fontSize:13, color:'#ffb547' }}>{fmtK(daily.reduce((a,d)=>a+d.loan,0))}</td>
+                    <td style={{ padding:'12px 14px', fontWeight:700, fontSize:13, color:'#9A5B00' }}>{fmtK(daily.reduce((a,d)=>a+d.loan,0))}</td>
                   </tr>
                   {!daily.some(d=>d.hasSales) && (
-                    <tr><td colSpan={7} style={{ padding:40, textAlign:'center', color:'#484f58' }}>No sales in {MONTH_NAMES[month]} {year}</td></tr>
+                    <tr><td colSpan={7} style={{ padding:40, textAlign:'center', color:'#8A8FAE' }}>No sales in {MONTH_NAMES[month]} {year}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -193,13 +193,13 @@ export default function MonthlyReport() {
           <>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:12, marginBottom:20 }}>
               {[
-                { l:`${year} Revenue`, v:fmtK(yearTotal), c:'#2196F3' },
-                { l:'Profit', v:fmtK(monthly.reduce((a,m)=>a+m.profit,0)), c:'#25d366' },
-                { l:'Transactions', v:monthly.reduce((a,m)=>a+m.count,0), c:'#a78bfa' },
-                { l:'Active Months', v:monthly.filter(m=>m.hasSales).length, c:'#ffb547' },
+                { l:`${year} Revenue`, v:fmtK(yearTotal), c:'#2D2F8F' },
+                { l:'Profit', v:fmtK(monthly.reduce((a,m)=>a+m.profit,0)), c:'#0B7A6C' },
+                { l:'Transactions', v:monthly.reduce((a,m)=>a+m.count,0), c:'#0F7375' },
+                { l:'Active Months', v:monthly.filter(m=>m.hasSales).length, c:'#9A5B00' },
               ].map(k => (
                 <div key={k.l} style={C.card}>
-                  <p style={{ fontSize:10, color:'#7d8590', letterSpacing:0.8 }}>{k.l.toUpperCase()}</p>
+                  <p style={{ fontSize:10, color:'#5B607E', letterSpacing:0.8 }}>{k.l.toUpperCase()}</p>
                   <p style={{ fontSize:20, fontWeight:900, color:k.c, marginTop:6 }}>{k.v}</p>
                 </div>
               ))}
@@ -207,50 +207,50 @@ export default function MonthlyReport() {
 
             {/* Monthly bar chart */}
             <div style={{ ...C.card, marginBottom:16 }}>
-              <p style={{ fontSize:11, color:'#7d8590', letterSpacing:0.8, marginBottom:14 }}>MONTHLY SALES — {year}</p>
-              <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:140, paddingBottom:24, borderBottom:'1px solid #30363d' }}>
+              <p style={{ fontSize:11, color:'#5B607E', letterSpacing:0.8, marginBottom:14 }}>MONTHLY SALES — {year}</p>
+              <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:140, paddingBottom:24, borderBottom:'1px solid #DCDFEC' }}>
                 {monthly.map((m,i) => (
                   <div key={m.month} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                    <div title={`${m.month}: ${fmt(m.total)}`} style={{ width:'100%', background:m.hasSales?'#2196F3':'#30363d', height:Math.max(2,(m.total/maxMonthTotal)*120)+'px', borderRadius:'4px 4px 0 0', cursor:'pointer', transition:'height 0.3s' }}
-                      onMouseEnter={e=>e.target.style.background=m.hasSales?'#4da6ff':'#30363d'}
-                      onMouseLeave={e=>e.target.style.background=m.hasSales?'#2196F3':'#30363d'}
+                    <div title={`${m.month}: ${fmt(m.total)}`} style={{ width:'100%', background:m.hasSales?'#2D2F8F':'#DCDFEC', height:Math.max(2,(m.total/maxMonthTotal)*120)+'px', borderRadius:'4px 4px 0 0', cursor:'pointer', transition:'height 0.3s' }}
+                      onMouseEnter={e=>e.target.style.background=m.hasSales?'#2D2F8F':'#DCDFEC'}
+                      onMouseLeave={e=>e.target.style.background=m.hasSales?'#2D2F8F':'#DCDFEC'}
                       onClick={()=>{setMonth(i);setViewMode('daily')}}/>
-                    <span style={{ fontSize:9, color:'#7d8590' }}>{m.month}</span>
+                    <span style={{ fontSize:9, color:'#5B607E' }}>{m.month}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Monthly table */}
-            <div style={{ background:'#161b22', border:'1px solid #30363d', borderRadius:12, overflow:'hidden' }}>
+            <div style={{ background:'#FFFFFF', border:'1px solid #DCDFEC', borderRadius:12, overflow:'hidden' }}>
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom:'1px solid #30363d' }}>
+                  <tr style={{ borderBottom:'1px solid #DCDFEC' }}>
                     {['Month','Sales','Revenue','Profit','Avg/Day',''].map(h => (
-                      <th key={h} style={{ padding:'10px 14px', textAlign:'left', fontSize:10, color:'#7d8590', letterSpacing:0.8, fontWeight:600 }}>{h}</th>
+                      <th key={h} style={{ padding:'10px 14px', textAlign:'left', fontSize:10, color:'#5B607E', letterSpacing:0.8, fontWeight:600 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {monthly.map((m, i) => (
-                    <tr key={m.month} style={{ borderBottom:'1px solid #30363d', opacity:m.hasSales?1:0.4 }}
-                      onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.02)'}
+                    <tr key={m.month} style={{ borderBottom:'1px solid #DCDFEC', opacity:m.hasSales?1:0.4 }}
+                      onMouseEnter={e=>e.currentTarget.style.background='rgba(21,24,58,0.02)'}
                       onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
                       <td style={{ padding:'11px 14px', fontSize:13, fontWeight:700 }}>{MONTH_NAMES[i]} {year}</td>
-                      <td style={{ padding:'11px 14px', fontSize:13, color:'#7d8590' }}>{m.count}</td>
-                      <td style={{ padding:'11px 14px', fontSize:13, fontWeight:700, color:'#2196F3' }}>{fmtK(m.total)}</td>
-                      <td style={{ padding:'11px 14px', fontSize:13, color:'#25d366' }}>{fmtK(m.profit)}</td>
-                      <td style={{ padding:'11px 14px', fontSize:12, color:'#7d8590' }}>{m.count>0?fmtK(m.total/new Date(year,i+1,0).getDate()):'—'}</td>
+                      <td style={{ padding:'11px 14px', fontSize:13, color:'#5B607E' }}>{m.count}</td>
+                      <td style={{ padding:'11px 14px', fontSize:13, fontWeight:700, color:'#2D2F8F' }}>{fmtK(m.total)}</td>
+                      <td style={{ padding:'11px 14px', fontSize:13, color:'#0B7A6C' }}>{fmtK(m.profit)}</td>
+                      <td style={{ padding:'11px 14px', fontSize:12, color:'#5B607E' }}>{m.count>0?fmtK(m.total/new Date(year,i+1,0).getDate()):'—'}</td>
                       <td style={{ padding:'11px 14px' }}>
-                        {m.hasSales && <button onClick={()=>{setMonth(i);setViewMode('daily')}} style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #2196F330', background:'rgba(33,150,243,0.1)', color:'#2196F3', fontSize:11, fontWeight:600, cursor:'pointer' }}>Daily →</button>}
+                        {m.hasSales && <button onClick={()=>{setMonth(i);setViewMode('daily')}} style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #2196F330', background:'rgba(45,47,143,0.1)', color:'#2D2F8F', fontSize:11, fontWeight:600, cursor:'pointer' }}>Daily →</button>}
                       </td>
                     </tr>
                   ))}
-                  <tr style={{ background:'rgba(33,150,243,0.08)', borderTop:'2px solid #30363d' }}>
+                  <tr style={{ background:'rgba(45,47,143,0.08)', borderTop:'2px solid #DCDFEC' }}>
                     <td style={{ padding:'12px 14px', fontWeight:800 }}>TOTAL {year}</td>
                     <td style={{ padding:'12px 14px', fontWeight:700 }}>{monthly.reduce((a,m)=>a+m.count,0)}</td>
-                    <td style={{ padding:'12px 14px', fontWeight:900, color:'#2196F3', fontSize:14 }}>{fmtK(yearTotal)}</td>
-                    <td style={{ padding:'12px 14px', fontWeight:800, color:'#25d366' }}>{fmtK(monthly.reduce((a,m)=>a+m.profit,0))}</td>
+                    <td style={{ padding:'12px 14px', fontWeight:900, color:'#2D2F8F', fontSize:14 }}>{fmtK(yearTotal)}</td>
+                    <td style={{ padding:'12px 14px', fontWeight:800, color:'#0B7A6C' }}>{fmtK(monthly.reduce((a,m)=>a+m.profit,0))}</td>
                     <td colSpan={2}></td>
                   </tr>
                 </tbody>

@@ -131,18 +131,18 @@ export default function SalesRep() {
   const unread = notifications.filter(n => !n.is_read).length
 
   const T = {
-    screen: { minHeight: '100vh', background: '#0d1117', color: '#e6edf3' },
-    header: { background: '#161b22', borderBottom: '1px solid #30363d', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 },
-    tabs: { display: 'flex', background: '#161b22', borderBottom: '1px solid #30363d' },
-    tab: (active) => ({ flex: 1, padding: '10px', textAlign: 'center', fontSize: 12, fontWeight: active ? 700 : 400, color: active ? '#a78bfa' : '#7d8590', background: 'none', border: 'none', borderBottom: active ? '2px solid #a78bfa' : '2px solid transparent', cursor: 'pointer' }),
-    card: { background: '#161b22', border: '1px solid #30363d', borderRadius: 12, padding: 14, marginBottom: 12 },
-    input: { background: '#0d1117', border: '1.5px solid #30363d', borderRadius: 8, color: '#e6edf3', padding: '10px 12px', fontSize: 14, width: '100%', outline: 'none', fontFamily: 'inherit' },
-    btn: (c = '#a78bfa', tc = '#000') => ({ padding: '10px 16px', borderRadius: 8, background: c, color: tc, fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer' }),
+    screen: { minHeight: '100vh', background: '#F6F7FB', color: '#15183A' },
+    header: { background: '#FFFFFF', borderBottom: '1px solid #DCDFEC', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 },
+    tabs: { display: 'flex', background: '#FFFFFF', borderBottom: '1px solid #DCDFEC' },
+    tab: (active) => ({ flex: 1, padding: '10px', textAlign: 'center', fontSize: 12, fontWeight: active ? 700 : 400, color: active ? '#0F7375' : '#5B607E', background: 'none', border: 'none', borderBottom: active ? '2px solid #0F7375' : '2px solid transparent', cursor: 'pointer' }),
+    card: { background: '#FFFFFF', border: '1px solid #DCDFEC', borderRadius: 12, padding: 14, marginBottom: 12 },
+    input: { background: '#F6F7FB', border: '1.5px solid #DCDFEC', borderRadius: 8, color: '#15183A', padding: '10px 12px', fontSize: 14, width: '100%', outline: 'none', fontFamily: 'inherit' },
+    btn: (c = '#0F7375', tc = '#000') => ({ padding: '10px 16px', borderRadius: 8, background: c, color: tc, fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer' }),
   }
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0d1117' }}>
-      <div style={{ width: 36, height: 36, border: '3px solid #30363d', borderTopColor: '#a78bfa', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#F6F7FB' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid #DCDFEC', borderTopColor: '#0F7375', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -151,21 +151,21 @@ export default function SalesRep() {
     <>
       <Head><title>Sales Rep — {shop?.name}</title></Head>
       <div style={T.screen}>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}} *{box-sizing:border-box;margin:0;padding:0} input::placeholder,select::placeholder{color:#484f58} select{background:#0d1117;border:1.5px solid #30363d;border-radius:8px;color:#e6edf3;padding:10px 12px;font-size:14px;width:100%;outline:none}`}</style>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}} *{box-sizing:border-box;margin:0;padding:0} input::placeholder,select::placeholder{color:#8A8FAE} select{background:#F6F7FB;border:1.5px solid #DCDFEC;border-radius:8px;color:#15183A;padding:10px 12px;font-size:14px;width:100%;outline:none}`}</style>
 
         {/* Header */}
         <div style={T.header}>
           <div>
             <p style={{ fontWeight: 800, fontSize: 14 }}>{shop?.name}</p>
-            <p style={{ fontSize: 11, color: '#a78bfa', marginTop: 2 }}>{profile?.full_name} · SALES REP</p>
+            <p style={{ fontSize: 11, color: '#0F7375', marginTop: 2 }}>{profile?.full_name} · SALES REP</p>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {unread > 0 && <div style={{ background: '#ff4d6d', borderRadius: 10, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{unread}</div>}
-            <button onClick={() => supabase.auth.signOut()} style={{ ...T.btn('#30363d', '#ff4d6d'), padding: '7px 12px', fontSize: 11 }}>Logout</button>
+            {unread > 0 && <div style={{ background: '#B93A16', borderRadius: 10, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{unread}</div>}
+            <button onClick={() => supabase.auth.signOut()} style={{ ...T.btn('#DCDFEC', '#B93A16'), padding: '7px 12px', fontSize: 11 }}>Logout</button>
           </div>
         </div>
 
-        {toast && <div style={{ background: '#a78bfa', padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: 13, color: '#000' }}>{toast}</div>}
+        {toast && <div style={{ background: '#0F7375', padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: 13, color: '#FFFFFF' }}>{toast}</div>}
 
         {/* Tabs */}
         <div style={T.tabs}>
@@ -184,25 +184,25 @@ export default function SalesRep() {
                 <button onClick={() => { setOrderModal(true); setOrderCart([]); setOrderCust(null); setOrderNotes('') }} style={T.btn()}>+ New Order</button>
               </div>
               {orders.map(o => (
-                <div key={o.id} style={{ ...T.card, borderColor: o.status === 'fulfilled' ? 'rgba(37,211,102,0.3)' : o.status === 'cancelled' ? 'rgba(255,77,109,0.3)' : 'rgba(255,181,71,0.3)' }}>
+                <div key={o.id} style={{ ...T.card, borderColor: o.status === 'fulfilled' ? 'rgba(11,122,108,0.3)' : o.status === 'cancelled' ? 'rgba(185,58,22,0.3)' : 'rgba(242,160,7,0.3)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                       <p style={{ fontWeight: 700, fontSize: 14 }}>{o.customer_name}</p>
-                      <p style={{ fontSize: 11, color: '#7d8590', marginTop: 2 }}>{new Date(o.created_at).toLocaleDateString()} · {(o.field_order_items || []).length} items</p>
+                      <p style={{ fontSize: 11, color: '#5B607E', marginTop: 2 }}>{new Date(o.created_at).toLocaleDateString()} · {(o.field_order_items || []).length} items</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: 15, fontWeight: 800, color: '#a78bfa' }}>{fmt(o.total)}</p>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: o.status === 'fulfilled' ? 'rgba(37,211,102,0.15)' : o.status === 'cancelled' ? 'rgba(255,77,109,0.15)' : 'rgba(255,181,71,0.15)', color: o.status === 'fulfilled' ? '#25d366' : o.status === 'cancelled' ? '#ff4d6d' : '#ffb547' }}>{o.status.toUpperCase()}</span>
+                      <p style={{ fontSize: 15, fontWeight: 800, color: '#0F7375' }}>{fmt(o.total)}</p>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: o.status === 'fulfilled' ? 'rgba(11,122,108,0.15)' : o.status === 'cancelled' ? 'rgba(185,58,22,0.15)' : 'rgba(242,160,7,0.15)', color: o.status === 'fulfilled' ? '#0B7A6C' : o.status === 'cancelled' ? '#B93A16' : '#9A5B00' }}>{o.status.toUpperCase()}</span>
                     </div>
                   </div>
                   {o.status === 'fulfilled' && (
-                    <p style={{ fontSize: 11, marginTop: 8, color: o.commission_status === 'approved' ? '#25d366' : '#ffb547' }}>
+                    <p style={{ fontSize: 11, marginTop: 8, color: o.commission_status === 'approved' ? '#0B7A6C' : '#9A5B00' }}>
                       Commission: {o.commission_status === 'approved' ? `✅ ${fmt(o.commission_amount)}` : '⏳ Pending approval'}
                     </p>
                   )}
                 </div>
               ))}
-              {!orders.length && <div style={{ ...T.card, textAlign: 'center', padding: 40 }}><p style={{ fontSize: 36 }}>📦</p><p style={{ color: '#484f58', marginTop: 10 }}>No orders yet. Tap + New Order.</p></div>}
+              {!orders.length && <div style={{ ...T.card, textAlign: 'center', padding: 40 }}><p style={{ fontSize: 36 }}>📦</p><p style={{ color: '#8A8FAE', marginTop: 10 }}>No orders yet. Tap + New Order.</p></div>}
             </div>
           )}
 
@@ -219,20 +219,20 @@ export default function SalesRep() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                       <p style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</p>
-                      {c.phone && <p style={{ fontSize: 11, color: '#7d8590', marginTop: 2 }}>{c.phone}</p>}
-                      {c.location && <p style={{ fontSize: 11, color: '#7d8590' }}>📍 {c.location}</p>}
+                      {c.phone && <p style={{ fontSize: 11, color: '#5B607E', marginTop: 2 }}>{c.phone}</p>}
+                      {c.location && <p style={{ fontSize: 11, color: '#5B607E' }}>📍 {c.location}</p>}
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>{c.business_type}</span>
-                      <p style={{ fontSize: 10, color: c.status === 'active' ? '#25d366' : '#ffb547', marginTop: 4 }}>{c.status?.toUpperCase()}</p>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: 'rgba(15,115,117,0.15)', color: '#0F7375' }}>{c.business_type}</span>
+                      <p style={{ fontSize: 10, color: c.status === 'active' ? '#0B7A6C' : '#9A5B00', marginTop: 4 }}>{c.status?.toUpperCase()}</p>
                     </div>
                   </div>
-                  <button onClick={() => { setOrderCust(c); setOrderCart([]); setOrderNotes(''); setOrderModal(true) }} style={{ marginTop: 10, width: '100%', padding: '8px', borderRadius: 8, border: '1px solid rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.1)', color: '#a78bfa', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  <button onClick={() => { setOrderCust(c); setOrderCart([]); setOrderNotes(''); setOrderModal(true) }} style={{ marginTop: 10, width: '100%', padding: '8px', borderRadius: 8, border: '1px solid rgba(15,115,117,0.3)', background: 'rgba(15,115,117,0.1)', color: '#0F7375', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                     📦 New Order for {c.name}
                   </button>
                 </div>
               ))}
-              {!customers.length && <div style={{ ...T.card, textAlign: 'center', padding: 40 }}><p style={{ fontSize: 36 }}>👥</p><p style={{ color: '#484f58', marginTop: 10 }}>No customers yet.</p></div>}
+              {!customers.length && <div style={{ ...T.card, textAlign: 'center', padding: 40 }}><p style={{ fontSize: 36 }}>👥</p><p style={{ color: '#8A8FAE', marginTop: 10 }}>No customers yet.</p></div>}
             </div>
           )}
 
@@ -240,37 +240,37 @@ export default function SalesRep() {
           {tab === 'stats' && (
             <div>
               <p style={{ fontWeight: 800, fontSize: 16, marginBottom: 16 }}>My Performance</p>
-              <div style={{ ...T.card, borderColor: 'rgba(167,139,250,0.3)', marginBottom: 16 }}>
-                <p style={{ fontSize: 11, color: '#7d8590', letterSpacing: 0.8, marginBottom: 12 }}>MY COMMISSION THIS MONTH</p>
+              <div style={{ ...T.card, borderColor: 'rgba(15,115,117,0.3)', marginBottom: 16 }}>
+                <p style={{ fontSize: 11, color: '#5B607E', letterSpacing: 0.8, marginBottom: 12 }}>MY COMMISSION THIS MONTH</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
-                  {[{ v: fmt(approvedComm), l: '✅ APPROVED', c: '#25d366' }, { v: fmt(pendingComm), l: '⏳ PENDING', c: '#ffb547' }, { v: fmt(approvedComm + pendingComm), l: 'TOTAL', c: '#a78bfa' }].map(s => (
-                    <div key={s.l} style={{ background: '#0d1117', borderRadius: 8, padding: 10, textAlign: 'center' }}>
+                  {[{ v: fmt(approvedComm), l: '✅ APPROVED', c: '#0B7A6C' }, { v: fmt(pendingComm), l: '⏳ PENDING', c: '#9A5B00' }, { v: fmt(approvedComm + pendingComm), l: 'TOTAL', c: '#0F7375' }].map(s => (
+                    <div key={s.l} style={{ background: '#F6F7FB', borderRadius: 8, padding: 10, textAlign: 'center' }}>
                       <p style={{ fontSize: 13, fontWeight: 800, color: s.c }}>{s.v}</p>
-                      <p style={{ fontSize: 9, color: '#7d8590', marginTop: 3 }}>{s.l}</p>
+                      <p style={{ fontSize: 9, color: '#5B607E', marginTop: 3 }}>{s.l}</p>
                     </div>
                   ))}
                 </div>
-                {pendingComm > 0 && approvedComm === 0 && <p style={{ fontSize: 11, color: '#ffb547', textAlign: 'center' }}>Waiting for admin to approve your commission</p>}
+                {pendingComm > 0 && approvedComm === 0 && <p style={{ fontSize: 11, color: '#9A5B00', textAlign: 'center' }}>Waiting for admin to approve your commission</p>}
               </div>
               {target > 0 && (
                 <div style={T.card}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                     <p style={{ fontSize: 13, fontWeight: 700 }}>Monthly Target</p>
-                    <p style={{ fontSize: 13, color: '#a78bfa', fontWeight: 700 }}>{pct}%</p>
+                    <p style={{ fontSize: 13, color: '#0F7375', fontWeight: 700 }}>{pct}%</p>
                   </div>
-                  <div style={{ height: 8, background: '#30363d', borderRadius: 4, marginBottom: 8, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: pct + '%', background: pct >= 100 ? '#25d366' : '#a78bfa', borderRadius: 4, transition: 'width 0.5s' }} />
+                  <div style={{ height: 8, background: '#DCDFEC', borderRadius: 4, marginBottom: 8, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: pct + '%', background: pct >= 100 ? '#0B7A6C' : '#0F7375', borderRadius: 4, transition: 'width 0.5s' }} />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <p style={{ fontSize: 12, color: '#7d8590' }}>{fmtK(monthTotal)} sold</p>
-                    <p style={{ fontSize: 12, color: '#7d8590' }}>Target: {fmtK(target)}</p>
+                    <p style={{ fontSize: 12, color: '#5B607E' }}>{fmtK(monthTotal)} sold</p>
+                    <p style={{ fontSize: 12, color: '#5B607E' }}>Target: {fmtK(target)}</p>
                   </div>
-                  {monthTotal >= target && <p style={{ fontSize: 12, color: '#25d366', marginTop: 8, textAlign: 'center', fontWeight: 700 }}>🎉 Target achieved! Bonus rate active.</p>}
+                  {monthTotal >= target && <p style={{ fontSize: 12, color: '#0B7A6C', marginTop: 8, textAlign: 'center', fontWeight: 700 }}>🎉 Target achieved! Bonus rate active.</p>}
                 </div>
               )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-                {[{ l: 'Orders This Month', v: monthOrders.length, c: '#a78bfa' }, { l: 'Total Sales', v: fmtK(monthTotal), c: '#2196F3' }, { l: 'My Customers', v: customers.length, c: '#ffb547' }, { l: 'All Orders', v: orders.length, c: '#4da6ff' }].map(k => (
-                  <div key={k.l} style={T.card}><p style={{ fontSize: 10, color: '#7d8590', letterSpacing: 0.8 }}>{k.l.toUpperCase()}</p><p style={{ fontSize: 22, fontWeight: 900, color: k.c, marginTop: 6 }}>{k.v}</p></div>
+                {[{ l: 'Orders This Month', v: monthOrders.length, c: '#0F7375' }, { l: 'Total Sales', v: fmtK(monthTotal), c: '#2D2F8F' }, { l: 'My Customers', v: customers.length, c: '#9A5B00' }, { l: 'All Orders', v: orders.length, c: '#2D2F8F' }].map(k => (
+                  <div key={k.l} style={T.card}><p style={{ fontSize: 10, color: '#5B607E', letterSpacing: 0.8 }}>{k.l.toUpperCase()}</p><p style={{ fontSize: 22, fontWeight: 900, color: k.c, marginTop: 6 }}>{k.v}</p></div>
                 ))}
               </div>
             </div>
@@ -282,69 +282,69 @@ export default function SalesRep() {
               <p style={{ fontWeight: 800, fontSize: 16, marginBottom: 16 }}>Notifications</p>
               {notifications.map(n => (
                 <div key={n.id} onClick={async () => { await supabase.from('commission_notifications').update({ is_read: true }).eq('id', n.id); setNotifications(p => p.map(x => x.id === n.id ? { ...x, is_read: true } : x)) }}
-                  style={{ ...T.card, opacity: n.is_read ? 0.5 : 1, borderColor: n.type === 'approved' ? 'rgba(37,211,102,0.3)' : 'rgba(255,77,109,0.3)', cursor: 'pointer' }}>
+                  style={{ ...T.card, opacity: n.is_read ? 0.5 : 1, borderColor: n.type === 'approved' ? 'rgba(11,122,108,0.3)' : 'rgba(185,58,22,0.3)', cursor: 'pointer' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 13, color: n.type === 'approved' ? '#25d366' : '#ff4d6d', fontWeight: 700, marginBottom: 4 }}>
+                      <p style={{ fontSize: 13, color: n.type === 'approved' ? '#0B7A6C' : '#B93A16', fontWeight: 700, marginBottom: 4 }}>
                         {n.type === 'approved' ? '✅' : n.type === 'fulfilled' ? '📦' : '❌'} {n.message}
                       </p>
-                      <p style={{ fontSize: 11, color: '#7d8590' }}>{new Date(n.created_at).toLocaleDateString()}</p>
+                      <p style={{ fontSize: 11, color: '#5B607E' }}>{new Date(n.created_at).toLocaleDateString()}</p>
                     </div>
-                    {!n.is_read && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#a78bfa', flexShrink: 0, marginLeft: 8, marginTop: 4 }} />}
+                    {!n.is_read && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0F7375', flexShrink: 0, marginLeft: 8, marginTop: 4 }} />}
                   </div>
                 </div>
               ))}
-              {!notifications.length && <div style={{ ...T.card, textAlign: 'center', padding: 40 }}><p style={{ fontSize: 36 }}>🔔</p><p style={{ color: '#484f58', marginTop: 10 }}>No notifications yet</p></div>}
+              {!notifications.length && <div style={{ ...T.card, textAlign: 'center', padding: 40 }}><p style={{ fontSize: 36 }}>🔔</p><p style={{ color: '#8A8FAE', marginTop: 10 }}>No notifications yet</p></div>}
             </div>
           )}
         </div>
 
         {/* New Order Modal */}
         {orderModal && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }} onClick={e => e.target === e.currentTarget && setOrderModal(false)}>
-            <div style={{ background: '#161b22', borderRadius: '20px 20px 0 0', padding: 20, width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto', border: '1px solid #30363d' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,24,58,0.55)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }} onClick={e => e.target === e.currentTarget && setOrderModal(false)}>
+            <div style={{ background: '#FFFFFF', borderRadius: '20px 20px 0 0', padding: 20, width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto', border: '1px solid #DCDFEC' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 800 }}>New Order</h2>
-                <button onClick={() => setOrderModal(false)} style={{ background: 'none', border: 'none', color: '#7d8590', fontSize: 20, cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setOrderModal(false)} style={{ background: 'none', border: 'none', color: '#5B607E', fontSize: 20, cursor: 'pointer' }}>✕</button>
               </div>
               {/* Customer selector */}
               {orderCust ? (
-                <div style={{ background: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.3)', borderRadius: 10, padding: 12, marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div><p style={{ fontWeight: 700, color: '#25d366' }}>✓ {orderCust.name}</p><p style={{ fontSize: 11, color: '#7d8590', marginTop: 2 }}>{orderCust.business_type}</p></div>
-                  <button onClick={() => setOrderCust(null)} style={{ background: 'none', border: 'none', color: '#7d8590', cursor: 'pointer', fontSize: 13 }}>Change</button>
+                <div style={{ background: 'rgba(11,122,108,0.1)', border: '1px solid rgba(11,122,108,0.3)', borderRadius: 10, padding: 12, marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div><p style={{ fontWeight: 700, color: '#0B7A6C' }}>✓ {orderCust.name}</p><p style={{ fontSize: 11, color: '#5B607E', marginTop: 2 }}>{orderCust.business_type}</p></div>
+                  <button onClick={() => setOrderCust(null)} style={{ background: 'none', border: 'none', color: '#5B607E', cursor: 'pointer', fontSize: 13 }}>Change</button>
                 </div>
               ) : (
                 <div style={{ marginBottom: 14 }}>
-                  <p style={{ fontSize: 11, color: '#7d8590', letterSpacing: 0.8, marginBottom: 8 }}>SELECT CUSTOMER</p>
-                  <div style={{ maxHeight: 160, overflowY: 'auto', border: '1px solid #30363d', borderRadius: 8 }}>
+                  <p style={{ fontSize: 11, color: '#5B607E', letterSpacing: 0.8, marginBottom: 8 }}>SELECT CUSTOMER</p>
+                  <div style={{ maxHeight: 160, overflowY: 'auto', border: '1px solid #DCDFEC', borderRadius: 8 }}>
                     {customers.map(c => (
-                      <button key={c.id} onClick={() => setOrderCust(c)} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid #30363d', color: '#e6edf3', cursor: 'pointer', fontSize: 13 }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                      <button key={c.id} onClick={() => setOrderCust(c)} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid #DCDFEC', color: '#15183A', cursor: 'pointer', fontSize: 13 }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(21,24,58,0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                         <span style={{ fontWeight: 600 }}>{c.name}</span>
-                        <span style={{ color: '#7d8590', fontSize: 11, marginLeft: 8 }}>{c.business_type}</span>
+                        <span style={{ color: '#5B607E', fontSize: 11, marginLeft: 8 }}>{c.business_type}</span>
                       </button>
                     ))}
-                    {!customers.length && <p style={{ padding: '12px 14px', color: '#484f58', fontSize: 13 }}>No customers. Add one first.</p>}
+                    {!customers.length && <p style={{ padding: '12px 14px', color: '#8A8FAE', fontSize: 13 }}>No customers. Add one first.</p>}
                   </div>
                 </div>
               )}
               {/* Product search */}
-              <p style={{ fontSize: 11, color: '#7d8590', letterSpacing: 0.8, marginBottom: 6 }}>ADD PRODUCTS</p>
+              <p style={{ fontSize: 11, color: '#5B607E', letterSpacing: 0.8, marginBottom: 6 }}>ADD PRODUCTS</p>
               <input value={orderSearch} onChange={e => setOrderSearch(e.target.value)} placeholder="Search products or part number..." style={{ ...T.input, marginBottom: 8 }} />
-              <div style={{ maxHeight: 180, overflowY: 'auto', marginBottom: 14, border: '1px solid #30363d', borderRadius: 8 }}>
+              <div style={{ maxHeight: 180, overflowY: 'auto', marginBottom: 14, border: '1px solid #DCDFEC', borderRadius: 8 }}>
                 {products.filter(p => !orderSearch || p.name.toLowerCase().includes(orderSearch.toLowerCase()) || Object.values(p._cfv || {}).some(v => String(v).toLowerCase().includes(orderSearch.toLowerCase()))).map(p => {
                   const inCart = orderCart.find(i => i.product.id === p.id)
                   const pf = customFields.find(f => f.field_name.toLowerCase().includes('part'))
                   const pn = pf && p._cfv?.[pf.id]
                   return (
                     <button key={p.id} onClick={() => { if (!inCart) setOrderCart(prev => [...prev, { product: p, qty: '1', unit_price: String(p.wholesale_price || p.sell_price || 0) }]) }}
-                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid #30363d', color: inCart ? '#484f58' : '#e6edf3', cursor: 'pointer', opacity: inCart ? 0.4 : 1 }}
-                      onMouseEnter={e => !inCart && (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '10px 14px', background: 'none', border: 'none', borderBottom: '1px solid #DCDFEC', color: inCart ? '#8A8FAE' : '#15183A', cursor: 'pointer', opacity: inCart ? 0.4 : 1 }}
+                      onMouseEnter={e => !inCart && (e.currentTarget.style.background = 'rgba(21,24,58,0.03)')} onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
                       <div style={{ textAlign: 'left' }}>
                         <span style={{ fontSize: 13, fontWeight: 600 }}>{p.image_emoji} {p.name}</span>
-                        {pn && <span style={{ fontSize: 10, color: '#a78bfa', display: 'block' }}>#{pn}</span>}
+                        {pn && <span style={{ fontSize: 10, color: '#0F7375', display: 'block' }}>#{pn}</span>}
                       </div>
-                      <span style={{ fontSize: 13, color: inCart ? '#484f58' : '#a78bfa', fontWeight: 700 }}>{inCart ? '✓' : '+'}</span>
+                      <span style={{ fontSize: 13, color: inCart ? '#8A8FAE' : '#0F7375', fontWeight: 700 }}>{inCart ? '✓' : '+'}</span>
                     </button>
                   )
                 })}
@@ -352,28 +352,28 @@ export default function SalesRep() {
               {/* Cart items */}
               {orderCart.length > 0 && (
                 <div>
-                  <p style={{ fontSize: 11, color: '#7d8590', letterSpacing: 0.8, marginBottom: 8 }}>ORDER ITEMS</p>
+                  <p style={{ fontSize: 11, color: '#5B607E', letterSpacing: 0.8, marginBottom: 8 }}>ORDER ITEMS</p>
                   {orderCart.map((it, i) => (
                     <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 8, alignItems: 'center', marginBottom: 8 }}>
                       <p style={{ fontSize: 12, fontWeight: 600 }}>{it.product.name}</p>
                       <input value={it.qty} onChange={e => setOrderCart(p => p.map((c, j) => j === i ? { ...c, qty: e.target.value } : c))} placeholder="Qty" type="number" style={{ ...T.input, padding: '8px' }} />
                       <input value={it.unit_price} onChange={e => setOrderCart(p => p.map((c, j) => j === i ? { ...c, unit_price: e.target.value } : c))} placeholder="Price" type="number" style={{ ...T.input, padding: '8px' }} />
-                      <button onClick={() => setOrderCart(p => p.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: '#ff4d6d', fontSize: 16, cursor: 'pointer' }}>✕</button>
+                      <button onClick={() => setOrderCart(p => p.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: '#B93A16', fontSize: 16, cursor: 'pointer' }}>✕</button>
                     </div>
                   ))}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '1px solid #30363d', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '1px solid #DCDFEC', marginBottom: 12 }}>
                     <span style={{ fontWeight: 700 }}>Total</span>
-                    <span style={{ fontWeight: 800, color: '#a78bfa', fontSize: 16 }}>{fmt(orderCart.reduce((a, i) => a + (parseFloat(i.qty) || 0) * (parseFloat(i.unit_price) || 0), 0))}</span>
+                    <span style={{ fontWeight: 800, color: '#0F7375', fontSize: 16 }}>{fmt(orderCart.reduce((a, i) => a + (parseFloat(i.qty) || 0) * (parseFloat(i.unit_price) || 0), 0))}</span>
                   </div>
                 </div>
               )}
               <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: 11, color: '#7d8590', letterSpacing: 0.8, marginBottom: 6 }}>NOTES (OPTIONAL)</p>
+                <p style={{ fontSize: 11, color: '#5B607E', letterSpacing: 0.8, marginBottom: 6 }}>NOTES (OPTIONAL)</p>
                 <input value={orderNotes} onChange={e => setOrderNotes(e.target.value)} placeholder="Delivery instructions..." style={T.input} />
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setOrderModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid #30363d', background: 'transparent', color: '#e6edf3', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                <button onClick={submitOrder} disabled={orderSaving || !orderCust || !orderCart.length} style={{ flex: 2, padding: '11px', borderRadius: 8, background: orderCust && orderCart.length ? '#a78bfa' : '#30363d', color: orderCust && orderCart.length ? '#000' : '#484f58', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                <button onClick={() => setOrderModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid #DCDFEC', background: 'transparent', color: '#15183A', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={submitOrder} disabled={orderSaving || !orderCust || !orderCart.length} style={{ flex: 2, padding: '11px', borderRadius: 8, background: orderCust && orderCart.length ? '#0F7375' : '#DCDFEC', color: orderCust && orderCart.length ? '#FFFFFF' : '#8A8FAE', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
                   {orderSaving ? 'Submitting...' : '📦 Submit Order'}
                 </button>
               </div>
@@ -383,29 +383,29 @@ export default function SalesRep() {
 
         {/* Add Customer Modal */}
         {custModal && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }} onClick={e => e.target === e.currentTarget && setCustModal(false)}>
-            <div style={{ background: '#161b22', borderRadius: '20px 20px 0 0', padding: 20, width: '100%', maxWidth: 480, border: '1px solid #30363d' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,24,58,0.55)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }} onClick={e => e.target === e.currentTarget && setCustModal(false)}>
+            <div style={{ background: '#FFFFFF', borderRadius: '20px 20px 0 0', padding: 20, width: '100%', maxWidth: 480, border: '1px solid #DCDFEC' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 800 }}>Add Customer</h2>
-                <button onClick={() => setCustModal(false)} style={{ background: 'none', border: 'none', color: '#7d8590', fontSize: 20, cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setCustModal(false)} style={{ background: 'none', border: 'none', color: '#5B607E', fontSize: 20, cursor: 'pointer' }}>✕</button>
               </div>
               {[{ k: 'name', l: 'Full Name *', ph: 'e.g. Amina Hassan' }, { k: 'phone', l: 'Phone', ph: 'e.g. 0754 123 456' }, { k: 'location', l: 'Location / Area', ph: 'e.g. Kariakoo' }].map(f => (
                 <div key={f.k} style={{ marginBottom: 12 }}>
-                  <p style={{ fontSize: 10, color: '#7d8590', letterSpacing: 0.8, marginBottom: 4 }}>{f.l.toUpperCase()}</p>
+                  <p style={{ fontSize: 10, color: '#5B607E', letterSpacing: 0.8, marginBottom: 4 }}>{f.l.toUpperCase()}</p>
                   <input value={custForm[f.k]} onChange={e => setCustForm(p => ({ ...p, [f.k]: e.target.value }))} placeholder={f.ph} style={T.input} />
                 </div>
               ))}
               <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: 10, color: '#7d8590', letterSpacing: 0.8, marginBottom: 6 }}>BUSINESS TYPE</p>
+                <p style={{ fontSize: 10, color: '#5B607E', letterSpacing: 0.8, marginBottom: 6 }}>BUSINESS TYPE</p>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {['Garage', 'Spare Parts', 'Wholesaler', 'Other'].map(bt => (
-                    <button key={bt} onClick={() => setCustForm(p => ({ ...p, business_type: bt }))} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid', borderColor: custForm.business_type === bt ? '#a78bfa' : '#30363d', background: custForm.business_type === bt ? 'rgba(167,139,250,0.15)' : 'transparent', color: custForm.business_type === bt ? '#a78bfa' : '#7d8590', fontSize: 12, fontWeight: custForm.business_type === bt ? 700 : 400, cursor: 'pointer' }}>{bt}</button>
+                    <button key={bt} onClick={() => setCustForm(p => ({ ...p, business_type: bt }))} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid', borderColor: custForm.business_type === bt ? '#0F7375' : '#DCDFEC', background: custForm.business_type === bt ? 'rgba(15,115,117,0.15)' : 'transparent', color: custForm.business_type === bt ? '#0F7375' : '#5B607E', fontSize: 12, fontWeight: custForm.business_type === bt ? 700 : 400, cursor: 'pointer' }}>{bt}</button>
                   ))}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setCustModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid #30363d', background: 'transparent', color: '#e6edf3', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                <button onClick={saveCustomer} disabled={custSaving} style={{ flex: 2, padding: '11px', borderRadius: 8, background: '#a78bfa', color: '#000', fontWeight: 700, border: 'none', cursor: 'pointer' }}>{custSaving ? 'Saving...' : 'Save Customer'}</button>
+                <button onClick={() => setCustModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid #DCDFEC', background: 'transparent', color: '#15183A', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={saveCustomer} disabled={custSaving} style={{ flex: 2, padding: '11px', borderRadius: 8, background: '#0F7375', color: '#FFFFFF', fontWeight: 700, border: 'none', cursor: 'pointer' }}>{custSaving ? 'Saving...' : 'Save Customer'}</button>
               </div>
             </div>
           </div>

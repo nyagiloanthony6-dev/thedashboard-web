@@ -4,19 +4,19 @@ import Layout from '../../components/Layout'
 import { supabase, fmt } from '../../lib/supabase'
 
 const TEMPLATES = [
-  { key:'new_arrivals', label:'New Arrivals', emoji:'🆕', color:'#2196F3', body:'Hi {{name}}! 👋\n\nGood news from {{shop}}! New items just arrived:\n\n{{products}}\n\nCome visit us today! 🛍️' },
-  { key:'promotion', label:'Promotion', emoji:'🎉', color:'#ffb547', body:'Hi {{name}}! 🎉\n\n{{shop}} has a special offer just for you!\n\nGet {{discount}}% OFF on selected items today only! ⏰' },
-  { key:'reactivation', label:'We Miss You', emoji:'💚', color:'#4da6ff', body:'Hi {{name}}! 💚\n\nWe miss you at {{shop}}!\n\nIt\'s been {{days}} days since your last visit. Come back - we have a surprise for you! 🎁' },
-  { key:'thank_you', label:'Thank You', emoji:'🙏', color:'#a78bfa', body:'Hi {{name}}! 🙏\n\nThank you for being a loyal customer at {{shop}}!\n\nYou\'ve visited us {{visits}} times and we truly appreciate you! ❤️' },
+  { key:'new_arrivals', label:'New Arrivals', emoji:'🆕', color:'#2D2F8F', body:'Hi {{name}}! 👋\n\nGood news from {{shop}}! New items just arrived:\n\n{{products}}\n\nCome visit us today! 🛍️' },
+  { key:'promotion', label:'Promotion', emoji:'🎉', color:'#9A5B00', body:'Hi {{name}}! 🎉\n\n{{shop}} has a special offer just for you!\n\nGet {{discount}}% OFF on selected items today only! ⏰' },
+  { key:'reactivation', label:'We Miss You', emoji:'💚', color:'#2D2F8F', body:'Hi {{name}}! 💚\n\nWe miss you at {{shop}}!\n\nIt\'s been {{days}} days since your last visit. Come back - we have a surprise for you! 🎁' },
+  { key:'thank_you', label:'Thank You', emoji:'🙏', color:'#0F7375', body:'Hi {{name}}! 🙏\n\nThank you for being a loyal customer at {{shop}}!\n\nYou\'ve visited us {{visits}} times and we truly appreciate you! ❤️' },
   { key:'custom', label:'Custom Message', emoji:'✏️', color:'#888888', body:'Hi {{name}}! 👋\n\nMessage from {{shop}}:\n\n' },
 ]
 
 const SEGMENTS = [
-  { key:'all', label:'All Customers', emoji:'👥', color:'#2196F3', desc:'Everyone with a phone number' },
-  { key:'active', label:'Active', emoji:'🟢', color:'#25d366', desc:'Bought in the last 30 days' },
-  { key:'dormant', label:'Dormant', emoji:'🔴', color:'#ff4d6d', desc:'No purchase in 30+ days' },
-  { key:'new', label:'New Customers', emoji:'🔵', color:'#4da6ff', desc:'Only 1 purchase so far' },
-  { key:'repeated', label:'Loyal Customers', emoji:'🟡', color:'#ffb547', desc:'3 or more purchases' },
+  { key:'all', label:'All Customers', emoji:'👥', color:'#2D2F8F', desc:'Everyone with a phone number' },
+  { key:'active', label:'Active', emoji:'🟢', color:'#0B7A6C', desc:'Bought in the last 30 days' },
+  { key:'dormant', label:'Dormant', emoji:'🔴', color:'#B93A16', desc:'No purchase in 30+ days' },
+  { key:'new', label:'New Customers', emoji:'🔵', color:'#2D2F8F', desc:'Only 1 purchase so far' },
+  { key:'repeated', label:'Loyal Customers', emoji:'🟡', color:'#9A5B00', desc:'3 or more purchases' },
 ]
 
 export default function WhatsApp() {
@@ -125,18 +125,18 @@ export default function WhatsApp() {
   const previewText = previewCustomer ? personalize(msg, previewCustomer) : msg
 
   const C = {
-    card: { background: '#161b22', border: '1px solid #30363d', borderRadius: 12, padding: 16 },
-    input: { background: '#0d1117', border: '1.5px solid #30363d', borderRadius: 8, color: '#e6edf3', padding: '9px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit' },
-    label: { fontSize: 10, color: '#7d8590', letterSpacing: 0.8, display: 'block', marginBottom: 6 },
+    card: { background: '#FFFFFF', border: '1px solid #DCDFEC', borderRadius: 12, padding: 16 },
+    input: { background: '#F6F7FB', border: '1.5px solid #DCDFEC', borderRadius: 8, color: '#15183A', padding: '9px 12px', fontSize: 13, width: '100%', outline: 'none', fontFamily: 'inherit' },
+    label: { fontSize: 10, color: '#5B607E', letterSpacing: 0.8, display: 'block', marginBottom: 6 },
   }
 
-  if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0d1117' }}><div style={{ width:36, height:36, border:'3px solid #30363d', borderTopColor:'#25d366', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>
+  if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#F6F7FB' }}><div style={{ width:36, height:36, border:'3px solid #DCDFEC', borderTopColor:'#0B7A6C', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>
 
   return (
     <>
       <Head><title>WhatsApp Campaigns — TheDashboard</title></Head>
       <Layout title="WhatsApp Campaigns" shop={shop} profile={profile}>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}} textarea{background:#0d1117;border:1.5px solid #30363d;border-radius:8px;color:#e6edf3;padding:9px 12px;font-size:13px;width:100%;outline:none;font-family:inherit;resize:vertical} input::placeholder,textarea::placeholder{color:#484f58}`}</style>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}} textarea{background:#F6F7FB;border:1.5px solid #DCDFEC;border-radius:8px;color:#15183A;padding:9px 12px;font-size:13px;width:100%;outline:none;font-family:inherit;resize:vertical} input::placeholder,textarea::placeholder{color:#8A8FAE}`}</style>
 
         {/* SENDING VIEW */}
         {view === 'sending' && targets[idx] && (
@@ -144,29 +144,29 @@ export default function WhatsApp() {
             <div style={C.card}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h2 style={{ fontSize: 16, fontWeight: 800 }}>Sending Campaign</h2>
-                <span style={{ fontSize: 13, color: '#7d8590' }}>{idx + 1} / {targets.length}</span>
+                <span style={{ fontSize: 13, color: '#5B607E' }}>{idx + 1} / {targets.length}</span>
               </div>
-              <div style={{ height: 6, background: '#30363d', borderRadius: 3, marginBottom: 20, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: Math.round((idx / targets.length) * 100) + '%', background: '#25d366', borderRadius: 3, transition: 'width 0.3s' }} />
+              <div style={{ height: 6, background: '#DCDFEC', borderRadius: 3, marginBottom: 20, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: Math.round((idx / targets.length) * 100) + '%', background: '#0B7A6C', borderRadius: 3, transition: 'width 0.3s' }} />
               </div>
-              <div style={{ background: '#0d1117', borderRadius: 10, padding: 16, marginBottom: 16 }}>
+              <div style={{ background: '#F6F7FB', borderRadius: 10, padding: 16, marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 40, height: 40, background: '#25d36620', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#25d366' }}>{targets[idx].name.charAt(0)}</div>
+                  <div style={{ width: 40, height: 40, background: '#25d36620', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#0B7A6C' }}>{targets[idx].name.charAt(0)}</div>
                   <div>
                     <p style={{ fontWeight: 700 }}>{targets[idx].name}</p>
-                    <p style={{ fontSize: 12, color: '#7d8590' }}>{targets[idx].phone}</p>
+                    <p style={{ fontSize: 12, color: '#5B607E' }}>{targets[idx].phone}</p>
                   </div>
                 </div>
                 <div style={{ background: '#25d36615', border: '1px solid #25d36630', borderRadius: 10, padding: 14 }}>
-                  <pre style={{ fontSize: 13, lineHeight: 1.6, color: '#e6edf3', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>
+                  <pre style={{ fontSize: 13, lineHeight: 1.6, color: '#15183A', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>
                     {personalize(msg, targets[idx])}
                   </pre>
                 </div>
               </div>
-              <button onClick={markSent} style={{ width: '100%', padding: '14px', borderRadius: 10, background: '#25d366', color: '#000', fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer' }}>
+              <button onClick={markSent} style={{ width: '100%', padding: '14px', borderRadius: 10, background: '#0B7A6C', color: '#FFFFFF', fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer' }}>
                 💬 Open WhatsApp & Mark Sent →
               </button>
-              <button onClick={() => { setView('home'); setTargets([]); setIdx(0) }} style={{ width: '100%', padding: '9px', borderRadius: 8, background: 'transparent', border: '1px solid #30363d', color: '#7d8590', fontSize: 12, cursor: 'pointer', marginTop: 8 }}>Cancel Campaign</button>
+              <button onClick={() => { setView('home'); setTargets([]); setIdx(0) }} style={{ width: '100%', padding: '9px', borderRadius: 8, background: 'transparent', border: '1px solid #DCDFEC', color: '#5B607E', fontSize: 12, cursor: 'pointer', marginTop: 8 }}>Cancel Campaign</button>
             </div>
           </div>
         )}
@@ -177,8 +177,8 @@ export default function WhatsApp() {
             <div style={C.card}>
               <p style={{ fontSize: 48, marginBottom: 16 }}>🎉</p>
               <h2 style={{ fontSize: 20, fontWeight: 900, marginBottom: 8 }}>Campaign Complete!</h2>
-              <p style={{ color: '#7d8590', fontSize: 14, marginBottom: 24 }}>WhatsApp messages sent to {sentCount} customers</p>
-              <button onClick={() => { setView('home'); setCampName(''); setIdx(0); setSentCount(0) }} style={{ width: '100%', padding: '12px', borderRadius: 8, background: '#25d366', color: '#000', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>Back to Campaigns</button>
+              <p style={{ color: '#5B607E', fontSize: 14, marginBottom: 24 }}>WhatsApp messages sent to {sentCount} customers</p>
+              <button onClick={() => { setView('home'); setCampName(''); setIdx(0); setSentCount(0) }} style={{ width: '100%', padding: '12px', borderRadius: 8, background: '#0B7A6C', color: '#FFFFFF', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>Back to Campaigns</button>
             </div>
           </div>
         )}
@@ -189,13 +189,13 @@ export default function WhatsApp() {
             {/* Summary */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 12, marginBottom: 24 }}>
               {[
-                { l: 'Total Customers', v: customers.length, c: '#2196F3' },
-                { l: 'With Phone', v: customers.filter(c => c.phone).length, c: '#25d366' },
-                { l: 'Campaigns Sent', v: campaigns.filter(c => c.status === 'sent').length, c: '#a78bfa' },
-                { l: 'Total Reached', v: campaigns.reduce((a, c) => a + (c.sent_count || 0), 0), c: '#ffb547' },
+                { l: 'Total Customers', v: customers.length, c: '#2D2F8F' },
+                { l: 'With Phone', v: customers.filter(c => c.phone).length, c: '#0B7A6C' },
+                { l: 'Campaigns Sent', v: campaigns.filter(c => c.status === 'sent').length, c: '#0F7375' },
+                { l: 'Total Reached', v: campaigns.reduce((a, c) => a + (c.sent_count || 0), 0), c: '#9A5B00' },
               ].map(k => (
                 <div key={k.l} style={C.card}>
-                  <p style={{ fontSize: 10, color: '#7d8590', letterSpacing: 0.8 }}>{k.l.toUpperCase()}</p>
+                  <p style={{ fontSize: 10, color: '#5B607E', letterSpacing: 0.8 }}>{k.l.toUpperCase()}</p>
                   <p style={{ fontSize: 20, fontWeight: 900, color: k.c, marginTop: 6 }}>{k.v}</p>
                 </div>
               ))}
@@ -204,7 +204,7 @@ export default function WhatsApp() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 16, alignItems: 'start' }}>
               {/* Compose */}
               <div>
-                <h2 style={{ fontSize: 14, fontWeight: 700, color: '#7d8590', letterSpacing: 0.8, marginBottom: 14 }}>NEW CAMPAIGN</h2>
+                <h2 style={{ fontSize: 14, fontWeight: 700, color: '#5B607E', letterSpacing: 0.8, marginBottom: 14 }}>NEW CAMPAIGN</h2>
 
                 {/* Campaign name */}
                 <div style={{ ...C.card, marginBottom: 12 }}>
@@ -217,9 +217,9 @@ export default function WhatsApp() {
                   <label style={C.label}>MESSAGE TEMPLATE</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))', gap: 8, marginBottom: 14 }}>
                     {TEMPLATES.map(t => (
-                      <button key={t.key} onClick={() => { setTpl(t); setMsg(t.body) }} style={{ padding: '10px', borderRadius: 10, border: `1px solid ${tpl.key === t.key ? t.color : '#30363d'}`, background: tpl.key === t.key ? t.color + '18' : 'transparent', cursor: 'pointer', textAlign: 'left' }}>
+                      <button key={t.key} onClick={() => { setTpl(t); setMsg(t.body) }} style={{ padding: '10px', borderRadius: 10, border: `1px solid ${tpl.key === t.key ? t.color : '#DCDFEC'}`, background: tpl.key === t.key ? t.color + '18' : 'transparent', cursor: 'pointer', textAlign: 'left' }}>
                         <p style={{ fontSize: 18, marginBottom: 4 }}>{t.emoji}</p>
-                        <p style={{ fontSize: 12, fontWeight: 700, color: tpl.key === t.key ? t.color : '#e6edf3' }}>{t.label}</p>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: tpl.key === t.key ? t.color : '#15183A' }}>{t.label}</p>
                       </button>
                     ))}
                   </div>
@@ -231,7 +231,7 @@ export default function WhatsApp() {
                       <input value={discount} onChange={e => setDiscount(e.target.value)} type="number" placeholder="10" style={{ ...C.input, width: 100 }} />
                     </div>
                   )}
-                  <p style={{ fontSize: 10, color: '#484f58', marginTop: 8 }}>Variables: {'{{name}}'} {'{{shop}}'} {'{{days}}'} {'{{visits}}'} {'{{products}}'} {'{{discount}}'}</p>
+                  <p style={{ fontSize: 10, color: '#8A8FAE', marginTop: 8 }}>Variables: {'{{name}}'} {'{{shop}}'} {'{{days}}'} {'{{visits}}'} {'{{products}}'} {'{{discount}}'}</p>
                 </div>
 
                 {/* Segment */}
@@ -239,16 +239,16 @@ export default function WhatsApp() {
                   <label style={C.label}>TARGET AUDIENCE</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     {SEGMENTS.map(s => (
-                      <button key={s.key} onClick={() => setSeg(s.key)} style={{ padding: '10px 12px', borderRadius: 10, border: `1px solid ${seg === s.key ? s.color : '#30363d'}`, background: seg === s.key ? s.color + '15' : 'transparent', cursor: 'pointer', textAlign: 'left' }}>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: seg === s.key ? s.color : '#e6edf3' }}>{s.emoji} {s.label}</p>
-                        <p style={{ fontSize: 11, color: '#7d8590', marginTop: 2 }}>{s.desc}</p>
+                      <button key={s.key} onClick={() => setSeg(s.key)} style={{ padding: '10px 12px', borderRadius: 10, border: `1px solid ${seg === s.key ? s.color : '#DCDFEC'}`, background: seg === s.key ? s.color + '15' : 'transparent', cursor: 'pointer', textAlign: 'left' }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: seg === s.key ? s.color : '#15183A' }}>{s.emoji} {s.label}</p>
+                        <p style={{ fontSize: 11, color: '#5B607E', marginTop: 2 }}>{s.desc}</p>
                         <p style={{ fontSize: 12, fontWeight: 700, color: s.color, marginTop: 4 }}>{getSegment(s.key).length} customers</p>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <button onClick={startCampaign} disabled={saving || !campName || !segList.length} style={{ width: '100%', padding: '14px', borderRadius: 10, background: !campName || !segList.length ? '#30363d' : '#25d366', color: !campName || !segList.length ? '#484f58' : '#000', fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer' }}>
+                <button onClick={startCampaign} disabled={saving || !campName || !segList.length} style={{ width: '100%', padding: '14px', borderRadius: 10, background: !campName || !segList.length ? '#DCDFEC' : '#0B7A6C', color: !campName || !segList.length ? '#8A8FAE' : '#000', fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer' }}>
                   {saving ? 'Setting up...' : `💬 Send to ${segList.length} Customers via WhatsApp`}
                 </button>
               </div>
@@ -257,33 +257,33 @@ export default function WhatsApp() {
               <div>
                 {/* Preview */}
                 <div style={{ ...C.card, marginBottom: 12 }}>
-                  <p style={{ fontSize: 11, color: '#7d8590', letterSpacing: 0.8, marginBottom: 10 }}>MESSAGE PREVIEW</p>
+                  <p style={{ fontSize: 11, color: '#5B607E', letterSpacing: 0.8, marginBottom: 10 }}>MESSAGE PREVIEW</p>
                   {previewCustomer ? (
-                    <div style={{ background: '#0d1117', borderRadius: 10, padding: 14 }}>
-                      <p style={{ fontSize: 10, color: '#7d8590', marginBottom: 8 }}>For: {previewCustomer.name}</p>
+                    <div style={{ background: '#F6F7FB', borderRadius: 10, padding: 14 }}>
+                      <p style={{ fontSize: 10, color: '#5B607E', marginBottom: 8 }}>For: {previewCustomer.name}</p>
                       <div style={{ background: '#25d36615', border: '1px solid #25d36630', borderRadius: 10, padding: 12 }}>
-                        <pre style={{ fontSize: 12, lineHeight: 1.6, color: '#e6edf3', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{previewText}</pre>
+                        <pre style={{ fontSize: 12, lineHeight: 1.6, color: '#15183A', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{previewText}</pre>
                       </div>
                     </div>
-                  ) : <p style={{ color: '#484f58', fontSize: 13 }}>No customers in this segment with phone numbers</p>}
+                  ) : <p style={{ color: '#8A8FAE', fontSize: 13 }}>No customers in this segment with phone numbers</p>}
                 </div>
 
                 {/* Campaign history */}
                 <div style={C.card}>
-                  <p style={{ fontSize: 11, color: '#7d8590', letterSpacing: 0.8, marginBottom: 12 }}>CAMPAIGN HISTORY</p>
+                  <p style={{ fontSize: 11, color: '#5B607E', letterSpacing: 0.8, marginBottom: 12 }}>CAMPAIGN HISTORY</p>
                   {campaigns.slice(0, 8).map(c => (
-                    <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #30363d' }}>
+                    <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #DCDFEC' }}>
                       <div>
                         <p style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</p>
-                        <p style={{ fontSize: 10, color: '#7d8590', marginTop: 1 }}>{c.segment} · {new Date(c.created_at).toLocaleDateString()}</p>
+                        <p style={{ fontSize: 10, color: '#5B607E', marginTop: 1 }}>{c.segment} · {new Date(c.created_at).toLocaleDateString()}</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{ background: c.status === 'sent' ? 'rgba(37,211,102,0.15)' : 'rgba(255,181,71,0.15)', color: c.status === 'sent' ? '#25d366' : '#ffb547', border: `1px solid ${c.status === 'sent' ? 'rgba(37,211,102,0.3)' : 'rgba(255,181,71,0.3)'}`, borderRadius: 4, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>{c.status?.toUpperCase()}</span>
-                        {c.sent_count > 0 && <p style={{ fontSize: 10, color: '#7d8590', marginTop: 3 }}>{c.sent_count} sent</p>}
+                        <span style={{ background: c.status === 'sent' ? 'rgba(11,122,108,0.15)' : 'rgba(242,160,7,0.15)', color: c.status === 'sent' ? '#0B7A6C' : '#9A5B00', border: `1px solid ${c.status === 'sent' ? 'rgba(11,122,108,0.3)' : 'rgba(242,160,7,0.3)'}`, borderRadius: 4, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>{c.status?.toUpperCase()}</span>
+                        {c.sent_count > 0 && <p style={{ fontSize: 10, color: '#5B607E', marginTop: 3 }}>{c.sent_count} sent</p>}
                       </div>
                     </div>
                   ))}
-                  {!campaigns.length && <p style={{ color: '#484f58', fontSize: 13 }}>No campaigns yet</p>}
+                  {!campaigns.length && <p style={{ color: '#8A8FAE', fontSize: 13 }}>No campaigns yet</p>}
                 </div>
               </div>
             </div>

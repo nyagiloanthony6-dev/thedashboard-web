@@ -3,29 +3,34 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 import { loadModules } from '../lib/store'
+import Icon from './store/Icon'
+import { SLMark, SLWordmark } from './store/Shell'
 
-// module: 'pos' items are hidden for Store-only shops; 'kibali' items show
-// only when the shop has the Store add-on.
+// Serengeti Labs brand: white sidebar, indigo active state, saffron highlight.
+// module: 'pos' items are hidden for Store-only shops; 'kibali' (Store) items
+// show only when the shop has the Store module.
 const NAV = [
-  { href:'/dashboard',  icon:'📊', label:'Dashboard', module:'pos' },
-  { href:'/sales',      icon:'💰', label:'Sales / POS', module:'pos' },
-  { href:'/store/owner', icon:'🏬', label:'Store', module:'kibali' },
-  { href:'/stock',      icon:'📦', label:'Stock' },
-  { href:'/warehouse',  icon:'🏭', label:'Warehouse', module:'pos' },
-  { href:'/customers',  icon:'👥', label:'Customers', module:'pos' },
-  { href:'/expenses',   icon:'💸', label:'Expenses', module:'pos' },
-  { href:'/credit',     icon:'🤝', label:'Credit', module:'pos' },
-  { href:'/loans',      icon:'💳', label:'Loans', module:'pos' },
-  { href:'/orders',     icon:'📋', label:'Field Orders', module:'pos' },
-  { href:'/reports',    icon:'📈', label:'Reports', module:'pos' },
-  { href:'/reports/monthly', icon:'📅', label:'Monthly Sales', module:'pos' },
-  { href:'/team',       icon:'👤', label:'Team' },
-  { href:'/whatsapp',   icon:'💬', label:'WhatsApp', module:'pos' },
-  { href:'/vendors',    icon:'🏢', label:'Vendors', module:'pos' },
-  { href:'/investors', icon:'💰', label:'Investor Fund', module:'pos' },
-  { href:'/batches', icon:'📦', label:'Stock Batches', module:'pos' },
-  { href:'/settings',   icon:'⚙️',  label:'Settings' },
+  { href:'/dashboard',  icon:'grid',      label:'Dashboard', module:'pos' },
+  { href:'/sales',      icon:'cart',      label:'Sales / POS', module:'pos' },
+  { href:'/store/owner', icon:'store',    label:'Store', module:'kibali' },
+  { href:'/stock',      icon:'tag',       label:'Stock' },
+  { href:'/warehouse',  icon:'warehouse', label:'Warehouse', module:'pos' },
+  { href:'/customers',  icon:'users',     label:'Customers', module:'pos' },
+  { href:'/expenses',   icon:'wallet',    label:'Expenses', module:'pos' },
+  { href:'/credit',     icon:'handshake', label:'Credit', module:'pos' },
+  { href:'/loans',      icon:'card',      label:'Loans', module:'pos' },
+  { href:'/orders',     icon:'clipboard', label:'Field Orders', module:'pos' },
+  { href:'/reports',    icon:'chart',     label:'Reports', module:'pos' },
+  { href:'/reports/monthly', icon:'calendar', label:'Monthly Sales', module:'pos' },
+  { href:'/team',       icon:'users',     label:'Team' },
+  { href:'/whatsapp',   icon:'message',   label:'WhatsApp', module:'pos' },
+  { href:'/vendors',    icon:'building',  label:'Vendors', module:'pos' },
+  { href:'/investors',  icon:'coins',     label:'Investor Fund', module:'pos' },
+  { href:'/batches',    icon:'layers',    label:'Stock Batches', module:'pos' },
+  { href:'/settings',   icon:'gear',      label:'Settings' },
 ]
+
+const C = { bg:'#F6F7FB', surface:'#FFFFFF', sunk:'#ECEEF7', ink:'#15183A', muted:'#5B607E', line:'#DCDFEC', indigo:'#2D2F8F', saffron:'#F2A007', coral:'#B93A16' }
 
 export default function Layout({ children, title, shop, profile }) {
   const router = useRouter()
@@ -34,60 +39,60 @@ export default function Layout({ children, title, shop, profile }) {
   useEffect(() => { if (shop?.id) loadModules(shop.id).then(setModules) }, [shop?.id])
   const nav = NAV.filter(n => !n.module || modules[n.module])
 
-  const active = (href) => router.pathname === href || router.pathname.startsWith(href + '/') || (href === '/store/owner' && router.pathname.startsWith('/store'))
+  const active = (href) => router.pathname === href || (href !== '/reports' && router.pathname.startsWith(href + '/')) || (href === '/store/owner' && router.pathname.startsWith('/store'))
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'#0d1117' }}>
-      {/* Sidebar */}
-      <aside style={{ width:col?52:210, background:'#161b22', borderRight:'1px solid #30363d', display:'flex', flexDirection:'column', flexShrink:0, position:'sticky', top:0, height:'100vh', overflowY:'auto', overflowX:'hidden', transition:'width 0.2s' }}>
-        {/* Logo */}
-        <div style={{ padding:'16px 12px', borderBottom:'1px solid #30363d', display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ width:30, height:30, background:'#2196F3', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:13, color:'#000', flexShrink:0 }}>D</div>
-          {!col && <span style={{ fontWeight:800, fontSize:13, letterSpacing:-0.3, whiteSpace:'nowrap' }}>TheDashboard</span>}
+    <div style={{ display:'flex', minHeight:'100vh', background:C.bg }}>
+      <aside style={{ width:col?64:236, background:C.surface, borderRight:`1px solid ${C.line}`, display:'flex', flexDirection:'column', flexShrink:0, position:'sticky', top:0, height:'100vh', overflowY:'auto', overflowX:'hidden', transition:'width 0.2s' }}>
+        <div style={{ padding:col?'16px 13px':'18px 16px', borderBottom:`1px solid ${C.line}`, display:'flex', alignItems:'center', gap:10 }}>
+          <SLMark size={36} />
+          {!col && (
+            <div style={{ minWidth:0 }}>
+              <p style={{ fontFamily:'var(--display)', fontWeight:700, fontSize:15, letterSpacing:'-0.02em', whiteSpace:'nowrap' }}>TheDashboard</p>
+              <p style={{ fontSize:11, color:C.muted, marginTop:2 }}>by <SLWordmark size={11} /></p>
+            </div>
+          )}
         </div>
-        {/* Shop name */}
         {!col && shop && (
-          <div style={{ padding:'8px 12px', borderBottom:'1px solid #30363d' }}>
-            <p style={{ fontSize:9, color:'#7d8590', letterSpacing:0.8, marginBottom:1 }}>SHOP</p>
-            <p style={{ fontSize:12, fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{shop.name}</p>
+          <div style={{ padding:'10px 16px', borderBottom:`1px solid ${C.line}` }}>
+            <p style={{ fontSize:10, color:C.muted, letterSpacing:0.8, fontWeight:600, marginBottom:2 }}>SHOP</p>
+            <p style={{ fontSize:14, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{shop.name}</p>
           </div>
         )}
-        {/* Nav */}
-        <nav style={{ flex:1, padding:'8px 6px', overflowY:'auto' }}>
+        <nav style={{ flex:1, padding:'8px', overflowY:'auto' }}>
           {nav.map(n => {
-            const isActive = active(n.href)
+            const on = active(n.href)
             return (
-              <Link key={n.href} href={n.href} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 8px', borderRadius:8, marginBottom:1, background:isActive?'#2196F315':'transparent', color:isActive?'#2196F3':'#7d8590', textDecoration:'none', fontSize:12, fontWeight:isActive?700:400, borderLeft:isActive?'2px solid #2196F3':'2px solid transparent', whiteSpace:'nowrap', transition:'all 0.1s' }}>
-                <span style={{ fontSize:14, flexShrink:0 }}>{n.icon}</span>
+              <Link key={n.href} href={n.href} title={col ? n.label : undefined}
+                style={{ display:'flex', alignItems:'center', gap:10, padding:'7px 8px', borderRadius:8, marginBottom:1, background:on?C.sunk:'transparent', color:on?C.ink:C.muted, textDecoration:'none', fontSize:14, fontWeight:on?600:500, whiteSpace:'nowrap' }}>
+                <span style={{ width:32, height:26, borderRadius:999, display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink:0, background:on?C.saffron:'transparent', color:on?C.ink:C.muted }}>
+                  <Icon name={n.icon} size={18} />
+                </span>
                 {!col && n.label}
               </Link>
             )
           })}
         </nav>
-        {/* Bottom */}
-        <div style={{ padding:'8px 6px', borderTop:'1px solid #30363d' }}>
-          <button onClick={() => setCol(p=>!p)} style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'8px', borderRadius:8, background:'transparent', border:'none', color:'#484f58', cursor:'pointer', fontSize:12 }}>
-            <span>{col?'→':'←'}</span>{!col&&'Collapse'}
+        <div style={{ padding:'8px', borderTop:`1px solid ${C.line}` }}>
+          <button onClick={() => setCol(p=>!p)} style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'8px', borderRadius:8, background:'transparent', border:'none', color:C.muted, fontSize:14 }}>
+            <span style={{ width:32, display:'inline-flex', justifyContent:'center' }}><Icon name={col?'expand':'collapse'} size={18} /></span>{!col&&'Collapse'}
           </button>
-          <button onClick={async()=>{ await supabase.auth.signOut(); window.location.href='/auth/login' }} style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'8px', borderRadius:8, background:'transparent', border:'none', color:'#ff4d6d', cursor:'pointer', fontSize:12 }}>
-            <span>🚪</span>{!col&&'Logout'}
+          <button onClick={async()=>{ await supabase.auth.signOut(); window.location.href='/auth/login' }} style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'8px', borderRadius:8, background:'transparent', border:'none', color:C.coral, fontSize:14 }}>
+            <span style={{ width:32, display:'inline-flex', justifyContent:'center' }}><Icon name="logout" size={18} /></span>{!col&&'Logout'}
           </button>
         </div>
       </aside>
 
-      {/* Main */}
       <main style={{ flex:1, overflow:'auto', minWidth:0 }}>
-        {/* Topbar */}
-        <div style={{ padding:'12px 24px', borderBottom:'1px solid #30363d', display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(22,27,34,0.9)', backdropFilter:'blur(8px)', position:'sticky', top:0, zIndex:10 }}>
-          <h1 style={{ fontSize:16, fontWeight:800, letterSpacing:-0.3 }}>{title}</h1>
+        <div style={{ padding:'14px 24px', borderBottom:`1px solid ${C.line}`, display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(246,247,251,0.92)', backdropFilter:'blur(8px)', position:'sticky', top:0, zIndex:10 }}>
+          <h1 style={{ fontFamily:'var(--display)', fontSize:18, fontWeight:700, letterSpacing:'-0.02em' }}>{title}</h1>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            {profile && <span style={{ fontSize:12, color:'#7d8590' }}>{profile.full_name}</span>}
-            <div style={{ width:30, height:30, background:'#2196F320', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, border:'1px solid #2196F330', fontWeight:700, color:'#2196F3' }}>
+            {profile && <span style={{ fontSize:14, color:C.muted }}>{profile.full_name}</span>}
+            <div style={{ width:34, height:34, background:C.indigo, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700, color:'#FFFFFF' }}>
               {profile?.full_name?.charAt(0)?.toUpperCase()||'A'}
             </div>
           </div>
         </div>
-        {/* Content */}
         <div style={{ padding:24 }}>{children}</div>
       </main>
     </div>
