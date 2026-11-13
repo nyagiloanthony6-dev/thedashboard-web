@@ -65,8 +65,9 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
     { href: '/store/owner?tab=stock', label: 'Stoo', icon: 'box' },
   ]
   const work = [
+    { href: '/store/release?tab=receive', label: 'Pokea mzigo', icon: 'down' },
     { href: '/store/shop', label: 'Oda mpya (duka)', icon: 'plus' },
-    { href: '/store/release', label: 'Skrini ya stoo', icon: 'scan' },
+    { href: '/store/release', label: 'Toa mzigo (skani)', icon: 'scan' },
   ]
   const admin = [
     { href: '/stock', label: 'Bidhaa', icon: 'tag' },
@@ -87,7 +88,7 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
           <nav style={{ padding: 10, display: 'grid', gap: 2 }}>
             {main.map(n => <SideLink key={n.href} n={n} on={isOn(n.href)} />)}
             <p style={sideHead}>KAZI</p>
-            {work.map(n => <SideLink key={n.href} n={n} on={isOn(n.href.split('?')[0]) || (n.href === '/store/shop' && onShopOrStore && isOn('/store/shop?tab=orders'))} />)}
+            {work.map(n => <SideLink key={n.href} n={n} on={isOn(n.href) || (n.href === '/store/shop' && isOn('/store/shop?tab=orders')) || (n.href === '/store/release' && isOn('/store/release?tab=waiting'))} />)}
             <p style={sideHead}>USIMAMIZI</p>
             {admin.map(n => <SideLink key={n.href} n={n} on={false} />)}
           </nav>

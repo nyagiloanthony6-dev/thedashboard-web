@@ -257,7 +257,8 @@ function Stock({ products, reserved, onChanged }) {
           {cats.map(c => <option key={c} value={c}>{c} ({rows.filter(r => r.category === c).length})</option>)}
         </select>
         <button onClick={() => setLow(v => !v)} style={{ ...ui.btn, borderColor: low ? '#9A5B00' : '#DCDFEC', color: low ? '#9A5B00' : '#5B607E' }}>Zinazokaribia kuisha ({rows.filter(r => r.isLow).length})</button>
-        <button onClick={() => setAdding(true)} style={ui.primary}>+ Bidhaa mpya</button>
+        <Link href="/store/release?tab=receive" style={{ ...ui.primary, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}><Icon name="down" size={18} />Pokea mzigo</Link>
+        <button onClick={() => setAdding(true)} style={ui.btn}>+ Bidhaa mpya</button>
       </div>
       <p style={ui.muted}>Kila aina inaonyesha: <b>stoo</b> (zilizopo ndani) na <b>zipo</b> (stoo kasoro zilizohifadhiwa kwa oda ambazo hazijachukuliwa).</p>
       <div style={{ ...ui.card, padding: 0, overflowX: 'auto' }}>
