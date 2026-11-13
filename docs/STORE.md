@@ -92,6 +92,14 @@ Run `supabase/migrations/20261113040000_store_sales.sql`: it creates `store_move
 adds the SALE movement type and `kibali_sell`, and restores `stock_movements` on
 databases where an earlier Store version had modified it.
 
+## Part numbers (optional, per shop)
+
+Part numbers are not a products column. Each shop can have a custom field
+(Settings → product custom fields) named like "Part number", "SKU", "OEM",
+"Item code" or "Product code"; Store reads it from `product_field_values`.
+Shops without such a field just see item names: the part number column and
+search hint are hidden automatically.
+
 ## How it is protected
 
 - All Kibali writes go through database functions (`kibali_*`) that check

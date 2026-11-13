@@ -253,7 +253,7 @@ function Stock({ products, reserved, onChanged }) {
   return (
     <div style={{ display: 'grid', gap: 10 }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tafuta jina, part number au kundi…" style={{ flex: 1, minWidth: 200 }} />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder={products.some(p => p.part_number) ? 'Tafuta jina, part number au kundi…' : 'Tafuta jina au kundi…'} style={{ flex: 1, minWidth: 200 }} />
         <select value={cat} onChange={e => setCat(e.target.value)} style={{ width: 'auto', minWidth: 170 }} aria-label="Kundi">
           <option value="">Makundi yote ({cats.length})</option>
           {cats.map(c => <option key={c} value={c}>{c} ({rows.filter(r => r.category === c).length})</option>)}

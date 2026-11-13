@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory, T, stockText, matchProduct } from '../../lib/store'
+import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory, T, stockText, matchProduct, usesPartNumbers } from '../../lib/store'
 import Shell from '../../components/store/Shell'
 import Icon from '../../components/store/Icon'
 
@@ -311,6 +311,7 @@ function Receive({ k }) {
   }
 
   const list = products.filter(x => matchProduct(x, search))
+  const showParts = usesPartNumbers(products)
 
   return (
     <div className="kb-receive" style={{ display: 'grid', gap: 16, alignItems: 'start' }}>
@@ -323,7 +324,7 @@ function Receive({ k }) {
       <div style={{ ...ui.card, padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: 14, borderBottom: `1px solid ${T.line}`, display: 'grid', gap: 8 }}>
           <p style={ui.h}>Chagua bidhaa</p>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tafuta kwa jina, part number au kundi…" autoComplete="off" aria-label="Tafuta bidhaa" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={showParts ? 'Tafuta kwa jina, part number au kundi…' : 'Tafuta kwa jina au kundi…'} autoComplete="off" aria-label="Tafuta bidhaa" />
           <p style={ui.muted}>Bidhaa {list.length} kati ya {products.length}</p>
           {loadErr && <div style={ui.banner(T.danger)}>{loadErr}</div>}
         </div>
@@ -331,8 +332,8 @@ function Receive({ k }) {
           <table style={{ width: '100%', fontSize: 14 }}>
             <thead style={{ position: 'sticky', top: 0, background: T.tint, zIndex: 1 }}>
               <tr style={{ color: T.muted, textAlign: 'left' }}>
-                <th style={{ padding: '8px 14px', fontSize: 12, fontWeight: 600 }}>Part number</th>
-                <th style={{ padding: '8px 8px', fontSize: 12, fontWeight: 600 }}>Bidhaa</th>
+                {showParts && <th style={{ padding: '8px 14px', fontSize: 12, fontWeight: 600 }}>Part number</th>}
+                <th style={{ padding: showParts ? '8px 8px' : '8px 14px', fontSize: 12, fontWeight: 600 }}>Bidhaa</th>
                 <th style={{ padding: '8px 14px', fontSize: 12, fontWeight: 600, textAlign: 'right' }}>Stock</th>
               </tr>
             </thead>
@@ -342,8 +343,8 @@ function Receive({ k }) {
                 return (
                   <tr key={x.id} className="kb-row" onClick={() => { setPid(String(x.id)); setKind(defaultKind(x)); setMsg(null) }}
                     style={{ cursor: 'pointer', borderTop: `1px solid ${T.line}`, background: on ? 'rgba(45,47,143,0.08)' : 'transparent', boxShadow: on ? `inset 3px 0 0 ${T.green}` : 'none' }}>
-                    <td style={{ padding: '10px 14px', fontFamily: T.mono, fontSize: 13, whiteSpace: 'nowrap', color: x.part_number ? T.ink : T.lineStrong }}>{x.part_number || '—'}</td>
-                    <td style={{ padding: '10px 8px' }}>
+                    {showParts && <td style={{ padding: '10px 14px', fontFamily: T.mono, fontSize: 13, whiteSpace: 'nowrap', color: x.part_number ? T.ink : T.lineStrong }}>{x.part_number || '—'}</td>}
+                    <td style={{ padding: showParts ? '10px 8px' : '10px 14px' }}>
                       <span style={{ fontWeight: 600 }}>{x.name}</span>
                       {x.category && <span style={{ display: 'block', fontSize: 12, color: T.muted }}>{x.category}</span>}
                     </td>
@@ -351,7 +352,7 @@ function Receive({ k }) {
                   </tr>
                 )
               })}
-              {list.length === 0 && <tr><td colSpan={3} style={{ padding: 20, textAlign: 'center', color: T.muted }}>Hakuna bidhaa inayolingana.</td></tr>}
+              {list.length === 0 && <tr><td colSpan={showParts ? 3 : 2} style={{ padding: 20, textAlign: 'center', color: T.muted }}>Hakuna bidhaa inayolingana.</td></tr>}
             </tbody>
           </table>
         </div>
