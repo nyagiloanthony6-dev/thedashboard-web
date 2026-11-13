@@ -188,7 +188,7 @@ function Stock({ products, reserved, onChanged }) {
           </thead>
           <tbody>{list.map(r => (
             <tr key={r.id} onClick={() => setSel(r.id)} style={{ borderTop: '1px solid #30363d', cursor: 'pointer' }}>
-              <td style={{ padding: '10px 12px' }}><b>{r.name}</b> <span style={ui.muted}>/{r.unit || 'unit'}</span></td>
+              <td style={{ padding: '10px 12px' }}><b>{r.name}</b></td>
               <td style={{ padding: '10px 12px', color: '#7d8590', fontSize: 12 }}>{r.category || '—'}</td>
               <td style={{ ...num, color: r.product_type === 'wholesale' && !r.retail ? '#484f58' : '#e6edf3' }}>{r.retail}</td>
               <td style={{ ...num, color: r.ar < 0 ? '#ff4d6d' : '#7d8590' }}>{r.ar}</td>
