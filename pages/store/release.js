@@ -309,60 +309,84 @@ function Receive({ k }) {
     setBusy(false)
   }
 
+  const list = products.filter(x => matchProduct(x, search))
+
   return (
-    <div style={{ display: 'grid', gap: 14 }}>
-      <div style={{ ...ui.card, display: 'grid', gap: 12 }}>
-        <div><label>Bidhaa</label>
+    <div className="kb-receive" style={{ display: 'grid', gap: 16, alignItems: 'start' }}>
+      <style jsx>{`
+        .kb-receive { grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); }
+        @media (max-width: 900px) { .kb-receive { grid-template-columns: 1fr; } }
+      `}</style>
+
+      {/* Left: the shop's items, always visible, filtered as you type */}
+      <div style={{ ...ui.card, padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: 14, borderBottom: `1px solid ${T.line}`, display: 'grid', gap: 8 }}>
+          <p style={ui.h}>Chagua bidhaa</p>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tafuta kwa jina, part number au kundi…" autoComplete="off" aria-label="Tafuta bidhaa" />
+          <p style={ui.muted}>Bidhaa {list.length} kati ya {products.length}</p>
+        </div>
+        <div style={{ maxHeight: 560, overflowY: 'auto' }}>
+          <table style={{ width: '100%', fontSize: 14 }}>
+            <thead style={{ position: 'sticky', top: 0, background: T.tint, zIndex: 1 }}>
+              <tr style={{ color: T.muted, textAlign: 'left' }}>
+                <th style={{ padding: '8px 14px', fontSize: 12, fontWeight: 600 }}>Part number</th>
+                <th style={{ padding: '8px 8px', fontSize: 12, fontWeight: 600 }}>Bidhaa</th>
+                <th style={{ padding: '8px 14px', fontSize: 12, fontWeight: 600, textAlign: 'right' }}>Stock</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map(x => {
+                const on = String(x.id) === pid
+                return (
+                  <tr key={x.id} className="kb-row" onClick={() => { setPid(String(x.id)); setKind(defaultKind(x)); setMsg(null) }}
+                    style={{ cursor: 'pointer', borderTop: `1px solid ${T.line}`, background: on ? 'rgba(45,47,143,0.08)' : 'transparent', boxShadow: on ? `inset 3px 0 0 ${T.green}` : 'none' }}>
+                    <td style={{ padding: '10px 14px', fontFamily: T.mono, fontSize: 13, whiteSpace: 'nowrap', color: x.part_number ? T.ink : T.lineStrong }}>{x.part_number || '—'}</td>
+                    <td style={{ padding: '10px 8px' }}>
+                      <span style={{ fontWeight: 600 }}>{x.name}</span>
+                      {x.category && <span style={{ display: 'block', fontSize: 12, color: T.muted }}>{x.category}</span>}
+                    </td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', whiteSpace: 'nowrap', fontSize: 13, color: T.muted }}>{stockText(x)}</td>
+                  </tr>
+                )
+              })}
+              {list.length === 0 && <tr><td colSpan={3} style={{ padding: 20, textAlign: 'center', color: T.muted }}>Hakuna bidhaa inayolingana.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Right: receiving form */}
+      <div style={{ display: 'grid', gap: 16, position: 'sticky', top: 90 }}>
+        <div style={{ ...ui.card, display: 'grid', gap: 12 }}>
+          <p style={ui.h}>Pokea mzigo</p>
           {!p ? (
-            <>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tafuta kwa jina au part number…" autoComplete="off" />
-              {search.trim() && (
-                <div style={{ marginTop: 6, border: `1px solid ${T.line}`, borderRadius: 10, overflow: 'hidden', maxHeight: 320, overflowY: 'auto' }}>
-                  {products.filter(x => matchProduct(x, search)).slice(0, 30).map((x, i) => (
-                    <button key={x.id} type="button" onClick={() => { setPid(String(x.id)); setKind(defaultKind(x)); setSearch('') }}
-                      style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderTop: i ? `1px solid ${T.line}` : 'none', background: T.raised, color: T.ink, display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
-                      <span style={{ minWidth: 0 }}>
-                        <span style={{ display: 'block', fontWeight: 600 }}>{x.name}</span>
-                        <span style={{ display: 'block', fontSize: 12, color: T.muted }}>{x.part_number ? <span style={{ fontFamily: T.mono }}>{x.part_number}</span> : null}{x.part_number && x.category ? ' · ' : ''}{x.category || ''}</span>
-                      </span>
-                      <span style={{ fontSize: 12, color: T.muted, whiteSpace: 'nowrap' }}>{stockText(x)}</span>
-                    </button>
-                  ))}
-                  {products.filter(x => matchProduct(x, search)).length === 0 && <p style={{ ...ui.muted, padding: 12 }}>Hakuna bidhaa inayolingana.</p>}
-                </div>
-              )}
-            </>
+            <div style={{ padding: '18px 14px', borderRadius: 10, border: `1.5px dashed ${T.lineStrong}`, color: T.muted, textAlign: 'center' }}>Chagua bidhaa kwenye orodha</div>
           ) : (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${T.green}`, background: 'rgba(45,47,143,0.05)' }}>
-              <div style={{ minWidth: 0 }}>
-                <p style={{ fontWeight: 600 }}>{p.name}</p>
-                <p style={{ fontSize: 12, color: T.muted }}>{p.part_number ? <span style={{ fontFamily: T.mono }}>{p.part_number} · </span> : null}{stockText(p)}</p>
-              </div>
-              <button type="button" onClick={() => { setPid(''); setMsg(null) }} style={{ ...ui.btn, padding: '6px 12px', fontSize: 13 }}>Badilisha</button>
+            <div style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${T.green}`, background: 'rgba(45,47,143,0.05)' }}>
+              <p style={{ fontWeight: 600 }}>{p.name}</p>
+              <p style={{ fontSize: 13, color: T.muted }}>{p.part_number ? <span style={{ fontFamily: T.mono }}>{p.part_number} · </span> : null}{stockText(p)}</p>
             </div>
           )}
-        </div>
-        {p && hasBoth(p) && (
-          <div><label>Aina ya stock</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {['retail', 'wholesale'].map(kd => (
-                <button key={kd} type="button" onClick={() => setKind(kd)} style={{ flex: 1, padding: 10, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: kind === kd ? KIND[kd].c : '#DCDFEC', background: kind === kd ? KIND[kd].c + '22' : 'transparent', color: kind === kd ? KIND[kd].c : '#5B607E' }}>
-                  {KIND[kd].sw} · {kd === 'wholesale' ? p.wholesale : p.retail} stock
-                </button>
-              ))}
+          {p && hasBoth(p) && (
+            <div><label>Aina ya stock</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {['retail', 'wholesale'].map(kd => (
+                  <button key={kd} type="button" onClick={() => setKind(kd)} style={{ flex: 1, padding: 10, borderRadius: 8, fontWeight: 600, fontSize: 14, border: '1px solid', borderColor: kind === kd ? KIND[kd].c : T.line, background: kind === kd ? KIND[kd].c + '18' : T.raised, color: kind === kd ? KIND[kd].c : T.muted }}>
+                    {KIND[kd].sw} · {kd === 'wholesale' ? p.wholesale : p.retail}
+                  </button>
+                ))}
+              </div>
             </div>
-            {!hasBoth(p) && kind !== defaultKind(p) && <p style={{ ...ui.muted, marginTop: 4, color: '#9A5B00' }}>Bidhaa hii kwa kawaida ni {KIND[defaultKind(p)].sw}. Hakikisha ni sahihi.</p>}
-          </div>
-        )}
-        <div><label>Idadi iliyopokelewa{p ? ` (${p.unit})` : ''}</label>
-          <input type="number" min="1" step="1" inputMode="numeric" value={qty} onChange={e => setQty(e.target.value)} style={{ ...ui.mono, fontSize: 24, fontWeight: 800 }} />
-          {q > 0 && <p style={{ fontSize: 11, fontWeight: 800, color: '#2D2F8F', marginTop: 4 }}>{swWords(q)} ({q}) {(p?.unit || '').toUpperCase()}</p>}</div>
-        <div><label>Msambazaji / namba ya delivery note</label><input value={ref} onChange={e => setRef(e.target.value)} placeholder="mf. Twiga Cement · DN 4471" /></div>
-        {p && q > 0 && <div style={ui.banner('#0B7A6C')}>Baada ya kupokea ({KIND[kind].sw}): <b style={ui.mono}>{cur} → {cur + q}</b></div>}
-        {msg && <div style={ui.banner(msg.c)}>{msg.t}</div>}
-        <button disabled={busy} onClick={save} style={{ ...ui.primary, height: 54 }}>{busy ? 'Inahifadhi…' : 'Ongeza kwenye store'}</button>
-      </div>
-      <div style={ui.card}>
+          )}
+          <div><label>Idadi iliyopokelewa{p ? ` (${p.unit || 'unit'})` : ''}</label>
+            <input type="number" min="1" step="1" inputMode="numeric" value={qty} onChange={e => setQty(e.target.value)} style={{ fontFamily: T.mono, fontSize: 22, fontWeight: 700 }} />
+            {q > 0 && <p style={{ fontSize: 12, fontWeight: 700, color: T.green, marginTop: 4 }}>{swWords(q)} ({q}) {(p?.unit || '').toUpperCase()}</p>}</div>
+          <div><label>Msambazaji / namba ya delivery note</label><input value={ref} onChange={e => setRef(e.target.value)} placeholder="mf. Kuper · DN 4471" /></div>
+          {p && q > 0 && <div style={ui.banner(T.success)}>Baada ya kupokea ({KIND[kind].sw}): <b style={{ fontFamily: T.mono }}>{cur} → {cur + q}</b></div>}
+          {msg && <div style={ui.banner(msg.c)}>{msg.t}</div>}
+          <button disabled={busy || !p} onClick={save} style={{ ...ui.primary, height: 52 }}>{busy ? 'Inahifadhi…' : 'Ongeza kwenye store'}</button>
+        </div>
+        <div style={ui.card}>
         <p style={{ fontWeight: 800, marginBottom: 8 }}>Zilizopokelewa leo</p>
         {moves.length === 0 && <p style={ui.muted}>Bado hakuna.</p>}
         {moves.map(m => (
@@ -371,6 +395,7 @@ function Receive({ k }) {
             <span style={{ ...ui.mono, color: '#0B7A6C', fontWeight: 800 }}>+{m.qty}</span>
           </div>
         ))}
+      </div>
       </div>
     </div>
   )
