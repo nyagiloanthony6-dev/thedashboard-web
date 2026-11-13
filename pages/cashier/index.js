@@ -688,7 +688,7 @@ export default function CashierPOS() {
                 {storeOn && (
                   <label style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:10, padding:'10px 12px', borderRadius:12, border:`1.5px solid ${collectStore ? '#2D2F8F' : '#DCDFEC'}`, background: collectStore ? 'rgba(45,47,143,0.06)' : '#FFFFFF', cursor:'pointer', textTransform:'none', letterSpacing:0, fontSize:14, color:'#15183A', fontWeight:500, margin:'0 0 10px' }}>
                     <input type="checkbox" checked={collectStore} onChange={e => setCollectStore(e.target.checked)} style={{ width:18, height:18, marginTop:2, accentColor:'#2D2F8F', flexShrink:0 }} />
-                    <span><b>Chukua stoo</b> — mteja atachukua mzigo stoo<br /><span style={{ fontSize:12, color:'#5B607E' }}>Inachapisha kibali cha stoo. Stock inapungua store ikitoa mzigo.</span></span>
+                    <span><b>Chukua stoo</b> — mteja atachukua mzigo stoo<br /><span style={{ fontSize:12, color:'#5B607E' }}>Inachapisha kibali cha store. Stock inapungua store ikitoa mzigo.</span></span>
                   </label>
                 )}
                 <button onClick={completeSale} disabled={saving} style={{ width:'100%', padding:'13px', borderRadius:12, border:'none', background: saving ? '#ECEEF7' : '#2D2F8F', color:'#fff', fontWeight:800, fontSize:15, cursor:saving?'not-allowed':'pointer', letterSpacing:0.3, boxShadow: saving ? 'none' : '0 4px 16px rgba(45,47,143,0.4)' }}>
