@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts } from '../../lib/kibali'
+import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
 import OrderModal from '../../components/kibali/OrderModal'
 
@@ -24,11 +24,11 @@ export default function KibaliOwner() {
       supabase.from('release_orders').select('*,release_order_items(*)').order('created_at', { ascending: false }).limit(300),
       supabase.from('kibali_alerts').select('*').order('created_at', { ascending: false }).limit(200),
       loadProducts(k.shop.id),
-      supabase.from('kibali_reserved').select('product_id,reserved'),
+      loadReserved(),
       supabase.from('stock_movements').select('qty').eq('type', 'OUT').gte('created_at', since.toISOString()),
     ])
     setOrders(o.data || []); setAlerts(a.data || []); setProducts(p)
-    setReserved(Object.fromEntries((r.data || []).map(x => [String(x.product_id), x.reserved])))
+    setReserved(r)
     setTodayOut(-(m.data || []).reduce((s, x) => s + x.qty, 0))
   }, [k.shop?.id])
 
@@ -146,15 +146,19 @@ function Orders({ orders, onOpen }) {
 }
 
 // ---------------------------------------------------------------------
+// Stock: retail (Rejareja) and wholesale (Jumla) side by side
 function Stock({ products, reserved, onChanged }) {
   const [q, setQ] = useState('')
   const [low, setLow] = useState(false)
   const [sel, setSel] = useState(null)
   const rows = useMemo(() => products.map(p => {
-    const res = reserved[String(p.id)] || 0, av = (p.stock || 0) - res
-    return { ...p, res, av, isLow: av <= (p.low_stock_alert ?? 10) }
+    const rr = reserved[resKey(p.id, 'retail')] || 0, rw = reserved[resKey(p.id, 'wholesale')] || 0
+    const ar = p.retail - rr, aw = p.wholesale - rw
+    const main = defaultKind(p), mainAv = main === 'wholesale' ? aw : ar
+    return { ...p, rr, rw, ar, aw, isLow: mainAv <= (p.low_stock_alert ?? 10), isOut: ar <= 0 && aw <= 0 }
   }), [products, reserved])
   const list = rows.filter(r => (!q || r.name.toLowerCase().includes(q.toLowerCase())) && (!low || r.isLow))
+  const current = sel ? rows.find(r => r.id === sel) : null
 
   return (
     <div style={{ display: 'grid', gap: 10 }}>
@@ -162,22 +166,31 @@ function Stock({ products, reserved, onChanged }) {
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tafuta bidhaa…" style={{ flex: 1, minWidth: 200 }} />
         <button onClick={() => setLow(v => !v)} style={{ ...ui.btn, borderColor: low ? '#f0b429' : '#30363d', color: low ? '#f0b429' : '#7d8590' }}>Zinazokaribia kuisha ({rows.filter(r => r.isLow).length})</button>
       </div>
-      <p style={ui.muted}>Stoo = zilizopo ndani · Oda = zimehifadhiwa kwa oda ambazo hazijachukuliwa · Zipo = zinazoweza kuuzwa sasa. Bidhaa mpya ongeza kwenye ukurasa wa Stock.</p>
+      <p style={ui.muted}>Kila aina inaonyesha: <b>stoo</b> (zilizopo ndani) na <b>zipo</b> (stoo kasoro zilizohifadhiwa kwa oda ambazo hazijachukuliwa). Bidhaa mpya ongeza kwenye ukurasa wa Stock.</p>
       <div style={{ ...ui.card, padding: 0, overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 520 }}>
-          <thead><tr style={{ color: '#7d8590' }}>{['Bidhaa', 'Stoo', 'Oda', 'Zipo', ''].map((h, i) => <th key={i} style={{ padding: '10px 12px', fontSize: 11, textAlign: i && i < 4 ? 'right' : 'left' }}>{h}</th>)}</tr></thead>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 560 }}>
+          <thead>
+            <tr style={{ color: '#7d8590' }}>
+              <th style={{ padding: '10px 12px', fontSize: 11, textAlign: 'left' }} rowSpan={2}>Bidhaa</th>
+              <th style={{ padding: '10px 12px 2px', fontSize: 11, textAlign: 'center', color: KIND.retail.c }} colSpan={2}>REJAREJA</th>
+              <th style={{ padding: '10px 12px 2px', fontSize: 11, textAlign: 'center', color: KIND.wholesale.c }} colSpan={2}>JUMLA</th>
+              <th rowSpan={2} />
+            </tr>
+            <tr style={{ color: '#7d8590' }}>{['Stoo', 'Zipo', 'Stoo', 'Zipo'].map((h, i) => <th key={i} style={{ padding: '2px 12px 8px', fontSize: 10, textAlign: 'right' }}>{h}</th>)}</tr>
+          </thead>
           <tbody>{list.map(r => (
-            <tr key={r.id} onClick={() => setSel(r)} style={{ borderTop: '1px solid #30363d', cursor: 'pointer' }}>
+            <tr key={r.id} onClick={() => setSel(r.id)} style={{ borderTop: '1px solid #30363d', cursor: 'pointer' }}>
               <td style={{ padding: '10px 12px' }}><b>{r.name}</b> <span style={ui.muted}>/{r.unit || 'unit'}</span></td>
-              <td style={num}>{r.stock || 0}</td>
-              <td style={{ ...num, color: '#7d8590' }}>{r.res}</td>
-              <td style={{ ...num, color: r.av <= 0 ? '#ff4d6d' : r.isLow ? '#f0b429' : '#e6edf3' }}>{r.av}</td>
-              <td style={{ padding: '10px 12px' }}>{r.av <= 0 ? <span style={{ color: '#ff4d6d', fontWeight: 800, fontSize: 11 }}>IMEISHA</span> : r.isLow ? <span style={{ color: '#f0b429', fontWeight: 800, fontSize: 11 }}>INAKARIBIA</span> : null}</td>
+              <td style={{ ...num, color: r.product_type === 'wholesale' && !r.retail ? '#484f58' : '#e6edf3' }}>{r.retail}</td>
+              <td style={{ ...num, color: r.ar < 0 ? '#ff4d6d' : '#7d8590' }}>{r.ar}</td>
+              <td style={{ ...num, color: r.product_type === 'retail' && !r.wholesale ? '#484f58' : '#e6edf3' }}>{r.wholesale}</td>
+              <td style={{ ...num, color: r.aw < 0 ? '#ff4d6d' : '#7d8590' }}>{r.aw}</td>
+              <td style={{ padding: '10px 12px' }}>{r.isOut ? <span style={{ color: '#ff4d6d', fontWeight: 800, fontSize: 11 }}>IMEISHA</span> : r.isLow ? <span style={{ color: '#f0b429', fontWeight: 800, fontSize: 11 }}>INAKARIBIA</span> : null}</td>
             </tr>))}
           </tbody>
         </table>
       </div>
-      {sel && <ItemPanel p={sel} onClose={() => setSel(null)} onChanged={() => { onChanged(); }} />}
+      {current && <ItemPanel p={current} onClose={() => setSel(null)} onChanged={onChanged} />}
     </div>
   )
 }
@@ -186,46 +199,62 @@ const num = { padding: '10px 12px', textAlign: 'right', fontFamily: 'ui-monospac
 function ItemPanel({ p, onClose, onChanged }) {
   const [moves, setMoves] = useState(null)
   const [mode, setMode] = useState(null)   // 'in' | 'adj'
-  const [f, setF] = useState({ qty: '', ref: '', adj: 'count' })
+  const [f, setF] = useState({ qty: '', ref: '', adj: 'count', kind: defaultKind(p) })
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
-  const [stock, setStock] = useState(p.stock || 0)
+  const [filter, setFilter] = useState('')
 
   const load = async () => {
-    const { data } = await supabase.from('stock_movements').select('*').eq('product_id', p.id).order('created_at', { ascending: false }).limit(200)
+    const { data } = await supabase.from('stock_movements').select('*').eq('product_id', p.id).order('created_at', { ascending: false }).limit(300)
     setMoves(data || [])
   }
   useEffect(() => { load() }, [p.id])
 
+  const open = (m) => { setErr(''); setMode(m); setF({ qty: '', ref: '', adj: 'count', kind: defaultKind(p) }) }
   const save = async () => {
     setErr(''); const q = Number(f.qty)
     if (f.qty === '' || !Number.isInteger(q) || q < 0 || (mode === 'in' && q < 1)) return setErr('Weka namba kamili')
     if (mode === 'adj' && !f.ref.trim()) return setErr('Sababu inahitajika')
     setBusy(true)
     try {
-      const bal = mode === 'in'
-        ? await rpc('kibali_receive_stock', { p_product_id: String(p.id), p_qty: q, p_reference: f.ref })
-        : await rpc('kibali_adjust_stock', { p_product_id: String(p.id), p_mode: f.adj, p_qty: q, p_reason: f.ref })
-      setStock(bal); setMode(null); setF({ qty: '', ref: '', adj: 'count' }); load(); onChanged()
+      if (mode === 'in') await rpc('kibali_receive_stock', { p_product_id: String(p.id), p_qty: q, p_reference: f.ref, p_kind: f.kind })
+      else await rpc('kibali_adjust_stock', { p_product_id: String(p.id), p_mode: f.adj, p_qty: q, p_reason: f.ref, p_kind: f.kind })
+      setMode(null); load(); onChanged()
     } catch (e) { setErr(e.message) }
     setBusy(false)
   }
   const label = { IN: ['Imepokelewa', '#3fb950'], OUT: ['Imetoka', '#ff4d6d'], ADJ: ['Marekebisho', '#f0b429'] }
+  const shown = (moves || []).filter(m => !filter || (m.kind || 'retail') === filter)
+  const curFor = (kd) => kd === 'wholesale' ? p.wholesale : p.retail
 
   return (
     <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 50, overflowY: 'auto', padding: '24px 12px' }}>
-      <div style={{ ...ui.card, maxWidth: 640, margin: '0 auto', position: 'relative', display: 'grid', gap: 12 }}>
+      <div style={{ ...ui.card, maxWidth: 680, margin: '0 auto', position: 'relative', display: 'grid', gap: 12 }}>
         <button onClick={onClose} aria-label="Funga" style={{ position: 'absolute', right: 10, top: 8, background: 'none', border: 'none', color: '#7d8590', fontSize: 26 }}>×</button>
-        <div><p style={{ fontSize: 20, fontWeight: 800 }}>{p.name}</p><p style={ui.muted}>{p.unit || 'unit'} · agiza ikifika {p.low_stock_alert ?? 10}</p></div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-          <Stat l="Stoo" v={stock} /><Stat l="Kwenye oda" v={p.res} /><Stat l="Zipo" v={stock - p.res} />
+        <div><p style={{ fontSize: 20, fontWeight: 800 }}>{p.name}</p><p style={ui.muted}>{p.unit || 'unit'} · aina: {p.product_type || 'retail'} · agiza ikifika {p.low_stock_alert ?? 10}</p></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 10 }}>
+          {['retail', 'wholesale'].map(kd => (
+            <div key={kd} style={{ border: '1px solid ' + KIND[kd].c + '55', borderRadius: 10, padding: 12 }}>
+              <p style={{ fontSize: 11, fontWeight: 800, color: KIND[kd].c, marginBottom: 6 }}>{KIND[kd].sw.toUpperCase()} ({KIND[kd].en})</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
+                <Mini l="Stoo" v={curFor(kd)} /><Mini l="Kwenye oda" v={kd === 'wholesale' ? p.rw : p.rr} /><Mini l="Zipo" v={kd === 'wholesale' ? p.aw : p.ar} />
+              </div>
+            </div>
+          ))}
         </div>
         {!mode && <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => setMode('in')} style={ui.primary}>+ Pokea mzigo</button>
-          <button onClick={() => setMode('adj')} style={ui.btn}>Hesabu / rekebisha</button>
+          <button onClick={() => open('in')} style={ui.primary}>+ Pokea mzigo</button>
+          <button onClick={() => open('adj')} style={ui.btn}>Hesabu / rekebisha</button>
         </div>}
         {mode && (
           <div style={{ border: '1px solid #30363d', borderRadius: 10, padding: 12, display: 'grid', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['retail', 'wholesale'].map(kd => (
+                <button key={kd} type="button" onClick={() => setF({ ...f, kind: kd })} style={{ flex: 1, padding: 9, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: f.kind === kd ? KIND[kd].c : '#30363d', background: f.kind === kd ? KIND[kd].c + '22' : 'transparent', color: f.kind === kd ? KIND[kd].c : '#7d8590' }}>
+                  {KIND[kd].sw} · {curFor(kd)}
+                </button>
+              ))}
+            </div>
             {mode === 'adj' && <select value={f.adj} onChange={e => setF({ ...f, adj: e.target.value })}>
               <option value="count">Hesabu ya stoo — weka salio jipya</option>
               <option value="remove">Ondoa (zimeharibika / zimepotea)</option>
@@ -236,15 +265,20 @@ function ItemPanel({ p, onClose, onChanged }) {
             <input value={f.ref} onChange={e => setF({ ...f, ref: e.target.value })} placeholder={mode === 'in' ? 'Msambazaji / delivery note' : 'Sababu (lazima)'} />
             {mode === 'adj' && <p style={ui.muted}>Kila marekebisho yanaonekana kwenye tahadhari na historia.</p>}
             {err && <div style={ui.banner('#ff4d6d')}>{err}</div>}
-            <div style={{ display: 'flex', gap: 8 }}><button disabled={busy} onClick={save} style={ui.primary}>Hifadhi</button><button onClick={() => setMode(null)} style={ui.btn}>Acha</button></div>
+            <div style={{ display: 'flex', gap: 8 }}><button disabled={busy} onClick={save} style={ui.primary}>Hifadhi ({KIND[f.kind].sw})</button><button onClick={() => setMode(null)} style={ui.btn}>Acha</button></div>
           </div>
         )}
         <div>
-          <p style={{ fontWeight: 800, marginBottom: 6 }}>Mzunguko</p>
-          {!moves ? <p style={ui.muted}>Inapakia…</p> : moves.length === 0 ? <p style={ui.muted}>Bado hakuna mzunguko uliorekodiwa na Kibali.</p> : moves.map(m => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
+            <p style={{ fontWeight: 800 }}>Mzunguko</p>
+            <select value={filter} onChange={e => setFilter(e.target.value)} style={{ width: 'auto', padding: '6px 10px', fontSize: 12 }}>
+              <option value="">Zote</option><option value="retail">Rejareja</option><option value="wholesale">Jumla</option>
+            </select>
+          </div>
+          {!moves ? <p style={ui.muted}>Inapakia…</p> : shown.length === 0 ? <p style={ui.muted}>Bado hakuna mzunguko uliorekodiwa na Kibali.</p> : shown.map(m => (
             <div key={m.id} style={{ display: 'grid', gridTemplateColumns: '1fr 64px 64px', gap: 8, padding: '8px 0', borderTop: '1px solid #30363d', alignItems: 'center' }}>
               <div>
-                <p style={{ fontWeight: 700, color: label[m.type][1] }}>{label[m.type][0]}{m.reference ? <span style={{ color: '#e6edf3', fontWeight: 400 }}> · {m.reference}</span> : null}</p>
+                <p style={{ fontWeight: 700, color: label[m.type][1] }}>{label[m.type][0]} <span style={{ fontSize: 11, color: KIND[m.kind || 'retail'].c }}>{KIND[m.kind || 'retail'].sw}</span>{m.reference ? <span style={{ color: '#e6edf3', fontWeight: 400 }}> · {m.reference}</span> : null}</p>
                 <p style={ui.muted}>{fmtTime(m.created_at)} · {m.created_by_name}{m.note && m.type !== 'ADJ' ? ' · ' + m.note : ''}</p>
               </div>
               <span style={{ ...num, padding: 0, color: label[m.type][1] }}>{m.qty > 0 ? '+' : ''}{m.qty}</span>
@@ -255,4 +289,8 @@ function ItemPanel({ p, onClose, onChanged }) {
       </div>
     </div>
   )
+}
+
+function Mini({ l, v }) {
+  return <div><p style={{ fontSize: 10, color: '#7d8590', fontWeight: 700 }}>{l.toUpperCase()}</p><p style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 20, fontWeight: 800 }}>{v}</p></div>
 }

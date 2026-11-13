@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts } from '../../lib/kibali'
+import { useKibali, rpc, swWords, STATUS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
 import OrderModal from '../../components/kibali/OrderModal'
 
@@ -9,7 +9,7 @@ const TABS = [
   { href: '/kibali/shop', label: 'Oda mpya', icon: '＋' },
   { href: '/kibali/shop?tab=orders', label: 'Oda', icon: '☰' },
 ]
-const blankLine = () => ({ key: Math.random().toString(36).slice(2), product_id: '', search: '', qty: '' })
+const blankLine = () => ({ key: Math.random().toString(36).slice(2), product_id: '', search: '', qty: '', kind: 'retail' })
 
 export default function KibaliShop() {
   const k = useKibali()
@@ -31,11 +31,11 @@ export default function KibaliShop() {
     const since = new Date(); since.setHours(0, 0, 0, 0)
     const [p, r, o] = await Promise.all([
       loadProducts(k.shop.id),
-      supabase.from('kibali_reserved').select('product_id,reserved'),
+      loadReserved(),
       supabase.from('release_orders').select('*,release_order_items(*)').gte('created_at', since.toISOString()).order('created_at', { ascending: false }),
     ])
     setProducts(p)
-    setReserved(Object.fromEntries((r.data || []).map(x => [String(x.product_id), x.reserved])))
+    setReserved(r)
     setOrders(o.data || [])
   }, [k.shop?.id])
 
@@ -46,12 +46,16 @@ export default function KibaliShop() {
 
   const byName = useMemo(() => Object.fromEntries(products.map(p => [p.name.toLowerCase(), p])), [products])
   const byId = useMemo(() => Object.fromEntries(products.map(p => [String(p.id), p])), [products])
-  const avail = (p) => (p?.stock || 0) - (reserved[String(p?.id)] || 0)
+  const avail = (p, kind) => (kind === 'wholesale' ? p?.wholesale : p?.retail || 0) - (reserved[resKey(p?.id, kind)] || 0)
 
   const setLine = (key, patch) => setLines(ls => ls.map(l => {
     if (l.key !== key) return l
     const n = { ...l, ...patch }
-    if ('search' in patch) n.product_id = byName[patch.search.trim().toLowerCase()]?.id || ''
+    if ('search' in patch) {
+      const p = byName[patch.search.trim().toLowerCase()]
+      n.product_id = p?.id || ''
+      if (p && String(p.id) !== String(l.product_id)) n.kind = defaultKind(p)
+    }
     return n
   }))
 
@@ -63,7 +67,7 @@ export default function KibaliShop() {
       if (!l.product_id) return setError(`Mstari ${i + 1}: chagua bidhaa kutoka kwenye orodha`)
       const q = Number(l.qty)
       if (!Number.isInteger(q) || q < 1) return setError(`Mstari ${i + 1}: idadi iwe namba kamili, 1 au zaidi`)
-      items.push({ product_id: l.product_id, qty: q })
+      items.push({ product_id: l.product_id, qty: q, kind: l.kind })
     }
     if (!items.length) return setError('Ongeza angalau bidhaa moja')
     setSaving(true)
@@ -77,7 +81,7 @@ export default function KibaliShop() {
   }
 
   const totalUnits = lines.reduce((a, l) => a + (Number(l.qty) || 0), 0)
-  const short = lines.find(l => l.product_id && Number(l.qty) > avail(byId[String(l.product_id)]))
+  const short = lines.find(l => l.product_id && Number(l.qty) > avail(byId[String(l.product_id)], l.kind))
 
   return (
     <Shell k={k} title={tab === 'new' ? 'Oda mpya' : 'Oda za leo'} tabs={TABS}>
@@ -94,12 +98,12 @@ export default function KibaliShop() {
 
           <div style={ui.card}>
             <p style={{ fontWeight: 800, marginBottom: 10 }}>Bidhaa</p>
-            <datalist id="kb-products">{products.map(p => <option key={p.id} value={p.name}>{avail(p)} zipo</option>)}</datalist>
+            <datalist id="kb-products">{products.map(p => <option key={p.id} value={p.name}>Rejareja {avail(p, 'retail')} · Jumla {avail(p, 'wholesale')}</option>)}</datalist>
             <div style={{ display: 'grid', gap: 10 }}>
               {lines.map((l, i) => {
                 const p = byId[String(l.product_id)]
                 const q = Number(l.qty)
-                const a = p ? avail(p) : null
+                const a = p ? avail(p, l.kind) : null
                 return (
                   <div key={l.key} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 36px', gap: 8, alignItems: 'start' }}>
                     <div>
@@ -107,8 +111,22 @@ export default function KibaliShop() {
                       <div style={{ fontSize: 11, marginTop: 4, display: 'flex', justifyContent: 'space-between', gap: 8, minHeight: 15 }}>
                         <span style={{ color: '#58a6ff', fontWeight: 700 }}>{q > 0 ? `${swWords(q)} (${q}) ${(p?.unit || '').toUpperCase()}` : ''}</span>
                         {l.search && !p && <span style={{ color: '#f0b429' }}>Chagua kutoka kwenye orodha</span>}
-                        {p && <span style={{ color: q > a ? '#ff4d6d' : '#3fb950', fontWeight: 700 }}>{q > a ? `! Zipo ${a} tu` : `✓ ${a} zipo`}</span>}
+                        {p && <span style={{ color: q > a ? '#ff4d6d' : '#3fb950', fontWeight: 700 }}>{q > a ? `! ${KIND[l.kind].sw}: zipo ${a} tu` : `✓ ${KIND[l.kind].sw}: ${a} zipo`}</span>}
                       </div>
+                      {p && (
+                        <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                          {['retail', 'wholesale'].map(kd => {
+                            const on = l.kind === kd, show = hasBoth(p) || defaultKind(p) === kd
+                            if (!show) return null
+                            return (
+                              <button key={kd} type="button" onClick={() => setLine(l.key, { kind: kd })}
+                                style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: '1px solid', borderColor: on ? KIND[kd].c : '#30363d', background: on ? KIND[kd].c + '22' : 'transparent', color: on ? KIND[kd].c : '#7d8590' }}>
+                                {KIND[kd].sw} · {avail(p, kd)}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                     <input type="number" min="1" step="1" inputMode="numeric" value={l.qty} onChange={e => setLine(l.key, { qty: e.target.value })} placeholder="Idadi" aria-label={`Idadi ${i + 1}`} style={{ fontWeight: 800, fontSize: 16 }} />
                     <button onClick={() => setLines(ls => ls.length > 1 ? ls.filter(x => x.key !== l.key) : [blankLine()])} aria-label="Ondoa" style={{ ...ui.btn, padding: '10px 0' }}>×</button>

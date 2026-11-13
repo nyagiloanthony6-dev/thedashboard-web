@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts } from '../../lib/kibali'
+import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth } from '../../lib/kibali'
 import Shell from '../../components/kibali/Shell'
 
 const TABS = [
@@ -107,7 +107,7 @@ function ScanRelease({ k, initialNo }) {
     setBusy(true)
     try {
       const r = await rpc('kibali_release', { p_order_no: order.order.order_no, p_code: code, p_lines: lines, p_collector: collector, p_collector_phone: phone })
-      setMsg({ c: '#3fb950', t: r.status === 'RELEASED' ? 'Mzigo wote umetolewa. ✓' : 'Sehemu imetolewa — kilichobaki kinabaki kwenye oda.', s: r.released.map(x => `${x.qty} ${x.unit} ${x.product_name}`).join(', ') })
+      setMsg({ c: '#3fb950', t: r.status === 'RELEASED' ? 'Mzigo wote umetolewa. ✓' : 'Sehemu imetolewa — kilichobaki kinabaki kwenye oda.', s: r.released.map(x => `${x.qty} ${x.unit} ${x.product_name} (${KIND[x.kind || 'retail'].sw})`).join(', ') })
       await refresh(order.order.id)
     } catch (e) { setMsg({ c: '#ff4d6d', t: e.message }) }
     setBusy(false)
@@ -172,7 +172,7 @@ function ScanRelease({ k, initialNo }) {
                   <div key={i.id} style={{ border: '1px solid #30363d', borderRadius: 10, padding: 12, display: 'grid', gap: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                       <div>
-                        <p style={{ fontSize: 16, fontWeight: 800 }}>{i.product_name}</p>
+                        <p style={{ fontSize: 16, fontWeight: 800 }}>{i.product_name} <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, color: KIND[i.kind || 'retail'].c, background: KIND[i.kind || 'retail'].c + '22' }}>{KIND[i.kind || 'retail'].sw}</span></p>
                         <p style={{ fontSize: 11, fontWeight: 800, color: '#58a6ff' }}>{swWords(i.qty)} ({i.qty}) {i.unit.toUpperCase()}</p>
                         {i.released > 0 && <p style={ui.muted}>Zilishatolewa {i.released} · zimebaki {rem}</p>}
                       </div>
@@ -233,14 +233,14 @@ function Waiting({ onPick }) {
   if (!rows) return <p style={ui.muted}>Inapakia…</p>
 
   const totals = {}
-  rows.forEach(o => o.release_order_items.forEach(i => { totals[i.product_name] = (totals[i.product_name] || 0) + i.qty - i.released }))
+  rows.forEach(o => o.release_order_items.forEach(i => { const n = i.product_name + ' (' + KIND[i.kind || 'retail'].sw + ')'; totals[n] = (totals[n] || 0) + i.qty - i.released }))
   const mins = (t) => Math.max(0, Math.round((Date.now() - new Date(t)) / 60000))
 
   return (
     <div style={{ display: 'grid', gap: 10 }}>
       {rows.length > 0 && (
         <div style={{ ...ui.card, background: '#1c2128' }}>
-          <p style={{ ...ui.muted, fontWeight: 800, marginBottom: 8 }}>JUMLA YA KUANDAA · ODA {rows.length}</p>
+          <p style={{ ...ui.muted, fontWeight: 800, marginBottom: 8 }}>VYA KUANDAA · ODA {rows.length}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
             {Object.entries(totals).filter(([, v]) => v > 0).map(([n, v]) => <div key={n}><p style={{ ...ui.mono, fontSize: 20, fontWeight: 800 }}>{v}</p><p style={ui.muted}>{n}</p></div>)}
           </div>
@@ -255,7 +255,7 @@ function Waiting({ onPick }) {
           </div>
           <span style={{ fontWeight: 700 }}>{o.customer_name || 'Mteja wa papo hapo'}</span>
           {o.release_order_items.filter(i => i.qty > i.released).map(i => (
-            <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}><span>{i.product_name}</span><span style={{ ...ui.mono, fontWeight: 800 }}>{i.qty - i.released}</span></div>
+            <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}><span>{i.product_name} <span style={{ fontSize: 11, color: KIND[i.kind || 'retail'].c }}>{KIND[i.kind || 'retail'].sw}</span></span><span style={{ ...ui.mono, fontWeight: 800 }}>{i.qty - i.released}</span></div>
           ))}
           {o.collector_name && <span style={ui.muted}>Atachukua: {o.collector_name}</span>}
         </button>
@@ -269,6 +269,7 @@ function Receive({ k }) {
   const [products, setProducts] = useState([])
   const [moves, setMoves] = useState([])
   const [pid, setPid] = useState('')
+  const [kind, setKind] = useState('retail')
   const [qty, setQty] = useState('')
   const [ref, setRef] = useState('')
   const [msg, setMsg] = useState(null)
@@ -285,6 +286,7 @@ function Receive({ k }) {
   useEffect(() => { load() }, [load])
 
   const p = products.find(x => String(x.id) === pid)
+  const cur = p ? (kind === 'wholesale' ? p.wholesale : p.retail) : 0
   const q = Number(qty)
 
   const save = async () => {
@@ -293,8 +295,8 @@ function Receive({ k }) {
     if (!Number.isInteger(q) || q < 1) return setMsg({ c: '#ff4d6d', t: 'Idadi iwe namba kamili, 1 au zaidi' })
     setBusy(true)
     try {
-      const bal = await rpc('kibali_receive_stock', { p_product_id: String(p.id), p_qty: q, p_reference: ref })
-      setMsg({ c: '#3fb950', t: `${p.name}: +${q} → ${bal} stoo` }); setQty(''); setRef(''); load()
+      const bal = await rpc('kibali_receive_stock', { p_product_id: String(p.id), p_qty: q, p_reference: ref, p_kind: kind })
+      setMsg({ c: '#3fb950', t: `${p.name} (${KIND[kind].sw}): +${q} → ${bal} stoo` }); setQty(''); setRef(''); load()
     } catch (e) { setMsg({ c: '#ff4d6d', t: e.message }) }
     setBusy(false)
   }
@@ -303,15 +305,27 @@ function Receive({ k }) {
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ ...ui.card, display: 'grid', gap: 12 }}>
         <div><label>Bidhaa</label>
-          <select value={pid} onChange={e => setPid(e.target.value)}>
+          <select value={pid} onChange={e => { setPid(e.target.value); const np = products.find(x => String(x.id) === e.target.value); setKind(defaultKind(np)) }}>
             <option value="">— chagua —</option>
-            {products.map(x => <option key={x.id} value={String(x.id)}>{x.name} — {x.stock || 0} stoo</option>)}
+            {products.map(x => <option key={x.id} value={String(x.id)}>{x.name} — Rejareja {x.retail} · Jumla {x.wholesale}</option>)}
           </select></div>
+        {p && (
+          <div><label>Aina ya stoo</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['retail', 'wholesale'].map(kd => (
+                <button key={kd} type="button" onClick={() => setKind(kd)} style={{ flex: 1, padding: 10, borderRadius: 8, fontWeight: 700, fontSize: 13, border: '1px solid', borderColor: kind === kd ? KIND[kd].c : '#30363d', background: kind === kd ? KIND[kd].c + '22' : 'transparent', color: kind === kd ? KIND[kd].c : '#7d8590' }}>
+                  {KIND[kd].sw} · {kd === 'wholesale' ? p.wholesale : p.retail} stoo
+                </button>
+              ))}
+            </div>
+            {!hasBoth(p) && kind !== defaultKind(p) && <p style={{ ...ui.muted, marginTop: 4, color: '#f0b429' }}>Bidhaa hii kwa kawaida ni {KIND[defaultKind(p)].sw}. Hakikisha ni sahihi.</p>}
+          </div>
+        )}
         <div><label>Idadi iliyopokelewa{p ? ` (${p.unit})` : ''}</label>
           <input type="number" min="1" step="1" inputMode="numeric" value={qty} onChange={e => setQty(e.target.value)} style={{ ...ui.mono, fontSize: 24, fontWeight: 800 }} />
           {q > 0 && <p style={{ fontSize: 11, fontWeight: 800, color: '#58a6ff', marginTop: 4 }}>{swWords(q)} ({q}) {(p?.unit || '').toUpperCase()}</p>}</div>
         <div><label>Msambazaji / namba ya delivery note</label><input value={ref} onChange={e => setRef(e.target.value)} placeholder="mf. Twiga Cement · DN 4471" /></div>
-        {p && q > 0 && <div style={ui.banner('#3fb950')}>Baada ya kupokea: <b style={ui.mono}>{p.stock || 0} → {(p.stock || 0) + q}</b></div>}
+        {p && q > 0 && <div style={ui.banner('#3fb950')}>Baada ya kupokea ({KIND[kind].sw}): <b style={ui.mono}>{cur} → {cur + q}</b></div>}
         {msg && <div style={ui.banner(msg.c)}>{msg.t}</div>}
         <button disabled={busy} onClick={save} style={{ ...ui.primary, padding: 14, fontSize: 15 }}>{busy ? 'Inahifadhi…' : 'Ongeza kwenye stoo'}</button>
       </div>
@@ -320,7 +334,7 @@ function Receive({ k }) {
         {moves.length === 0 && <p style={ui.muted}>Bado hakuna.</p>}
         {moves.map(m => (
           <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid #30363d' }}>
-            <div><p style={{ fontWeight: 700 }}>{m.product_name}</p><p style={ui.muted}>{fmtTime(m.created_at)} · {m.created_by_name}{m.reference ? ' · ' + m.reference : ''}</p></div>
+            <div><p style={{ fontWeight: 700 }}>{m.product_name} <span style={{ fontSize: 11, color: KIND[m.kind || 'retail'].c }}>{KIND[m.kind || 'retail'].sw}</span></p><p style={ui.muted}>{fmtTime(m.created_at)} · {m.created_by_name}{m.reference ? ' · ' + m.reference : ''}</p></div>
             <span style={{ ...ui.mono, color: '#3fb950', fontWeight: 800 }}>+{m.qty}</span>
           </div>
         ))}

@@ -13,7 +13,16 @@ Open the Supabase dashboard → SQL editor → paste
 
 Then also run, in order:
 - `supabase/migrations/20261113010000_kibali_owner_shop_fix.sql` (owners linked through `shop_owners`)
-- `supabase/migrations/20261113020000_kibali_stock_fields.sql` (uses the same quantity field as the Stock page: `wholesale_stock` for wholesale items, `retail_stock` for the rest)
+- `supabase/migrations/20261113020000_kibali_stock_fields.sql`
+- `supabase/migrations/20261113030000_kibali_retail_wholesale.sql` (retail and wholesale stock tracked separately)
+
+## Retail (Rejareja) and wholesale (Jumla)
+
+Kibali uses the same fields as the Stock page: retail = `retail_stock`,
+wholesale = `wholesale_stock`. Every order line, delivery and adjustment is
+marked Rejareja or Jumla, and only that quantity moves. The default follows
+the product type (wholesale items → Jumla, others → Rejareja); for items sold
+both ways the clerk / storekeeper picks with one tap.
 
 It only **adds** tables and functions. Every existing shop gets the `pos`
 module, so nothing changes for current clients. It is safe to run twice.
