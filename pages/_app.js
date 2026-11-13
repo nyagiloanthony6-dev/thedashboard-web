@@ -2,7 +2,7 @@ import '../styles/globals.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
-import { loadModules, ownedShop } from '../lib/store'
+import { loadModules, ownedShop, isPlatformAdmin } from '../lib/store'
 
 const PUBLIC = ['/', '/auth/login', '/auth/register', '/invest']
 
@@ -73,7 +73,8 @@ export default function App({ Component, pageProps }) {
         // Block access to pages this role can't see
         if (!pub) {
           const basePath = '/' + router.pathname.split('/')[1]
-          const canAccess = allowed.some(p => matches(router.pathname, p))
+          const canAccess = allowed.some(p => matches(router.pathname, p)) ||
+            (router.pathname.startsWith('/admin') && await isPlatformAdmin())
           if (!canAccess) {
             router.push(homeRoute)
             return

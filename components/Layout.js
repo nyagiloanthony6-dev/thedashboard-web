@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
-import { loadModules } from '../lib/store'
+import { loadModules, usePlatformAdmin } from '../lib/store'
 import Icon from './store/Icon'
 import { SLMark, SLWordmark } from './store/Shell'
 
@@ -37,7 +37,8 @@ export default function Layout({ children, title, shop, profile }) {
   const [col, setCol] = useState(false)
   const [modules, setModules] = useState({ pos: true, kibali: false })
   useEffect(() => { if (shop?.id) loadModules(shop.id).then(setModules) }, [shop?.id])
-  const nav = NAV.filter(n => !n.module || modules[n.module])
+  const platform = usePlatformAdmin()
+  const nav = [...NAV.filter(n => !n.module || modules[n.module]), ...(platform ? [{ href: '/admin/shops', icon: 'building', label: 'Serengeti Admin' }] : [])]
 
   const active = (href) => router.pathname === href || (href !== '/reports' && router.pathname.startsWith(href + '/')) || (href === '/store/owner' && router.pathname.startsWith('/store'))
 

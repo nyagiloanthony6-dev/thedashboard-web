@@ -3,7 +3,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { ROLE_LABELS, T } from '../../lib/store'
+import { ROLE_LABELS, T, usePlatformAdmin } from '../../lib/store'
 import Icon from './Icon'
 
 // Store layout in the Serengeti Labs look (light, warm, phone-first).
@@ -69,11 +69,13 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
     { href: '/store/shop', label: 'Oda mpya (duka)', icon: 'plus' },
     { href: '/store/release', label: 'Toa mzigo (skani)', icon: 'scan' },
   ]
+  const platform = usePlatformAdmin()
   const admin = [
     { href: '/stock', label: 'Bidhaa', icon: 'tag' },
     { href: '/team', label: 'Wafanyakazi', icon: 'users' },
     { href: '/settings', label: 'Mipangilio', icon: 'gear' },
     ...(pos ? [{ href: '/dashboard', label: 'TheDashboard POS', icon: 'back' }] : []),
+    ...(platform ? [{ href: '/admin/shops', label: 'Serengeti Admin', icon: 'building' }] : []),
   ]
   const onShopOrStore = /^\/store\/(shop|store)/.test(useRouter().pathname)
 
