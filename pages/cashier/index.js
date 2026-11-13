@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import { supabase, fmt, fmtK, today } from '../../lib/supabase'
+import { loadModules, storeSell, storeReleaseForSale } from '../../lib/store'
+import ReleaseSlipModal from '../../components/store/ReleaseSlipModal'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 export default function CashierPOS() {
@@ -32,6 +34,10 @@ export default function CashierPOS() {
   const [saleMode, setSaleMode] = useState('both')
   const [splitCashPaid, setSplitCashPaid] = useState('')
   const [receipt, setReceipt] = useState(null)
+  const [storeOn, setStoreOn] = useState(false)
+  const [collectStore, setCollectStore] = useState(false)
+  const [slip, setSlip] = useState(null)
+  const [pendingReceipt, setPendingReceipt] = useState(null)
   const [editingPrice, setEditingPrice] = useState({})
   const [staffList, setStaffList] = useState([])
   const [broughtBy, setBroughtBy] = useState('')
@@ -62,6 +68,7 @@ export default function CashierPOS() {
     setProfile(prof)
     const shopData = prof.shops
     setShop(shopData)
+    loadModules(shopData.id).then(m => setStoreOn(m.kibali))
     // Apply sale mode: auto-set posTab if shop only sells one type
     const mode = shopData.sale_mode || 'both'
     setSaleMode(mode)
@@ -152,11 +159,25 @@ export default function CashierPOS() {
           buy_price: c.buy_price || 0, sale_type: c.sale_type,
           line_profit: (c.sell_price - (c.buy_price || 0) / (c.box_qty || 1)) * c.qty,
         })))
-        for (const c of cart) {
-          const field = posTab === 'wholesale' ? 'wholesale_stock' : 'retail_stock'
-          const cur = posTab === 'wholesale' ? (c.wholesale_stock || 0) : (c.retail_stock || c.stock || 0)
-          await supabase.from('products').update({ [field]: Math.max(0, cur - c.qty) }).eq('id', c.id)
-        }
+        // Stock: Store shops record the sale in the history, or (Chukua stoo)
+        // create a release order; POS-only shops keep the direct update.
+        const saleRef = 'Sale ' + sale.id.slice(-8).toUpperCase()
+        const storeItems = cart.map(c => ({ product_id: c.id, name: c.name, unit: c.unit, qty: c.qty, kind: (c.sale_type || posTab) === 'wholesale' ? 'wholesale' : 'retail' }))
+        let newSlip = null
+        try {
+          if (storeOn && collectStore) {
+            newSlip = await storeReleaseForSale({ items: storeItems, customer: custName || selectedCustomer?.name || '', phone: custPhone || '', saleRef, cashierName: profile?.full_name })
+          } else if (storeOn) {
+            await storeSell(storeItems, saleRef)
+          } else {
+            for (const c of cart) {
+              const field = posTab === 'wholesale' ? 'wholesale_stock' : 'retail_stock'
+              const cur = posTab === 'wholesale' ? (c.wholesale_stock || 0) : (c.retail_stock || c.stock || 0)
+              await supabase.from('products').update({ [field]: Math.max(0, cur - c.qty) }).eq('id', c.id)
+            }
+          }
+        } catch (e) { showToast('Sale saved, but stock could not be updated: ' + e.message, '#B93A16') }
+        if (newSlip) { setSlip(newSlip); setCollectStore(false) }
         if (custId) {
           const { data: cust } = await supabase.from('customers').select('total_spent,visit_count').eq('id', custId).single()
           if (cust) {
@@ -166,7 +187,8 @@ export default function CashierPOS() {
             }).eq('id', custId)
           }
         }
-        setReceipt({ id: sale.id.slice(-8).toUpperCase(), date: new Date(), customer: custName || 'Walk-in', items: cart.map(c => ({ name: c.name, qty: c.qty, price: c.sell_price, total: c.sell_price * c.qty, pn: partField && c._cfv?.[partField.id] })), subtotal, discount: discAmt, total: finalTotal, payMeth: isSplit ? 'split' : payMeth, cashPaid: receivedAmt, loanBalance, isSplit })
+        const rcpt = ({ id: sale.id.slice(-8).toUpperCase(), date: new Date(), customer: custName || 'Walk-in', items: cart.map(c => ({ name: c.name, qty: c.qty, price: c.sell_price, total: c.sell_price * c.qty, pn: partField && c._cfv?.[partField.id] })), subtotal, discount: discAmt, total: finalTotal, payMeth: isSplit ? 'split' : payMeth, cashPaid: receivedAmt, loanBalance, isSplit })
+        if (newSlip) setPendingReceipt(rcpt); else setReceipt(rcpt)
         setCart([]); setDisc(''); clearCustomer(); setPayMeth('cash'); setSplitCashPaid(''); setBroughtBy(''); setBroughtByCustom('')
         loadData()
       }
@@ -236,6 +258,7 @@ export default function CashierPOS() {
       `}</style>
 
       {/* Toast */}
+      <ReleaseSlipModal slip={slip} shopName={shop?.name} onClose={() => { setSlip(null); if (pendingReceipt) { setReceipt(pendingReceipt); setPendingReceipt(null) } }} />
       {toast && <div style={{ position:'fixed', top:16, right:16, background:toast.c, color:'#FFFFFF', padding:'10px 20px', borderRadius:12, fontWeight:700, fontSize:13, zIndex:9999, animation:'fadeIn 0.2s', boxShadow:'0 4px 20px rgba(0,0,0,0.4)' }}>{toast.msg}</div>}
 
       {/* Receipt Modal */}
@@ -662,6 +685,12 @@ export default function CashierPOS() {
                   <div style={{ display:'flex', justifyContent:'space-between', fontWeight:900, fontSize:20, color:'#15183A' }}><span>Total</span><span style={{ color:'#0B7A6C' }}>{fmt(finalTotal)}</span></div>
                 </div>
 
+                {storeOn && (
+                  <label style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:10, padding:'10px 12px', borderRadius:12, border:`1.5px solid ${collectStore ? '#2D2F8F' : '#DCDFEC'}`, background: collectStore ? 'rgba(45,47,143,0.06)' : '#FFFFFF', cursor:'pointer', textTransform:'none', letterSpacing:0, fontSize:14, color:'#15183A', fontWeight:500, margin:'0 0 10px' }}>
+                    <input type="checkbox" checked={collectStore} onChange={e => setCollectStore(e.target.checked)} style={{ width:18, height:18, marginTop:2, accentColor:'#2D2F8F', flexShrink:0 }} />
+                    <span><b>Chukua stoo</b> — mteja atachukua mzigo stoo<br /><span style={{ fontSize:12, color:'#5B607E' }}>Inachapisha kibali cha stoo. Idadi inapungua mzigo ukitolewa stoo.</span></span>
+                  </label>
+                )}
                 <button onClick={completeSale} disabled={saving} style={{ width:'100%', padding:'13px', borderRadius:12, border:'none', background: saving ? '#ECEEF7' : '#2D2F8F', color:'#fff', fontWeight:800, fontSize:15, cursor:saving?'not-allowed':'pointer', letterSpacing:0.3, boxShadow: saving ? 'none' : '0 4px 16px rgba(45,47,143,0.4)' }}>
                   {saving ? '⏳ Processing...' : `Complete Sale · ${fmt(finalTotal)}`}
                 </button>

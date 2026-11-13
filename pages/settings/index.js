@@ -193,7 +193,7 @@ export default function Settings() {
                     <button key={opt.value} onClick={() => setShopForm(p => ({ ...p, sale_mode: opt.value }))}
                       style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:10, border:`1.5px solid ${isActive ? '#0F7375' : '#DCDFEC'}`, background: isActive ? 'rgba(15,115,117,0.1)' : 'transparent', cursor:'pointer', textAlign:'left' }}>
                       <div style={{ width:20, height:20, borderRadius:'50%', border:`2px solid ${isActive ? '#0F7375' : '#8A8FAE'}`, background: isActive ? '#0F7375' : 'transparent', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                        {isActive && <div style={{ width:8, height:8, borderRadius:'50%', background:'#000' }} />}
+                        {isActive && <div style={{ width:8, height:8, borderRadius:'50%', background: '#FFFFFF' }} />}
                       </div>
                       <div>
                         <p style={{ fontSize:13, fontWeight: isActive ? 700 : 500, color: isActive ? '#15183A' : '#5B607E', marginBottom:2 }}>{opt.label}</p>
@@ -231,7 +231,7 @@ export default function Settings() {
               {/* Add new */}
               <div style={{ display:'flex', gap:8, marginBottom:20 }}>
                 <input value={newCat} onChange={e => setNewCat(e.target.value)} onKeyDown={e => e.key==='Enter'&&addCategory()} placeholder="New category name..." style={{ ...C.input, flex:1 }} />
-                <button onClick={addCategory} disabled={catSaving||!newCat.trim()} style={{ padding:'9px 18px', borderRadius:8, background:catSaving||!newCat.trim()?'#DCDFEC':'#0F7375', color:catSaving||!newCat.trim()?'#8A8FAE':'#000', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', whiteSpace:'nowrap' }}>
+                <button onClick={addCategory} disabled={catSaving||!newCat.trim()} style={{ padding:'9px 18px', borderRadius:8, background:catSaving||!newCat.trim()?'#DCDFEC':'#0F7375', color:catSaving||!newCat.trim()?'#8A8FAE': '#FFFFFF', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', whiteSpace:'nowrap' }}>
                   {catSaving ? '...' : '+ Add'}
                 </button>
               </div>
@@ -272,7 +272,7 @@ export default function Settings() {
                     <option value="date">Date</option>
                   </select>
                 </div>
-                <button onClick={addCustomField} disabled={cfSaving||!newField.trim()} style={{ padding:'9px 16px', borderRadius:8, background:cfSaving||!newField.trim()?'#DCDFEC':'#0F7375', color:cfSaving||!newField.trim()?'#8A8FAE':'#000', fontWeight:700, fontSize:13, border:'none', cursor:'pointer' }}>
+                <button onClick={addCustomField} disabled={cfSaving||!newField.trim()} style={{ padding:'9px 16px', borderRadius:8, background:cfSaving||!newField.trim()?'#DCDFEC':'#0F7375', color:cfSaving||!newField.trim()?'#8A8FAE': '#FFFFFF', fontWeight:700, fontSize:13, border:'none', cursor:'pointer' }}>
                   {cfSaving ? '...' : '+ Add'}
                 </button>
               </div>

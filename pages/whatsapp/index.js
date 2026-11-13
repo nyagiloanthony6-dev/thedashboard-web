@@ -248,7 +248,7 @@ export default function WhatsApp() {
                   </div>
                 </div>
 
-                <button onClick={startCampaign} disabled={saving || !campName || !segList.length} style={{ width: '100%', padding: '14px', borderRadius: 10, background: !campName || !segList.length ? '#DCDFEC' : '#0B7A6C', color: !campName || !segList.length ? '#8A8FAE' : '#000', fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer' }}>
+                <button onClick={startCampaign} disabled={saving || !campName || !segList.length} style={{ width: '100%', padding: '14px', borderRadius: 10, background: !campName || !segList.length ? '#DCDFEC' : '#0B7A6C', color: !campName || !segList.length ? '#8A8FAE' : '#FFFFFF', fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer' }}>
                   {saving ? 'Setting up...' : `💬 Send to ${segList.length} Customers via WhatsApp`}
                 </button>
               </div>

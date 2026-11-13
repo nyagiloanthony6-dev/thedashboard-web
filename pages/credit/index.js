@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt, fmtK, today } from '../../lib/supabase'
+import { loadModules, storeSell } from '../../lib/store'
 
 export default function Credit() {
+  const [storeOn, setStoreOn] = useState(false)
   const [profile, setProfile] = useState(null)
   const [shop, setShop] = useState(null)
   const [batches, setBatches] = useState([])
@@ -37,6 +39,7 @@ export default function Credit() {
     const { data: prof } = await supabase.from('app_users').select('*,shops(*)').eq('id', user.id).single()
     setProfile(prof); setShop(prof.shops)
     const shopId = prof.shops.id
+    loadModules(shopId).then(m => setStoreOn(m.kibali))
     const [br, pr] = await Promise.all([
       supabase.from('credit_batches').select('*,credit_batch_items(*),credit_payments(*),credit_returns(*)').eq('shop_id', shopId).order('created_at', { ascending:false }),
       supabase.from('products').select('*').eq('shop_id', shopId).eq('is_active', true).order('name'),
@@ -70,9 +73,14 @@ export default function Credit() {
       credit_rate: parseFloat(i.credit_rate)||0,
       subtotal: (parseFloat(i.qty)||0)*(parseFloat(i.credit_rate)||0),
     })))
-    // Deduct stock
-    for (const i of valid) {
-      await supabase.from('products').update({ wholesale_stock: Math.max(0,(i.product.wholesale_stock||0)-parseFloat(i.qty)), stock: Math.max(0,(i.product.stock||0)-parseFloat(i.qty)) }).eq('id', i.product.id)
+    // Deduct stock (Store shops: recorded in the stock movement history)
+    if (storeOn) {
+      try { await storeSell(valid.map(i => ({ product_id: i.product.id, qty: parseFloat(i.qty), kind: 'wholesale' })), 'Credit batch ' + batch.id.slice(-6).toUpperCase() + ' · ' + recipient.trim()) }
+      catch (e) { alert('Batch saved, but stock could not be updated: ' + e.message) }
+    } else {
+      for (const i of valid) {
+        await supabase.from('products').update({ wholesale_stock: Math.max(0,(i.product.wholesale_stock||0)-parseFloat(i.qty)), stock: Math.max(0,(i.product.stock||0)-parseFloat(i.qty)) }).eq('id', i.product.id)
+      }
     }
     const newBatch = { ...batch, credit_batch_items: valid.map(i=>({...i,product_name:i.product.name,image_emoji:i.product.image_emoji,qty:parseFloat(i.qty),credit_rate:parseFloat(i.credit_rate),subtotal:(parseFloat(i.qty)||0)*(parseFloat(i.credit_rate)||0)})), credit_payments:[], credit_returns:[] }
     setBatches(p => [newBatch, ...p])
@@ -294,7 +302,7 @@ export default function Credit() {
                 </div>
               )}
 
-              <button onClick={saveBatch} disabled={saving||!recipient||!items.filter(i=>parseFloat(i.qty)>0).length} style={{width:'100%',padding:'13px',borderRadius:8,background:saving||!recipient||!items.filter(i=>parseFloat(i.qty)>0).length?'#DCDFEC':'#0B7A6C',color:saving||!recipient?'#8A8FAE':'#000',fontWeight:700,fontSize:15,border:'none',cursor:'pointer',marginTop:16}}>
+              <button onClick={saveBatch} disabled={saving||!recipient||!items.filter(i=>parseFloat(i.qty)>0).length} style={{width:'100%',padding:'13px',borderRadius:8,background:saving||!recipient||!items.filter(i=>parseFloat(i.qty)>0).length?'#DCDFEC':'#0B7A6C',color:saving||!recipient?'#8A8FAE': '#FFFFFF',fontWeight:700,fontSize:15,border:'none',cursor:'pointer',marginTop:16}}>
                 {saving?'Saving...':'💾 Save Credit Batch'}
               </button>
             </div>

@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt, fmtK, today } from '../../lib/supabase'
+import { loadModules, storeSell } from '../../lib/store'
 
 export default function FieldOrders() {
+  const [storeOn, setStoreOn] = useState(false)
   const [profile, setProfile] = useState(null)
   const [shop, setShop] = useState(null)
   const [orders, setOrders] = useState([])
@@ -26,6 +28,7 @@ export default function FieldOrders() {
     const { data: prof } = await supabase.from('app_users').select('*,shops(*)').eq('id', user.id).single()
     setProfile(prof); setShop(prof.shops)
     const shopId = prof.shops.id
+    loadModules(shopId).then(m => setStoreOn(m.kibali))
     const [or, pr] = await Promise.all([
       supabase.from('field_orders').select('*,field_order_items(*),app_users!created_by(full_name,id)').eq('shop_id', shopId).order('created_at', { ascending: false }).limit(200),
       supabase.from('products').select('id,name,buy_price,box_qty,retail_stock,stock').eq('shop_id', shopId).eq('is_active', true),
@@ -55,11 +58,16 @@ export default function FieldOrders() {
         sale_type: 'retail',
       }))
       await supabase.from('sale_items').insert(saleItems)
-      for (const it of order.field_order_items || []) {
-        const prod = prods.find(p => p.id === it.product_id)
-        if (prod) {
-          const cur = Number(prod.retail_stock) || Number(prod.stock) || 0
-          await supabase.from('products').update({ retail_stock: Math.max(0, cur - it.qty), stock: Math.max(0, cur - it.qty) }).eq('id', prod.id)
+      if (storeOn) {
+        await storeSell((order.field_order_items || []).filter(it => prods.some(p => p.id === it.product_id)).map(it => ({ product_id: it.product_id, qty: it.qty, kind: 'retail' })),
+          'Field order · ' + (order.customer_name || '') + ' · Sale ' + sale.id.slice(-8).toUpperCase())
+      } else {
+        for (const it of order.field_order_items || []) {
+          const prod = prods.find(p => p.id === it.product_id)
+          if (prod) {
+            const cur = Number(prod.retail_stock) || Number(prod.stock) || 0
+            await supabase.from('products').update({ retail_stock: Math.max(0, cur - it.qty), stock: Math.max(0, cur - it.qty) }).eq('id', prod.id)
+          }
         }
       }
       const { data: repSet } = await supabase.from('sales_rep_settings').select('*').eq('user_id', order.created_by).eq('shop_id', shopId).single()
@@ -240,7 +248,7 @@ export default function FieldOrders() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {detail.status === 'pending' && (
                   <>
-                    <button onClick={() => fulfill(detail)} disabled={fulfilling === detail.id} style={{ padding: '12px', borderRadius: 8, background: fulfilling === detail.id ? '#DCDFEC' : '#0B7A6C', color: fulfilling === detail.id ? '#8A8FAE' : '#000', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>
+                    <button onClick={() => fulfill(detail)} disabled={fulfilling === detail.id} style={{ padding: '12px', borderRadius: 8, background: fulfilling === detail.id ? '#DCDFEC' : '#0B7A6C', color: fulfilling === detail.id ? '#8A8FAE' : '#FFFFFF', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>
                       {fulfilling === detail.id ? 'Processing...' : '✅ Fulfill Order'}
                     </button>
                     <button onClick={() => cancel(detail)} style={{ padding: '10px', borderRadius: 8, background: 'transparent', border: '1px solid rgba(185,58,22,0.3)', color: '#B93A16', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>❌ Cancel Order</button>

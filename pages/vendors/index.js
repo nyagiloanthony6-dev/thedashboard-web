@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt, fmtK, today } from '../../lib/supabase'
+import { loadModules, storeReceive } from '../../lib/store'
 
 const COST_TYPES = ['clearing','transport','handling','customs','other']
 
@@ -185,6 +186,7 @@ function VendorOrderDetail({ detailData, calcLanded, C, fmt, fmtK, setPayModal, 
 }
 
 export default function Vendors() {
+  const [storeOn, setStoreOn] = useState(false)
   const [profile, setProfile] = useState(null)
   const [shop, setShop] = useState(null)
   const [vendors, setVendors] = useState([])
@@ -245,6 +247,7 @@ export default function Vendors() {
     if (!shopData) { alert('No shop found for this account'); return }
     setShop(shopData)
     const shopId = shopData.id
+    loadModules(shopId).then(m => setStoreOn(m.kibali))
     const [vr, or, wp] = await Promise.all([
       supabase.from('vendors').select('*').eq('shop_id', shopId).eq('is_active', true).order('name'),
       supabase.from('purchase_orders').select('*,vendors(name),purchase_order_items(*),vendor_payments(*),shipment_costs(*)').eq('shop_id', shopId).order('created_at', { ascending: false }),
@@ -523,20 +526,24 @@ export default function Vendors() {
         .select('id,wholesale_stock').ilike('name', it.product_name).eq('shop_id', shop.id).limit(1)
       const exProd = existingProd?.[0]
       let prodId = exProd?.id
+      // Store shops: quantity is recorded as a delivery in the movement history
+      const poRef = 'Vendor PO ' + String(order?.id || '').slice(-6).toUpperCase()
       if (exProd) {
         await supabase.from('products').update({
-          wholesale_stock: (Number(exProd.wholesale_stock)||0) + it.qty_boxes,
+          ...(storeOn ? {} : { wholesale_stock: (Number(exProd.wholesale_stock)||0) + it.qty_boxes }),
           buy_price: Math.round(uc*r),
         }).eq('id', exProd.id)
+        if (storeOn) { try { await storeReceive(exProd.id, it.qty_boxes, 'wholesale', poRef) } catch (e) { alert(it.product_name + ': ' + e.message) } }
       } else {
         const { data: newProd } = await supabase.from('products').insert({
           shop_id: shop.id, name: it.product_name, image_emoji: it.image_emoji||'📦',
           category: it.category||null, buy_price: Math.round(uc*r),
           sell_price: 0, wholesale_price: 0, box_qty: pcsPerBox,
-          wholesale_stock: it.qty_boxes||0, retail_stock: 0, stock: 0,
+          wholesale_stock: storeOn ? 0 : (it.qty_boxes||0), retail_stock: 0, stock: 0,
           unit: 'unit', product_type: 'wholesale', is_active: true,
         }).select('id').single()
         prodId = newProd?.id
+        if (storeOn && prodId) { try { await storeReceive(prodId, it.qty_boxes, 'wholesale', poRef) } catch (e) { alert(it.product_name + ': ' + e.message) } }
       }
 
       // Save part number to product_field_values if part_number exists
@@ -1003,7 +1010,7 @@ export default function Vendors() {
               </div>
               <div style={{display:'flex',gap:10}}>
                 <button onClick={()=>setOrderModal(false)} style={{flex:1,padding:'11px',borderRadius:8,border:'1px solid #DCDFEC',background:'transparent',color:'#15183A',fontWeight:600,cursor:'pointer'}}>Cancel</button>
-                <button onClick={saveOrder} disabled={orderSaving} style={{flex:2,padding:'11px',borderRadius:8,background:orderSaving?'#DCDFEC':'#9A5B00',color:orderSaving?'#8A8FAE':'#000',fontWeight:700,border:'none',cursor:'pointer'}}>{orderSaving?'Creating...':'Create Purchase Order'}</button>
+                <button onClick={saveOrder} disabled={orderSaving} style={{flex:2,padding:'11px',borderRadius:8,background:orderSaving?'#DCDFEC':'#9A5B00',color:orderSaving?'#8A8FAE': '#FFFFFF',fontWeight:700,border:'none',cursor:'pointer'}}>{orderSaving?'Creating...':'Create Purchase Order'}</button>
               </div>
             </div>
           </div>
@@ -1139,7 +1146,7 @@ export default function Vendors() {
               </div>
               <div style={{display:'flex',gap:10}}>
                 <button onClick={()=>setEditOrderModal(false)} style={{flex:1,padding:'11px',borderRadius:8,border:'1px solid #DCDFEC',background:'transparent',color:'#15183A',fontWeight:600,cursor:'pointer'}}>Cancel</button>
-                <button onClick={saveEditOrder} disabled={editOrderSaving} style={{flex:2,padding:'11px',borderRadius:8,background:editOrderSaving?'#DCDFEC':'#9A5B00',color:editOrderSaving?'#8A8FAE':'#000',fontWeight:700,border:'none',cursor:'pointer'}}>{editOrderSaving?'Saving...':'Save Changes'}</button>
+                <button onClick={saveEditOrder} disabled={editOrderSaving} style={{flex:2,padding:'11px',borderRadius:8,background:editOrderSaving?'#DCDFEC':'#9A5B00',color:editOrderSaving?'#8A8FAE': '#FFFFFF',fontWeight:700,border:'none',cursor:'pointer'}}>{editOrderSaving?'Saving...':'Save Changes'}</button>
               </div>
             </div>
           </div>

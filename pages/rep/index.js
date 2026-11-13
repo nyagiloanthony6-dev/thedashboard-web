@@ -137,7 +137,7 @@ export default function SalesRep() {
     tab: (active) => ({ flex: 1, padding: '10px', textAlign: 'center', fontSize: 12, fontWeight: active ? 700 : 400, color: active ? '#0F7375' : '#5B607E', background: 'none', border: 'none', borderBottom: active ? '2px solid #0F7375' : '2px solid transparent', cursor: 'pointer' }),
     card: { background: '#FFFFFF', border: '1px solid #DCDFEC', borderRadius: 12, padding: 14, marginBottom: 12 },
     input: { background: '#F6F7FB', border: '1.5px solid #DCDFEC', borderRadius: 8, color: '#15183A', padding: '10px 12px', fontSize: 14, width: '100%', outline: 'none', fontFamily: 'inherit' },
-    btn: (c = '#0F7375', tc = '#000') => ({ padding: '10px 16px', borderRadius: 8, background: c, color: tc, fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer' }),
+    btn: (c = '#0F7375', tc = '#FFFFFF') => ({ padding: '10px 16px', borderRadius: 8, background: c, color: tc, fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer' }),
   }
 
   if (loading) return (

@@ -676,7 +676,7 @@ export default function Stock() {
                     </div>
                   </div>
                 ))}
-                <button onClick={saveBulk} disabled={!!bulkSaving} style={{width:'100%',padding:'12px',borderRadius:8,background:bulkSaving?'#ECEEF7':'#0B7A6C',color:bulkSaving?'#2D2F8F':'#000',fontWeight:800,fontSize:14,border:'none',cursor:bulkSaving?'not-allowed':'pointer',marginTop:4}}>
+                <button onClick={saveBulk} disabled={!!bulkSaving} style={{width:'100%',padding:'12px',borderRadius:8,background:bulkSaving?'#ECEEF7':'#0B7A6C',color:bulkSaving?'#2D2F8F': '#FFFFFF',fontWeight:800,fontSize:14,border:'none',cursor:bulkSaving?'not-allowed':'pointer',marginTop:4}}>
                   {bulkSaving ? (bulkStatus||'Saving...') : `✅ Save ${bulkParsed.filter(i=>parseInt(i.qty_boxes)>0).length} Items`}
                 </button>
               </>

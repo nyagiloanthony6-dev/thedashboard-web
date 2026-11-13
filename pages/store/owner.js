@@ -27,7 +27,7 @@ export default function StoreOwner() {
       supabase.from('kibali_alerts').select('*').order('created_at', { ascending: false }).limit(200),
       loadProducts(k.shop.id),
       loadReserved(),
-      supabase.from('stock_movements').select('qty').eq('type', 'OUT').gte('created_at', since.toISOString()),
+      supabase.from('stock_movements').select('qty').in('type', ['OUT', 'SALE']).gte('created_at', since.toISOString()),
     ])
     setOrders(o.data || []); setAlerts(a.data || []); setProducts(p)
     setReserved(r)
@@ -84,7 +84,7 @@ function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
     <div style={{ display: 'grid', gap: 22 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
         <Stat l="Oda za leo" v={orders.filter(o => isToday(o.created_at)).length} href="/store/owner?tab=orders" />
-        <Stat l="Vipimo vilivyotoka leo" v={todayOut} />
+        <Stat l="Vipimo vilivyotoka leo (stoo + POS)" v={todayOut} />
         <Stat l="Zinasubiri stoo" v={waiting.length} href="/store/release?tab=waiting" />
         <Stat l="Tahadhari" v={openAlerts.length} red={openAlerts.length > 0} href="/store/owner?tab=alerts" />
       </div>
@@ -326,7 +326,8 @@ function ItemPanel({ p, onClose, onChanged }) {
     } catch (e) { setErr(e.message) }
     setBusy(false)
   }
-  const label = { IN: ['Imepokelewa', '#0B7A6C'], OUT: ['Imetoka', '#B93A16'], ADJ: ['Marekebisho', '#9A5B00'] }
+  const label = { IN: ['Imepokelewa', '#0B7A6C'], OUT: ['Imetoka stoo', '#B93A16'], SALE: ['Imeuzwa (POS)', '#2D2F8F'], ADJ: ['Marekebisho', '#9A5B00'] }
+  const lab = (t) => label[t] || [t, '#5B607E']
   const shown = (moves || []).filter(m => !filter || (m.kind || 'retail') === filter)
   const curFor = (kd) => kd === 'wholesale' ? p.wholesale : p.retail
 
@@ -381,10 +382,10 @@ function ItemPanel({ p, onClose, onChanged }) {
           {!moves ? <p style={ui.muted}>Inapakia…</p> : shown.length === 0 ? <p style={ui.muted}>Bado hakuna mzunguko uliorekodiwa na Store.</p> : shown.map(m => (
             <div key={m.id} style={{ display: 'grid', gridTemplateColumns: '1fr 64px 64px', gap: 8, padding: '8px 0', borderTop: '1px solid #DCDFEC', alignItems: 'center' }}>
               <div>
-                <p style={{ fontWeight: 700, color: label[m.type][1] }}>{label[m.type][0]} <span style={{ fontSize: 11, color: KIND[m.kind || 'retail'].c }}>{KIND[m.kind || 'retail'].sw}</span>{m.reference ? <span style={{ color: '#15183A', fontWeight: 400 }}> · {m.reference}</span> : null}</p>
+                <p style={{ fontWeight: 700, color: lab(m.type)[1] }}>{lab(m.type)[0]} <span style={{ fontSize: 11, color: KIND[m.kind || 'retail'].c }}>{KIND[m.kind || 'retail'].sw}</span>{m.reference ? <span style={{ color: '#15183A', fontWeight: 400 }}> · {m.reference}</span> : null}</p>
                 <p style={ui.muted}>{fmtTime(m.created_at)} · {m.created_by_name}{m.note && m.type !== 'ADJ' ? ' · ' + m.note : ''}</p>
               </div>
-              <span style={{ ...num, padding: 0, color: label[m.type][1] }}>{m.qty > 0 ? '+' : ''}{m.qty}</span>
+              <span style={{ ...num, padding: 0, color: lab(m.type)[1] }}>{m.qty > 0 ? '+' : ''}{m.qty}</span>
               <span style={{ ...num, padding: 0 }}>{m.balance_after}</span>
             </div>
           ))}

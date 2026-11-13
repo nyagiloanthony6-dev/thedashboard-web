@@ -195,7 +195,7 @@ export default function Loans() {
                     <label style={C.label}>NOTE (OPTIONAL)</label>
                     <input value={payNote} onChange={e=>setPayNote(e.target.value)} placeholder="e.g. Cash received" style={C.input}/>
                   </div>
-                  <button onClick={recordPayment} disabled={paySaving||!payAmount} style={{width:'100%',padding:'12px',borderRadius:8,background:paySaving||!payAmount?'#DCDFEC':'#0B7A6C',color:paySaving||!payAmount?'#8A8FAE':'#000',fontWeight:700,fontSize:14,border:'none',cursor:'pointer'}}>
+                  <button onClick={recordPayment} disabled={paySaving||!payAmount} style={{width:'100%',padding:'12px',borderRadius:8,background:paySaving||!payAmount?'#DCDFEC':'#0B7A6C',color:paySaving||!payAmount?'#8A8FAE': '#FFFFFF',fontWeight:700,fontSize:14,border:'none',cursor:'pointer'}}>
                     {paySaving?'Saving...':'💵 Record Payment'}
                   </button>
                 </div>

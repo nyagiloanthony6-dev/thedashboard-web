@@ -239,7 +239,7 @@ export default function Investors() {
     input: { background:'#F6F7FB', border:'1.5px solid #DCDFEC', borderRadius:8, color:'#15183A', padding:'9px 12px', fontSize:13, width:'100%', outline:'none', fontFamily:'inherit' },
     label: { fontSize:10, color:'#5B607E', letterSpacing:0.8, display:'block', marginBottom:4, fontWeight:600 },
     badge: (c) => ({ background:c+'18', color:c, border:`1px solid ${c}30`, borderRadius:4, padding:'2px 8px', fontSize:10, fontWeight:700 }),
-    btn:   (bg,c='#000') => ({ padding:'10px 20px', borderRadius:8, background:bg, color:c, fontWeight:700, fontSize:13, border:'none', cursor:'pointer' }),
+    btn:   (bg,c='#FFFFFF') => ({ padding:'10px 20px', borderRadius:8, background:bg, color:c, fontWeight:700, fontSize:13, border:'none', cursor:'pointer' }),
   }
   const statusColor = s => s==='completed'?'#0B7A6C':'#2D2F8F'
 

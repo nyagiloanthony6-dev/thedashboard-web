@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt, fmtK } from '../../lib/supabase'
+import { loadModules, storeReceive } from '../../lib/store'
 
 export default function Warehouse() {
+  const [storeOn, setStoreOn] = useState(false)
   const [profile, setProfile] = useState(null)
   const [shop, setShop] = useState(null)
   const [wProds, setWProds] = useState([])
@@ -38,6 +40,7 @@ export default function Warehouse() {
     const { data: { user } } = await supabase.auth.getUser()
     const { data: prof } = await supabase.from('app_users').select('*,shops(*)').eq('id', user.id).single()
     setProfile(prof); setShop(prof.shops)
+    loadModules(prof.shops?.id).then(m => setStoreOn(m.kibali))
 
     // Get or create warehouse
     let { data: whArr } = await supabase.from('warehouse').select('*').eq('owner_id', user.id).limit(1)
@@ -104,21 +107,25 @@ export default function Warehouse() {
     const { data: existingArr } = await supabase.from('products').select('id,wholesale_stock,retail_stock,stock').eq('shop_id', transShop).ilike('name', transProd.name).limit(1)
     const existing = existingArr?.[0] || null
 
+    // Store shops: the transfer is recorded as a delivery in the movement history
+    const trRef = 'Warehouse transfer · ' + (transProd.name || '')
     if (existing) {
       await supabase.from('products').update({
-        wholesale_stock: (existing.wholesale_stock || 0) + qty,
+        ...(storeOn ? {} : { wholesale_stock: (existing.wholesale_stock || 0) + qty }),
         ...(transWhsPrice ? { wholesale_price: parseFloat(transWhsPrice) } : {}),
         ...(transRetPrice ? { sell_price: parseFloat(transRetPrice) } : {}),
       }).eq('id', existing.id)
+      if (storeOn) { try { await storeReceive(existing.id, qty, 'wholesale', trRef) } catch (e) { alert(e.message) } }
     } else {
-      await supabase.from('products').insert({
+      const { data: newShopProd } = await supabase.from('products').insert({
         shop_id: transShop, name: transProd.name, category: transProd.category || '',
         image_emoji: transProd.image_emoji || '📦',
         buy_price: Math.round((transProd.buy_price || 0) / (transProd.box_qty || 1)),
         wholesale_price: parseFloat(transWhsPrice) || 0, sell_price: parseFloat(transRetPrice) || 0,
-        wholesale_stock: qty, retail_stock: 0, stock: 0, box_qty: 1,
+        wholesale_stock: storeOn ? 0 : qty, retail_stock: 0, stock: 0, box_qty: 1,
         product_type: transRetPrice ? 'both' : 'wholesale', unit: transProd.unit || 'unit', is_active: true,
-      })
+      }).select('id').single()
+      if (storeOn && newShopProd?.id) { try { await storeReceive(newShopProd.id, qty, 'wholesale', trRef) } catch (e) { alert(e.message) } }
     }
 
     // Record transfer
@@ -341,7 +348,7 @@ export default function Warehouse() {
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setShowTransModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid #DCDFEC', background: 'transparent', color: '#15183A', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                <button onClick={confirmTransfer} disabled={transSaving || !transShop || !transQty} style={{ flex: 2, padding: '11px', borderRadius: 8, background: !transShop || !transQty ? '#DCDFEC' : '#0B7A6C', color: !transShop || !transQty ? '#8A8FAE' : '#000', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                <button onClick={confirmTransfer} disabled={transSaving || !transShop || !transQty} style={{ flex: 2, padding: '11px', borderRadius: 8, background: !transShop || !transQty ? '#DCDFEC' : '#0B7A6C', color: !transShop || !transQty ? '#8A8FAE' : '#FFFFFF', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
                   {transSaving ? 'Transferring...' : '🔄 Transfer to Shop'}
                 </button>
               </div>

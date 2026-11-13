@@ -77,6 +77,18 @@ change is recorded. New items can be created in Kibali (+ Bidhaa mpya) or on
 the Stock page; opening stock is recorded as a delivery. The Stock page bulk
 import also records each quantity as a Kibali delivery.
 
+## Stock recording by plan
+
+| | POS only | Store only | POS + Store |
+|---|---|---|---|
+| Stock in | Stock page, bulk import, vendors, warehouse (direct) | Pokea mzigo, + Bidhaa mpya, bulk import (recorded) | All recorded: Pokea, bulk import, Vendors receiving, Warehouse transfers |
+| Stock out | POS sales, credit, field orders (direct) | Store releases only (recorded) | POS sales / credit / field orders recorded as SALE; "Chukua stoo" sales create a release order and stock comes off when the store releases |
+| Corrections | Stock page | Hesabu / rekebisha (owner, reason, alert) | Hesabu / rekebisha (owner, reason, alert) |
+| History | none | full | full |
+
+Run `supabase/migrations/20261113040000_store_sales.sql` for the SALE movement type
+and the `kibali_sell` function.
+
 ## How it is protected
 
 - All Kibali writes go through database functions (`kibali_*`) that check
