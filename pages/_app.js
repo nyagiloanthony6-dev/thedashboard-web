@@ -2,7 +2,7 @@ import '../styles/globals.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
-import { loadModules } from '../lib/kibali'
+import { loadModules, ownedShop } from '../lib/kibali'
 
 const PUBLIC = ['/', '/auth/login', '/auth/register', '/invest']
 
@@ -33,7 +33,8 @@ let access = null
 async function getAccess(userId) {
   if (access?.userId === userId) return access
   const { data: prof } = await supabase.from('app_users').select('role,shop_id').eq('id', userId).single()
-  const modules = await loadModules(prof?.shop_id)
+  const shopId = prof?.shop_id || (await ownedShop(userId))?.id
+  const modules = await loadModules(shopId)
   access = { userId, role: prof?.role || 'shop_admin', modules }
   return access
 }
