@@ -56,7 +56,8 @@ export default function StoreShop() {
     if (l.key !== key) return l
     const n = { ...l, ...patch }
     if ('search' in patch) {
-      const p = byName[patch.search.trim().toLowerCase()]
+      const key = patch.search.trim().toLowerCase()
+      const p = byName[key] || products.find(x => (x.part_number || '').toLowerCase() === key)
       n.product_id = p?.id || ''
       if (p && String(p.id) !== String(l.product_id)) n.kind = defaultKind(p)
     }
@@ -111,7 +112,7 @@ export default function StoreShop() {
                 </select>
               )}
             </div>
-            <datalist id="kb-products">{pickable.map(p => <option key={p.id} value={p.name}>{p.category ? p.category + ' · ' : ''}Rejareja {avail(p, 'retail')} · Jumla {avail(p, 'wholesale')}</option>)}</datalist>
+            <datalist id="kb-products">{pickable.map(p => <option key={p.id} value={p.name}>{[p.part_number, p.category].filter(Boolean).join(' · ')}{p.part_number || p.category ? ' · ' : ''}{p.product_type === 'wholesale' ? `Jumla ${avail(p, 'wholesale')}` : hasBoth(p) ? `Rejareja ${avail(p, 'retail')} · Jumla ${avail(p, 'wholesale')}` : `Rejareja ${avail(p, 'retail')}`}</option>)}</datalist>
             <div style={{ display: 'grid', gap: 10 }}>
               {lines.map((l, i) => {
                 const p = byId[String(l.product_id)]

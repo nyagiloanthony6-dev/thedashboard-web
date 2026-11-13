@@ -244,14 +244,14 @@ function Stock({ products, reserved, onChanged }) {
     const main = defaultKind(p), mainAv = main === 'wholesale' ? aw : ar
     return { ...p, rr, rw, ar, aw, isLow: mainAv <= (p.low_stock_alert ?? 10), isOut: ar <= 0 && aw <= 0 }
   }), [products, reserved])
-  const list = rows.filter(r => (!q || r.name.toLowerCase().includes(q.toLowerCase()) || (r.category || '').toLowerCase().includes(q.toLowerCase())) && (!low || r.isLow) && (!cat || r.category === cat))
+  const list = rows.filter(r => (!q || [r.name, r.category, r.part_number].some(v => (v || '').toLowerCase().includes(q.toLowerCase()))) && (!low || r.isLow) && (!cat || r.category === cat))
   const catTotals = cat ? list.reduce((a, r) => ({ retail: a.retail + r.retail, wholesale: a.wholesale + r.wholesale }), { retail: 0, wholesale: 0 }) : null
   const current = sel ? rows.find(r => r.id === sel) : null
 
   return (
     <div style={{ display: 'grid', gap: 10 }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tafuta bidhaa au kundi…" style={{ flex: 1, minWidth: 200 }} />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tafuta jina, part number au kundi…" style={{ flex: 1, minWidth: 200 }} />
         <select value={cat} onChange={e => setCat(e.target.value)} style={{ width: 'auto', minWidth: 170 }} aria-label="Kundi">
           <option value="">Makundi yote ({cats.length})</option>
           {cats.map(c => <option key={c} value={c}>{c} ({rows.filter(r => r.category === c).length})</option>)}
@@ -275,7 +275,7 @@ function Stock({ products, reserved, onChanged }) {
           </thead>
           <tbody>{list.map(r => (
             <tr key={r.id} onClick={() => setSel(r.id)} style={{ borderTop: '1px solid #DCDFEC', cursor: 'pointer' }}>
-              <td style={{ padding: '10px 12px' }}><b>{r.name}</b></td>
+              <td style={{ padding: '10px 12px' }}><b>{r.name}</b>{r.part_number ? <span style={{ display: 'block', fontFamily: T.mono, fontSize: 12, color: T.muted }}>{r.part_number}</span> : null}</td>
               <td style={{ padding: '10px 12px', color: '#5B607E', fontSize: 12 }}>{r.category || '—'}</td>
               <td style={{ ...num, color: r.product_type === 'wholesale' && !r.retail ? '#8A8FAE' : '#15183A' }}>{r.retail}</td>
               <td style={{ ...num, color: r.ar < 0 ? '#B93A16' : '#5B607E' }}>{r.ar}</td>

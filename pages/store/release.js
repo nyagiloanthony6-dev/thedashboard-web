@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory, T } from '../../lib/store'
+import { useKibali, rpc, swWords, STATUS, fmtTime, ui, loadProducts, KIND, defaultKind, hasBoth, byCategory, T, stockText, matchProduct } from '../../lib/store'
 import Shell from '../../components/store/Shell'
 import Icon from '../../components/store/Icon'
 
@@ -276,6 +276,7 @@ function Receive({ k }) {
   const [products, setProducts] = useState([])
   const [moves, setMoves] = useState([])
   const [pid, setPid] = useState('')
+  const [search, setSearch] = useState('')
   const [kind, setKind] = useState('retail')
   const [qty, setQty] = useState('')
   const [ref, setRef] = useState('')
@@ -312,15 +313,36 @@ function Receive({ k }) {
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ ...ui.card, display: 'grid', gap: 12 }}>
         <div><label>Bidhaa</label>
-          <select value={pid} onChange={e => { setPid(e.target.value); const np = products.find(x => String(x.id) === e.target.value); setKind(defaultKind(np)) }}>
-            <option value="">— chagua —</option>
-            {byCategory(products).map(([c, ps]) => (
-              <optgroup key={c} label={c}>
-                {ps.map(x => <option key={x.id} value={String(x.id)}>{x.name} — Rejareja {x.retail} · Jumla {x.wholesale}</option>)}
-              </optgroup>
-            ))}
-          </select></div>
-        {p && (
+          {!p ? (
+            <>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tafuta kwa jina au part number…" autoComplete="off" />
+              {search.trim() && (
+                <div style={{ marginTop: 6, border: `1px solid ${T.line}`, borderRadius: 10, overflow: 'hidden', maxHeight: 320, overflowY: 'auto' }}>
+                  {products.filter(x => matchProduct(x, search)).slice(0, 30).map((x, i) => (
+                    <button key={x.id} type="button" onClick={() => { setPid(String(x.id)); setKind(defaultKind(x)); setSearch('') }}
+                      style={{ width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none', borderTop: i ? `1px solid ${T.line}` : 'none', background: T.raised, color: T.ink, display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+                      <span style={{ minWidth: 0 }}>
+                        <span style={{ display: 'block', fontWeight: 600 }}>{x.name}</span>
+                        <span style={{ display: 'block', fontSize: 12, color: T.muted }}>{x.part_number ? <span style={{ fontFamily: T.mono }}>{x.part_number}</span> : null}{x.part_number && x.category ? ' · ' : ''}{x.category || ''}</span>
+                      </span>
+                      <span style={{ fontSize: 12, color: T.muted, whiteSpace: 'nowrap' }}>{stockText(x)}</span>
+                    </button>
+                  ))}
+                  {products.filter(x => matchProduct(x, search)).length === 0 && <p style={{ ...ui.muted, padding: 12 }}>Hakuna bidhaa inayolingana.</p>}
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${T.green}`, background: 'rgba(45,47,143,0.05)' }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontWeight: 600 }}>{p.name}</p>
+                <p style={{ fontSize: 12, color: T.muted }}>{p.part_number ? <span style={{ fontFamily: T.mono }}>{p.part_number} · </span> : null}{stockText(p)}</p>
+              </div>
+              <button type="button" onClick={() => { setPid(''); setMsg(null) }} style={{ ...ui.btn, padding: '6px 12px', fontSize: 13 }}>Badilisha</button>
+            </div>
+          )}
+        </div>
+        {p && hasBoth(p) && (
           <div><label>Aina ya stock</label>
             <div style={{ display: 'flex', gap: 8 }}>
               {['retail', 'wholesale'].map(kd => (
