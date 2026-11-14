@@ -337,13 +337,26 @@ export default function Stock() {
     setSaving(true)
     const d={name:form.name.trim(),category:form.category,image_emoji:form.image_emoji,buy_price:parseFloat(form.buy_price)||0,sell_price:parseFloat(form.sell_price)||0,wholesale_price:parseFloat(form.wholesale_price)||0,stock:parseInt(form.retail_stock)||0,retail_stock:parseInt(form.retail_stock)||0,wholesale_stock:parseInt(form.wholesale_stock)||0,box_qty:parseInt(form.box_qty)||1,unit:form.unit,product_type:form.product_type,low_stock_alert:parseInt(form.low_stock_alert)||10,is_active:true,shop_id:shop.id,min_sell_price:form.min_sell_price?parseFloat(form.min_sell_price):null}
     // Store shops: quantities only change through Store (Pokea / Hesabu)
+    // New items: the opening stock typed here is recorded through Store as "Stock ya mwanzo"
+    const openR=parseInt(form.retail_stock)||0, openW=parseInt(form.wholesale_stock)||0
     if(kibaliOn){
       if(editProd){delete d.stock;delete d.retail_stock;delete d.wholesale_stock}
       else{d.stock=0;d.retail_stock=0;d.wholesale_stock=0}
     }
     let prodId=editProd?.id
     if(editProd){const {data}=await supabase.from('products').update(d).eq('id',editProd.id).select().single();setProducts(p=>p.map(x=>x.id===editProd.id?{...x,...data,_cfv:{...x._cfv,...customFieldValues}}:x))}
-    else{const {data}=await supabase.from('products').insert(d).select().single();if(data){prodId=data.id;setProducts(p=>[...p,{...data,_cfv:{}}])}}
+    else{
+      const {data,error}=await supabase.from('products').insert(d).select().single()
+      if(error){setSaving(false);alert('Could not save: '+error.message);return}
+      if(data){prodId=data.id;setProducts(p=>[...p,{...data,_cfv:{}}])}
+      if(kibaliOn&&prodId){
+        const errs=[]
+        for(const [q,kind] of [[openR,'retail'],[openW,'wholesale']]){
+          if(q>0){const {error:e}=await supabase.rpc('kibali_receive_stock',{p_product_id:String(prodId),p_qty:q,p_reference:'Stock ya mwanzo',p_kind:kind});if(e)errs.push(kind+': '+e.message)}
+        }
+        if(errs.length)alert('Product saved, but Store could not record the opening stock:\n'+errs.join('\n'))
+      }
+    }
     // Save custom field values
     if(prodId&&customFields.length){
       const upserts=customFields.filter(f=>customFieldValues[f.id]!==undefined&&customFieldValues[f.id]!=='').map(f=>({product_id:prodId,field_id:f.id,value:String(customFieldValues[f.id])}))
@@ -570,9 +583,11 @@ export default function Stock() {
                 <div><label>Retail Sell Price</label><input value={form.sell_price} onChange={set('sell_price')} type="number" placeholder="0"/></div>
                 <div><label style={{color:'#9A5B00'}}>Min Sell Price (Floor)</label><input value={form.min_sell_price} onChange={set('min_sell_price')} type="number" placeholder="Optional — cashier can't go below this"/></div>
                 <div><label>Wholesale Price</label><input value={form.wholesale_price} onChange={set('wholesale_price')} type="number" placeholder="0"/></div>
-                <div><label>Retail Stock (pcs)</label><input value={kibaliOn&&!editProd?'0':form.retail_stock} onChange={set('retail_stock')} type="number" placeholder="0" disabled={kibaliOn} style={kibaliOn?{opacity:0.5,cursor:'not-allowed'}:undefined}/></div>
-                <div><label>Wholesale Stock (boxes)</label><input value={kibaliOn&&!editProd?'0':form.wholesale_stock} onChange={set('wholesale_stock')} type="number" placeholder="0" disabled={kibaliOn} style={kibaliOn?{opacity:0.5,cursor:'not-allowed'}:undefined}/></div>
-                {kibaliOn&&<div style={{gridColumn:'1/-1',padding:'8px 12px',borderRadius:8,background:'rgba(242,160,7,0.08)',border:'1px solid rgba(242,160,7,0.3)',color:'#9A5B00',fontSize:12}}>Store iko ON: idadi ya stock inabadilishwa kupitia Store tu — <b>Pokea mzigo</b> kwa mzigo unaoingia, <b>Hesabu / rekebisha</b> kwa marekebisho. Hivyo kila mabadiliko yanarekodiwa.</div>}
+                <div><label>Retail Stock (pcs)</label><input value={form.retail_stock} onChange={set('retail_stock')} type="number" min="0" placeholder="0" disabled={kibaliOn&&!!editProd} style={kibaliOn&&editProd?{opacity:0.5,cursor:'not-allowed'}:undefined}/></div>
+                <div><label>Wholesale Stock (boxes)</label><input value={form.wholesale_stock} onChange={set('wholesale_stock')} type="number" min="0" placeholder="0" disabled={kibaliOn&&!!editProd} style={kibaliOn&&editProd?{opacity:0.5,cursor:'not-allowed'}:undefined}/></div>
+                {kibaliOn&&<div style={{gridColumn:'1/-1',padding:'8px 12px',borderRadius:8,background:'rgba(242,160,7,0.08)',border:'1px solid rgba(242,160,7,0.3)',color:'#9A5B00',fontSize:12}}>{editProd
+                  ?<>Store iko ON: kubadilisha idadi tumia vitufe vya <b>+ Restock</b> au <b>± Adjust</b> kwenye orodha ya bidhaa — mabadiliko yanarekodiwa kwenye historia ya Store.</>
+                  :<>Store iko ON: stock unayoandika hapa inarekodiwa kwenye Store kama <b>"Stock ya mwanzo"</b>.</>}</div>}
                 <div><label>Pieces per Box</label><input value={form.box_qty} onChange={set('box_qty')} type="number" placeholder="1"/></div>
                 <div><label>Unit</label><input value={form.unit} onChange={set('unit')} placeholder="unit"/></div>
                 <div style={{gridColumn:'1/-1'}}>
