@@ -14,7 +14,7 @@ const NAV = [
   { href:'/sales',      icon:'cart',      label:'Sales / POS', module:'pos' },
   { href:'/store/owner', icon:'store',    label:'Store', module:'kibali' },
   { href:'/stock',      icon:'tag',       label:'Stock' },
-  { href:'/warehouse',  icon:'warehouse', label:'Warehouse', module:'pos' },
+  // Central Warehouse hidden (Nov 2026): TheDashboard Store covers it. Page and data kept at /warehouse.
   { href:'/customers',  icon:'users',     label:'Customers', module:'pos' },
   { href:'/expenses',   icon:'wallet',    label:'Expenses', module:'pos' },
   { href:'/credit',     icon:'handshake', label:'Credit', module:'pos' },
