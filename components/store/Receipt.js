@@ -82,7 +82,7 @@ export default function Receipt({ order, items, code, shopName, shopId }) {
 
 const S = {
   paper: { width: 300, background: '#fff', color: '#000', padding: '14px 12px', fontFamily: 'ui-monospace, Menlo, "Courier New", monospace', fontSize: 12, lineHeight: '17px', border: '1px solid #d0d7de' },
-  title: { textAlign: 'center', fontWeight: 700, border: '1.5px solid #000', margin: '8px 0', padding: 3 },
+  title: { textAlign: 'center', fontWeight: 700, margin: '8px 0', padding: 3 },
   void: { textAlign: 'center', fontWeight: 800, fontSize: 14, border: '2px solid #000', margin: '0 0 8px', padding: 2 },
   code: { fontSize: 15, letterSpacing: 3, border: '1.5px dashed #000', padding: '0 5px', fontWeight: 700 },
   dash: { borderTop: '1px dashed #000', margin: '8px 0' },
