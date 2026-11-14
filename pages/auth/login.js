@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
-import { SLMark, SLWordmark } from '../../components/store/Shell'
+import { TDMark, SLWordmark } from '../../components/store/Shell'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import Head from 'next/head'
@@ -55,7 +55,7 @@ export default function Login() {
       <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#F6F7FB', padding:24 }}>
         <div style={{ width:'100%', maxWidth:400 }}>
           <div style={{ textAlign:'center', marginBottom:36 }}>
-            <div style={{ display:'flex', justifyContent:'center', marginBottom:16 }}><SLMark size={52} /></div>
+            <div style={{ display:'flex', justifyContent:'center', marginBottom:16 }}><TDMark size={52} /></div>
             <h1 style={{ fontSize:24, fontWeight:800, letterSpacing:-0.5 }}>Welcome back</h1>
             <p style={{ color:'#5B607E', fontSize:14, marginTop:6 }}>Sign in to TheDashboard · by <SLWordmark size={13} /></p>
           </div>

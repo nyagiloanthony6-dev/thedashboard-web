@@ -241,6 +241,22 @@ function Frame({ title, children }) {
 }
 
 // Serengeti Labs logo: "s/" mark + serengeti/labs wordmark (Geist), as on serengetilabs site
+// TheDashboard logo: rising bars with a saffron trend line on the indigo tile (same as the app)
+export function TDMark({ size = 34 }) {
+  return (
+    <span aria-hidden="true" style={{ width: size, height: size, borderRadius: Math.round(size * 0.27), background: '#2D2F8F', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+      <svg width={Math.round(size * 0.68)} height={Math.round(size * 0.68)} viewBox="0 0 100 100">
+        <rect x="14" y="58" width="17" height="22" rx="3" fill="#fff" opacity=".55" />
+        <rect x="38" y="44" width="17" height="36" rx="3" fill="#fff" opacity=".8" />
+        <rect x="62" y="28" width="17" height="52" rx="3" fill="#fff" />
+        <path d="M22.5 52 L46.5 38 L70.5 22 L80 16" stroke="#F2A007" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="80" cy="16" r="8" fill="#F2A007" /><circle cx="80" cy="16" r="3.5" fill="#2D2F8F" />
+        <rect x="10" y="84" width="74" height="3.5" rx="1.75" fill="#fff" opacity=".7" />
+      </svg>
+    </span>
+  )
+}
+
 export function SLMark({ size = 34 }) {
   return (
     <span aria-hidden="true" style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), background: '#2D2F8F', color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none', fontFamily: 'Geist, system-ui, sans-serif', fontWeight: 800, fontSize: Math.round(size * 0.55), letterSpacing: '-0.05em', lineHeight: 1 }}>
@@ -260,7 +276,7 @@ export function SLWordmark({ size = 13 }) {
 function Brand() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }} aria-label="TheDashboard Store by Serengeti Labs">
-      <SLMark size={38} />
+      <TDMark size={38} />
       <div style={{ minWidth: 0 }}>
         <p style={{ fontFamily: T.display, fontSize: 13, fontWeight: 700, lineHeight: '16px', letterSpacing: '-0.01em' }}>TheDashboard</p>
         <p style={{ fontFamily: T.display, fontSize: 19, fontWeight: 700, lineHeight: '22px', color: T.green, letterSpacing: '-0.01em' }}>Store</p>

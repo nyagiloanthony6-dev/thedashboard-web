@@ -125,7 +125,7 @@ function Home({ k, orders, openAlerts, products, reserved, todayOut, onOpen }) {
                 <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '11px 14px', borderTop: i ? `1px solid ${T.line}` : 'none' }}>
                   <div style={{ minWidth: 0 }}>
                     <p style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</p>
-                    <p style={ui.muted}>{shopMode() === 'both' ? KIND[p.kind].sw : ''}{shopMode() === 'both' && p.category ? ' · ' : ''}{p.category || ''}</p>
+                    <p style={ui.muted}>{[p.part_number && 'P/N ' + p.part_number, shopMode() === 'both' && KIND[p.kind].sw, p.category].filter(Boolean).join(' · ')}</p>
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 600, color: p.av <= 0 ? T.danger : T.warning, whiteSpace: 'nowrap' }}>{p.av <= 0 ? 'Imeisha' : `${p.av} zipo`} · agiza kwa {p.low_stock_alert ?? 10}</span>
                 </div>

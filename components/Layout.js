@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 import { loadModules, cachedModules, isStoreOnly } from '../lib/store'
 import Icon from './store/Icon'
-import { SLMark, SLWordmark, StoreFrame } from './store/Shell'
+import { TDMark, SLWordmark, StoreFrame } from './store/Shell'
 
 // Serengeti Labs brand: white sidebar, indigo active state, saffron highlight.
 // module: 'pos' items are hidden for Store-only shops; 'kibali' (Store) items
@@ -54,7 +54,7 @@ export default function Layout({ children, title, shop, profile }) {
     <div style={{ display:'flex', minHeight:'100vh', background:C.bg }}>
       <aside style={{ width:col?64:236, background:C.surface, borderRight:`1px solid ${C.line}`, display:'flex', flexDirection:'column', flexShrink:0, position:'sticky', top:0, height:'100vh', overflowY:'auto', overflowX:'hidden', transition:'width 0.2s' }}>
         <div style={{ padding:col?'16px 13px':'18px 16px', borderBottom:`1px solid ${C.line}`, display:'flex', alignItems:'center', gap:10 }}>
-          <SLMark size={36} />
+          <TDMark size={36} />
           {!col && (
             <div style={{ minWidth:0 }}>
               <p style={{ fontFamily:'var(--display)', fontWeight: 700, fontSize:15, letterSpacing:'-0.01em', whiteSpace:'nowrap' }}>TheDashboard</p>

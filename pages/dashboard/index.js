@@ -4,6 +4,7 @@ import Head from 'next/head'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import Layout from '../../components/Layout'
 import { supabase, fmt, fmtK } from '../../lib/supabase'
+import { usePartNumbers } from '../../lib/store'
 
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [products,setProducts]=useState([])
   const [loading,setLoading]=useState(true)
 
+  const parts=usePartNumbers(shop?.id)
   useEffect(()=>{loadData()},[])
 
   const loadData = async () => {
@@ -57,7 +59,11 @@ export default function Dashboard() {
   const mGross=mSales.reduce((a,s)=>a+(s.total_profit||0),0)
   const mExpAmt=mExp.reduce((a,e)=>a+(e.amount||0),0)
   const netProfit=mGross-mExpAmt
-  const lowStock=products.filter(p=>(p.retail_stock||p.stock||0)<(p.low_stock_alert||10))
+  // Check the stock the item is actually sold from: wholesale items count boxes, others count pieces
+  const mode=['retail','wholesale'].includes(shop?.sale_mode)?shop.sale_mode:'both'
+  const lowKind=p=>mode!=='both'?mode:(p.product_type==='wholesale'?'wholesale':'retail')
+  const lowQty=p=>lowKind(p)==='wholesale'?(p.wholesale_stock||0):(p.retail_stock||p.stock||0)
+  const lowStock=products.filter(p=>lowQty(p)<(p.low_stock_alert||10)).sort((a,b)=>lowQty(a)-lowQty(b))
 
   const chartData=MONTHS.map((m,mi)=>{
     const ms=sales.filter(s=>{const d=new Date(s.sale_date||s.created_at);return d.getFullYear()===now.getFullYear()&&d.getMonth()===mi})
@@ -127,8 +133,8 @@ export default function Dashboard() {
               <p style={{fontSize:10,color:'#B93A16',letterSpacing:0.8,marginBottom:12}}>⚠️ LOW STOCK ({lowStock.length})</p>
               {lowStock.slice(0,5).map(p=>(
                 <div key={p.id} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #DCDFEC'}}>
-                  <span style={{fontSize:13}}>{p.image_emoji} {p.name}</span>
-                  <span style={{fontSize:13,fontWeight:700,color:'#B93A16'}}>{p.retail_stock||p.stock||0} left</span>
+                  <span style={{fontSize:13}}>{p.image_emoji} {p.name}{parts[String(p.id)]&&<span style={{display:'block',fontSize:11,color:'#5B607E',fontFamily:'JetBrains Mono, monospace',marginLeft:22}}>P/N {parts[String(p.id)]}</span>}</span>
+                  <span style={{fontSize:13,fontWeight:700,color:'#B93A16',whiteSpace:'nowrap'}}>{lowQty(p)} {lowKind(p)==='wholesale'?'boxes':'pcs'} left</span>
                 </div>
               ))}
             </div>
