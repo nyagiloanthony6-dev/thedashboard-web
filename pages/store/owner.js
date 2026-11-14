@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T, kindsShown, shopMode, unitOf } from '../../lib/store'
+import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T, kindsShown, shopMode, unitOf, alertParts } from '../../lib/store'
 import Shell from '../../components/store/Shell'
 import Icon from '../../components/store/Icon'
 import OrderModal from '../../components/store/OrderModal'
@@ -52,7 +52,7 @@ export default function StoreOwner() {
         <>
           {loadErr && <div style={{ ...ui.banner(T.danger), marginBottom: 14 }}>{loadErr}</div>}
           {tab === 'home' && <Home k={k} orders={orders} openAlerts={openAlerts} products={products} reserved={reserved} todayOut={todayOut} onOpen={setOpenId} />}
-          {tab === 'alerts' && <Alerts alerts={alerts} onOpen={setOpenId} onChanged={load} />}
+          {tab === 'alerts' && <Alerts alerts={alerts} products={products} orders={orders} onOpen={setOpenId} onChanged={load} />}
           {tab === 'orders' && <Orders orders={orders} onOpen={setOpenId} />}
           {tab === 'stock' && <Stock products={products} reserved={reserved} onChanged={load} />}
         </>
@@ -74,7 +74,13 @@ function Stat({ l, v, red, href }) {
 
 // ---------------------------------------------------------------------
 // Nyumbani: today at a glance
-function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
+// Part numbers under an alert (nothing for shops without part numbers)
+function PartLine({ parts }) {
+  if (!parts?.length) return null
+  return <span style={{ fontSize: 12, color: '#5B607E', fontFamily: 'JetBrains Mono, monospace' }}>{parts.map(p => (parts.length > 1 ? p.name + ' ' : '') + 'P/N ' + p.part).join(' · ')}</span>
+}
+
+function Home({ k, orders, openAlerts, products, reserved, todayOut, onOpen }) {
   const waiting = orders.filter(o => o.status === 'PENDING' || o.status === 'PARTIAL')
   const low = products.map(p => {
     const kind = defaultKind(p)
@@ -92,7 +98,7 @@ function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
         <Stat l="Tahadhari" v={openAlerts.length} red={openAlerts.length > 0} href="/store/owner?tab=alerts" />
       </div>
 
-      <Insights />
+      <Insights shopId={k?.shop?.id} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 22, alignItems: 'start' }}>
         <section>
@@ -103,6 +109,7 @@ function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
                 <button key={a.id} className="kb-card-btn" onClick={() => a.order_id && onOpen(a.order_id)} style={{ ...ui.card, padding: '10px 12px', borderLeft: `4px solid ${sevC(a.type)}`, textAlign: 'left', color: T.ink, display: 'grid', gap: 2, width: '100%' }}>
                   <span style={{ fontWeight: 600, color: sevC(a.type) }}>{ALERT_LABELS[a.type] || a.type}</span>
                   <span style={{ fontSize: 14 }}>{a.message}</span>
+                  <PartLine parts={alertParts(a, products, orders)} />
                   <span style={ui.muted}>{fmtTime(a.created_at)} · {a.created_by_name}</span>
                 </button>
               ))}
@@ -166,7 +173,7 @@ function Empty({ t, icon }) {
 }
 
 // ---------------------------------------------------------------------
-function Alerts({ alerts, onOpen, onChanged }) {
+function Alerts({ alerts, products, orders, onOpen, onChanged }) {
   const [all, setAll] = useState(false)
   const list = alerts.filter(a => all || !a.resolved_at)
   const color = (t) => ['tamper', 'unknown', 'reuse', 'negative', 'locked'].includes(t) ? '#B93A16' : t === 'cancel' ? '#5B607E' : '#9A5B00'
@@ -184,6 +191,7 @@ function Alerts({ alerts, onOpen, onChanged }) {
             <span style={ui.muted}>{fmtTime(a.created_at)}</span>
           </div>
           <p style={{ fontSize: 13 }}>{a.message}</p>
+          <PartLine parts={alertParts(a, products, orders)} />
           <p style={ui.muted}>{a.created_by_name}{a.resolved_at ? ` · imeshughulikiwa na ${a.resolved_by_name} ${fmtTime(a.resolved_at)}` : ''}</p>
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             {a.order_id && <button onClick={() => onOpen(a.order_id)} style={ui.btn}>Fungua oda</button>}

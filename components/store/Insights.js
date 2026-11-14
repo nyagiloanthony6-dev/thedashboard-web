@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { T, KIND, shopMode } from '../../lib/store'
+import { T, KIND, shopMode, usePartNumbers } from '../../lib/store'
 
 // Owner insights: orders processed, packages released and by item, for a period.
 // Built from release_orders and the store movement log (OUT = released from the store, SALE = sold at POS).
@@ -12,7 +12,8 @@ export function periodStart(p) {
   return d.toISOString()
 }
 
-export default function Insights() {
+export default function Insights({ shopId }) {
+  const parts = usePartNumbers(shopId)
   const [period, setPeriod] = useState('today')
   const [data, setData] = useState(null)
   const [err, setErr] = useState('')
@@ -25,7 +26,7 @@ export default function Insights() {
       supabase.from('release_orders').select('id,status,created_at,updated_at').gte('created_at', start).limit(5000),
       supabase.from('release_orders').select('id', { count: 'exact', head: true }).eq('status', 'RELEASED').gte('updated_at', start),
       supabase.from('release_orders').select('id', { count: 'exact', head: true }).in('status', ['PENDING', 'PARTIAL']),
-      supabase.from('store_movements').select('product_name,unit,kind,qty,type,order_id').in('type', ['OUT', 'SALE']).gte('created_at', start).limit(10000),
+      supabase.from('store_movements').select('product_id,product_name,unit,kind,qty,type,order_id').in('type', ['OUT', 'SALE']).gte('created_at', start).limit(10000),
     ]).then(([o, done, open, mv]) => {
       if (!alive) return
       const e = o.error || mv.error
@@ -35,7 +36,7 @@ export default function Insights() {
       const items = {}
       for (const m of moves) {
         const key = m.product_name + '|' + (m.kind || 'retail')
-        const it = items[key] || (items[key] = { name: m.product_name, kind: m.kind || 'retail', unit: m.unit, out: 0, sale: 0, orders: new Set() })
+        const it = items[key] || (items[key] = { pid: m.product_id, name: m.product_name, kind: m.kind || 'retail', unit: m.unit, out: 0, sale: 0, orders: new Set() })
         if (m.type === 'OUT') { it.out += -m.qty; if (m.order_id) it.orders.add(m.order_id) } else it.sale += -m.qty
       }
       const byKind = { retail: 0, wholesale: 0 }
@@ -93,7 +94,7 @@ export default function Insights() {
               <tbody>
                 {data.items.slice(0, 15).map(i => (
                   <tr key={i.name + i.kind} style={{ borderTop: '1px solid ' + T.line }}>
-                    <td style={td}>{i.name}{mode === 'both' && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: KIND[i.kind].c }}>{KIND[i.kind].sw}</span>}</td>
+                    <td style={td}>{i.name}{mode === 'both' && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: KIND[i.kind].c }}>{KIND[i.kind].sw}</span>}{parts[String(i.pid)] && <span style={{ display: 'block', fontSize: 11, color: T.muted, fontFamily: 'JetBrains Mono, monospace' }}>P/N {parts[String(i.pid)]}</span>}</td>
                     <td style={{ ...td, textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>{qtyText(i.out, i.kind)}</td>
                     <td style={{ ...td, textAlign: 'right', fontFamily: 'JetBrains Mono, monospace' }}>{i.orders.size}</td>
                     {data.anySale && <td style={{ ...td, textAlign: 'right', fontFamily: 'JetBrains Mono, monospace' }}>{i.sale || '—'}</td>}
