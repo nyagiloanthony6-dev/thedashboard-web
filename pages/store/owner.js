@@ -6,6 +6,7 @@ import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui
 import Shell from '../../components/store/Shell'
 import Icon from '../../components/store/Icon'
 import OrderModal from '../../components/store/OrderModal'
+import Insights from '../../components/store/Insights'
 
 export default function StoreOwner() {
   const k = useKibali()
@@ -90,6 +91,8 @@ function Home({ orders, openAlerts, products, reserved, todayOut, onOpen }) {
         <Stat l="Zinasubiri store" v={waiting.length} href="/store/release?tab=waiting" />
         <Stat l="Tahadhari" v={openAlerts.length} red={openAlerts.length > 0} href="/store/owner?tab=alerts" />
       </div>
+
+      <Insights />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 22, alignItems: 'start' }}>
         <section>
