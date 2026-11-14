@@ -471,8 +471,8 @@ function NewItem({ cats, existing, onClose, onSaved }) {
           </div></div>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
           <div><label>Bei ya kununua</label><input type="number" value={f.buy} onChange={set('buy')} placeholder="0" /></div>
-          {showR && <div><label>Bei rejareja</label><input type="number" value={f.sell} onChange={set('sell')} placeholder="0" /></div>}
-          {showW && <div><label>Bei jumla</label><input type="number" value={f.whs} onChange={set('whs')} placeholder="0" /></div>}
+          {showR && <div><label>Bei ya kuuza (rejareja)</label><input type="number" value={f.sell} onChange={set('sell')} placeholder="0" /></div>}
+          {showW && <div><label>Bei ya kuuza (jumla, boksi)</label><input type="number" value={f.whs} onChange={set('whs')} placeholder="0" /></div>}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
           {showR && <div><label style={{ color: KIND.retail.c }}>Stock ya mwanzo{shopMode() === 'both' ? ' · Rejareja' : ''}</label><input type="number" min="0" step="1" value={f.openR} onChange={set('openR')} placeholder="0" /></div>}

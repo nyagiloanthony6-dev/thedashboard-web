@@ -1,10 +1,25 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 import { swWords, usePartNumbers, lineName } from '../../lib/store'
+import { supabase } from '../../lib/supabase'
 
 // Thermal-receipt style release order (80mm). Printed with window.print();
 // the @media print rules below print ONLY the receipt.
+// Shop details (address, phone) for the slip header, cached per shop
+const SHOP_INFO = {}
+function useShopInfo(shopId) {
+  const [info, setInfo] = useState(SHOP_INFO[shopId] || null)
+  useEffect(() => {
+    if (!shopId || SHOP_INFO[shopId]) return
+    supabase.from('shops').select('*').eq('id', shopId).single().then(({ data }) => {
+      if (data) { SHOP_INFO[shopId] = data; setInfo(data) }
+    })
+  }, [shopId])
+  return info
+}
+
 export default function Receipt({ order, items, code, shopName, shopId }) {
+  const shopInfo = useShopInfo(shopId || order.shop_id)
   const parts = usePartNumbers(shopId || order.shop_id)
   const [qr, setQr] = useState('')
   useEffect(() => {
@@ -28,6 +43,8 @@ export default function Receipt({ order, items, code, shopName, shopId }) {
         }
       `}</style>
       <div style={{ textAlign: 'center', fontWeight: 800, fontSize: 15, fontFamily: 'system-ui, sans-serif' }}>{(shopName || 'SHOP').toUpperCase()}</div>
+      {shopInfo?.address && <div style={{ textAlign: 'center', fontSize: 11 }}>{shopInfo.address}</div>}
+      {(shopInfo?.phone || shopInfo?.email) && <div style={{ textAlign: 'center', fontSize: 11 }}>{[shopInfo.phone && 'Simu: ' + shopInfo.phone, shopInfo.email].filter(Boolean).join('  |  ')}</div>}
       <div style={S.title}>KIBALI CHA KUTOA STORE</div>
       {cancelled && <div style={S.void}>IMESITISHWA — USITOE</div>}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
