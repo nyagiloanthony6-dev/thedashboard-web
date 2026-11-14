@@ -3,6 +3,7 @@ import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt } from '../../lib/supabase'
 import { loadModules, ownedShop } from '../../lib/store'
+import { RestockModal, AdjustModal } from '../../components/StockActions'
 
 export default function Stock() {
   const [profile,setProfile]=useState(null)
@@ -11,6 +12,9 @@ export default function Stock() {
   const [customFields,setCustomFields]=useState([])
   const [categories,setCategories]=useState([])
   const [kibaliOn,setKibaliOn]=useState(false)
+  const [restockProd,setRestockProd]=useState(null)
+  const [adjustProd,setAdjustProd]=useState(null)
+  const [actionMsg,setActionMsg]=useState('')
   const [loading,setLoading]=useState(true)
   const [search,setSearch]=useState('')
   const [showModal,setShowModal]=useState(false)
@@ -443,6 +447,8 @@ export default function Stock() {
                     <td style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
                         <button onClick={()=>openEdit(p)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid #DCDFEC',background:'transparent',color:'#2D2F8F',fontSize:11,fontWeight:600}}>Edit</button>
+                        <button onClick={()=>setRestockProd(p)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid rgba(11,122,108,0.35)',background:'transparent',color:'#0B7A6C',fontSize:11,fontWeight:600}}>+ Restock</button>
+                        <button onClick={()=>setAdjustProd(p)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid rgba(154,91,0,0.35)',background:'transparent',color:'#9A5B00',fontSize:11,fontWeight:600}}>± Adjust</button>
                         <button onClick={()=>openBatches(p)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid #a78bfa40',background:'transparent',color:'#0F7375',fontSize:11,fontWeight:600}}>📦 Batches</button>
                         <button onClick={()=>del(p.id)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid rgba(185,58,22,0.3)',background:'transparent',color:'#B93A16',fontSize:11,fontWeight:600}}>Del</button>
                       </div>
@@ -685,6 +691,11 @@ export default function Stock() {
         </div>
       )}
       {/* BATCH HISTORY MODAL */}
+      {restockProd && <RestockModal product={restockProd} shop={shop} kibaliOn={kibaliOn} customFields={customFields}
+        onClose={()=>setRestockProd(null)} onDone={m=>{setRestockProd(null);setActionMsg(m);loadData()}} />}
+      {adjustProd && <AdjustModal product={adjustProd} shop={shop} kibaliOn={kibaliOn} customFields={customFields}
+        onClose={()=>setAdjustProd(null)} onDone={m=>{setAdjustProd(null);setActionMsg(m);loadData()}} />}
+      {actionMsg && <div role="status" onClick={()=>setActionMsg('')} style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:'#15183A',color:'#fff',padding:'12px 18px',borderRadius:12,fontSize:14,zIndex:70,maxWidth:'90vw',cursor:'pointer'}}>{actionMsg}</div>}
       {batchModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(21,24,58,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}}>
           <div style={{background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:16,padding:24,width:'100%',maxWidth:640,maxHeight:'85vh',overflowY:'auto'}}>
