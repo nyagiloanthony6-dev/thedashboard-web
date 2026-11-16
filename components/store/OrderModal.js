@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { rpc, STATUS, fmtTime, ui, KIND, shopMode, usePartNumbers } from '../../lib/store'
+import { rpc, STATUS, fmtTime, ui, KIND, shopMode, usePartNumbers, priceOf, tzs } from '../../lib/store'
 import Receipt from './Receipt'
 
 // Order details: receipt (with release code for people allowed to see it),
@@ -8,6 +8,14 @@ import Receipt from './Receipt'
 export default function OrderModal({ k, orderId, onClose, onChanged, autoPrint }) {
   const [d, setD] = useState(null)
   const parts = usePartNumbers(k.shop?.id)
+  const showValue = !k.modules?.pos
+  const [prices, setPrices] = useState({})
+  useEffect(() => {
+    if (!showValue || !d?.items?.length) return
+    supabase.from('products').select('id,sell_price,wholesale_price').in('id', d.items.map(i => i.product_id))
+      .then(({ data }) => setPrices(Object.fromEntries((data || []).map(p => [String(p.id), p]))))
+  }, [showValue, d?.items?.length])
+  const lineValue = (i) => Number(i.qty) * priceOf(prices[String(i.product_id)], i.kind || 'retail')
   const [reason, setReason] = useState('')
   const [askCancel, setAskCancel] = useState(false)
   const [err, setErr] = useState('')
@@ -67,15 +75,20 @@ export default function OrderModal({ k, orderId, onClose, onChanged, autoPrint }
                 {err && <div style={ui.banner('#B93A16')}>{err}</div>}
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead><tr style={{ color: '#5B607E', textAlign: 'left' }}><th style={th}>Bidhaa</th><th style={thr}>Oda</th><th style={thr}>Imetoka</th><th style={thr}>Imebaki</th></tr></thead>
+                  <thead><tr style={{ color: '#5B607E', textAlign: 'left' }}><th style={th}>Bidhaa</th><th style={thr}>Oda</th><th style={thr}>Imetoka</th><th style={thr}>Imebaki</th>{showValue && <th style={thr}>Thamani</th>}</tr></thead>
                   <tbody>{d.items.map(i => (
                     <tr key={i.id} style={{ borderTop: '1px solid #DCDFEC' }}>
                       <td style={td}>{i.product_name} {shopMode() === 'both' && <span style={{ fontSize: 11, fontWeight: 700, color: KIND[i.kind || 'retail'].c }}>{KIND[i.kind || 'retail'].sw}</span>}{parts[String(i.product_id)] && <div style={{ fontSize: 11, color: '#5B607E', fontFamily: 'JetBrains Mono, monospace' }}>{parts[String(i.product_id)]}</div>}</td>
                       <td style={tdr}>{i.qty}</td>
                       <td style={{ ...tdr, color: '#0B7A6C' }}>{i.released}</td>
                       <td style={{ ...tdr, color: i.qty - i.released ? '#9A5B00' : '#5B607E' }}>{i.qty - i.released}</td>
+                      {showValue && <td style={{ ...tdr, whiteSpace: 'nowrap' }}>{tzs(lineValue(i))}</td>}
                     </tr>))}
                   </tbody>
+                  {showValue && <tfoot><tr style={{ borderTop: '2px solid #15183A' }}>
+                    <td style={{ ...td, fontWeight: 700 }} colSpan={4}>Thamani ya oda <span style={{ fontWeight: 400, fontSize: 11, color: '#5B607E' }}>(bei za sasa · si mauzo)</span></td>
+                    <td style={{ ...tdr, fontWeight: 800, whiteSpace: 'nowrap' }}>{tzs(d.items.reduce((a, i) => a + lineValue(i), 0))}</td>
+                  </tr></tfoot>}
                 </table>
 
                 <div>

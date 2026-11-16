@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { T, KIND, shopMode, usePartNumbers } from '../../lib/store'
+import { T, KIND, shopMode, usePartNumbers, priceOf, tzs } from '../../lib/store'
 
 // Owner insights: orders processed, packages released and by item, for a period.
 // Built from release_orders and the store movement log (OUT = released from the store, SALE = sold at POS).
@@ -12,7 +12,7 @@ export function periodStart(p) {
   return d.toISOString()
 }
 
-export default function Insights({ shopId }) {
+export default function Insights({ shopId, showValue }) {
   const parts = usePartNumbers(shopId)
   const [period, setPeriod] = useState('today')
   const [data, setData] = useState(null)
@@ -27,8 +27,14 @@ export default function Insights({ shopId }) {
       supabase.from('release_orders').select('id', { count: 'exact', head: true }).eq('status', 'RELEASED').gte('updated_at', start),
       supabase.from('release_orders').select('id', { count: 'exact', head: true }).in('status', ['PENDING', 'PARTIAL']),
       supabase.from('store_movements').select('product_id,product_name,unit,kind,qty,type,order_id').in('type', ['OUT', 'SALE']).gte('created_at', start).limit(10000),
-    ]).then(([o, done, open, mv]) => {
+    ]).then(async ([o, done, open, mv]) => {
       if (!alive) return
+      let prices = {}
+      if (showValue && (mv.data || []).length) {
+        const ids = [...new Set((mv.data || []).map(m => m.product_id).filter(Boolean))]
+        const { data: pr } = await supabase.from('products').select('id,sell_price,wholesale_price').in('id', ids)
+        prices = Object.fromEntries((pr || []).map(p => [String(p.id), p]))
+      }
       const e = o.error || mv.error
       if (e) { setErr(e.message); return }
       const moves = mv.data || []
@@ -36,8 +42,8 @@ export default function Insights({ shopId }) {
       const items = {}
       for (const m of moves) {
         const key = m.product_name + '|' + (m.kind || 'retail')
-        const it = items[key] || (items[key] = { pid: m.product_id, name: m.product_name, kind: m.kind || 'retail', unit: m.unit, out: 0, sale: 0, orders: new Set() })
-        if (m.type === 'OUT') { it.out += -m.qty; if (m.order_id) it.orders.add(m.order_id) } else it.sale += -m.qty
+        const it = items[key] || (items[key] = { pid: m.product_id, name: m.product_name, kind: m.kind || 'retail', unit: m.unit, out: 0, sale: 0, value: 0, orders: new Set() })
+        if (m.type === 'OUT') { it.out += -m.qty; it.value += -m.qty * priceOf(prices[String(m.product_id)], m.kind || 'retail'); if (m.order_id) it.orders.add(m.order_id) } else it.sale += -m.qty
       }
       const byKind = { retail: 0, wholesale: 0 }
       out.forEach(m => { byKind[m.kind || 'retail'] += -m.qty })
@@ -49,10 +55,11 @@ export default function Insights({ shopId }) {
         byKind,
         items: Object.values(items).sort((a, b) => (b.out + b.sale) - (a.out + a.sale)),
         anySale: moves.some(m => m.type === 'SALE'),
+        value: Object.values(items).reduce((a, i) => a + i.value, 0),
       })
     })
     return () => { alive = false }
-  }, [period])
+  }, [period, showValue])
 
   const mode = shopMode()
   const qtyText = (n, kind) => `${n} ${kind === 'wholesale' ? 'boksi' : 'pc'}`
@@ -82,6 +89,7 @@ export default function Insights({ shopId }) {
           <Kpi l="Oda zilizokamilika" v={data.completed} c={T.success} />
           <Kpi l="Zinasubiri sasa" v={data.open} c={data.open ? T.warning : T.ink} />
           <Kpi l="Mzigo uliotoka store" v={released} c={T.green} small />
+          {showValue && <Kpi l="Thamani ya mzigo uliotoka (bei za sasa)" v={tzs(data.value)} c={T.ink} small />}
         </div>
         <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Kwa bidhaa</p>
         {data.items.length === 0 ? <p style={{ color: T.muted, fontSize: 14 }}>Hakuna mzigo uliotoka kipindi hiki.</p> : (
@@ -89,7 +97,7 @@ export default function Insights({ shopId }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead><tr style={{ color: T.muted, textAlign: 'left' }}>
                 <th style={th}>Bidhaa</th><th style={{ ...th, textAlign: 'right' }}>Imetoka store</th>
-                <th style={{ ...th, textAlign: 'right' }}>Oda</th>{data.anySale && <th style={{ ...th, textAlign: 'right' }}>Imeuzwa POS</th>}<th style={{ ...th, width: '28%' }} />
+                <th style={{ ...th, textAlign: 'right' }}>Oda</th>{showValue && <th style={{ ...th, textAlign: 'right' }}>Thamani</th>}{data.anySale && <th style={{ ...th, textAlign: 'right' }}>Imeuzwa POS</th>}<th style={{ ...th, width: '28%' }} />
               </tr></thead>
               <tbody>
                 {data.items.slice(0, 15).map(i => (
@@ -97,6 +105,7 @@ export default function Insights({ shopId }) {
                     <td style={td}>{i.name}{mode === 'both' && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: KIND[i.kind].c }}>{KIND[i.kind].sw}</span>}{parts[String(i.pid)] && <span style={{ display: 'block', fontSize: 11, color: T.muted, fontFamily: 'JetBrains Mono, monospace' }}>P/N {parts[String(i.pid)]}</span>}</td>
                     <td style={{ ...td, textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>{qtyText(i.out, i.kind)}</td>
                     <td style={{ ...td, textAlign: 'right', fontFamily: 'JetBrains Mono, monospace' }}>{i.orders.size}</td>
+                    {showValue && <td style={{ ...td, textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'nowrap', color: i.value ? undefined : '#8A8FAE' }}>{i.value ? tzs(i.value) : '—'}</td>}
                     {data.anySale && <td style={{ ...td, textAlign: 'right', fontFamily: 'JetBrains Mono, monospace' }}>{i.sale || '—'}</td>}
                     <td style={td}><div style={{ height: 8, borderRadius: 4, background: T.tint }}>
                       <div style={{ width: Math.max(4, ((i.out + i.sale) / max) * 100) + '%', height: 8, borderRadius: 4, background: KIND[i.kind].c }} /></div></td>

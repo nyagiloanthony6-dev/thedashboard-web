@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
-import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T, kindsShown, shopMode, unitOf, alertParts } from '../../lib/store'
+import { useKibali, rpc, STATUS, ALERT_LABELS, fmtTime, isToday, itemSummary, ui, loadProducts, loadReserved, KIND, defaultKind, hasBoth, resKey, categoriesOf, T, kindsShown, shopMode, unitOf, alertParts, orderValue, tzs } from '../../lib/store'
 import Shell from '../../components/store/Shell'
 import Icon from '../../components/store/Icon'
 import OrderModal from '../../components/store/OrderModal'
@@ -53,7 +53,7 @@ export default function StoreOwner() {
           {loadErr && <div style={{ ...ui.banner(T.danger), marginBottom: 14 }}>{loadErr}</div>}
           {tab === 'home' && <Home k={k} orders={orders} openAlerts={openAlerts} products={products} reserved={reserved} todayOut={todayOut} onOpen={setOpenId} />}
           {tab === 'alerts' && <Alerts alerts={alerts} products={products} orders={orders} onOpen={setOpenId} onChanged={load} />}
-          {tab === 'orders' && <Orders orders={orders} onOpen={setOpenId} />}
+          {tab === 'orders' && <Orders orders={orders} onOpen={setOpenId} products={products} showValue={!k.modules.pos} />}
           {tab === 'stock' && <Stock products={products} reserved={reserved} onChanged={load} />}
         </>
       )}
@@ -98,7 +98,7 @@ function Home({ k, orders, openAlerts, products, reserved, todayOut, onOpen }) {
         <Stat l="Tahadhari" v={openAlerts.length} red={openAlerts.length > 0} href="/store/owner?tab=alerts" />
       </div>
 
-      <Insights shopId={k?.shop?.id} />
+      <Insights shopId={k?.shop?.id} showValue={!k?.modules?.pos} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 22, alignItems: 'start' }}>
         <section>
@@ -204,7 +204,8 @@ function Alerts({ alerts, products, orders, onOpen, onChanged }) {
 }
 
 // ---------------------------------------------------------------------
-function Orders({ orders, onOpen }) {
+function Orders({ orders, onOpen, products = [], showValue }) {
+  const byId = Object.fromEntries(products.map(p => [String(p.id), p]))
   const [q, setQ] = useState('')
   const [f, setF] = useState('')
   const list = orders.filter(o =>
@@ -222,15 +223,16 @@ function Orders({ orders, onOpen }) {
       </div>
       <div style={{ ...ui.card, padding: 0, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 640 }}>
-          <thead><tr style={{ color: '#5B607E', textAlign: 'left' }}>{['Oda', 'Muda', 'Mteja', 'Bidhaa', 'Aliyetoa', 'Hali'].map(h => <th key={h} style={{ padding: '10px 12px', fontSize: 11 }}>{h}</th>)}</tr></thead>
+          <thead><tr style={{ color: '#5B607E', textAlign: 'left' }}>{['Oda', 'Muda', 'Mteja', 'Bidhaa', ...(showValue ? ['Thamani'] : []), 'Aliyetoa', 'Hali'].map(h => <th key={h} style={{ padding: '10px 12px', fontSize: 11 }}>{h}</th>)}</tr></thead>
           <tbody>
-            {list.length === 0 && <tr><td colSpan={6} style={{ padding: 20, textAlign: 'center', color: '#5B607E' }}>Hakuna oda.</td></tr>}
+            {list.length === 0 && <tr><td colSpan={showValue ? 7 : 6} style={{ padding: 20, textAlign: 'center', color: '#5B607E' }}>Hakuna oda.</td></tr>}
             {list.map(o => (
               <tr key={o.id} onClick={() => onOpen(o.id)} style={{ borderTop: '1px solid #DCDFEC', cursor: 'pointer' }}>
                 <td style={{ padding: '10px 12px', ...ui.mono, fontWeight: 800 }}>{o.order_no}</td>
                 <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{fmtTime(o.created_at)}</td>
                 <td style={{ padding: '10px 12px' }}>{o.customer_name || '—'}</td>
                 <td style={{ padding: '10px 12px', color: '#5B607E' }}>{itemSummary(o.release_order_items)}</td>
+                {showValue && <td style={{ padding: '10px 12px', ...ui.mono, fontWeight: 700, whiteSpace: 'nowrap' }}>{tzs(orderValue(o.release_order_items, byId))}</td>}
                 <td style={{ padding: '10px 12px' }}>{o.created_by_name}</td>
                 <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}><span style={ui.pill(o.status)}>{STATUS[o.status].label}</span>{o.flagged && <span style={{ color: '#B93A16', fontWeight: 800, marginLeft: 6 }}>FLAG</span>}</td>
               </tr>
