@@ -3,7 +3,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
 import { T, isPlatformAdmin } from '../../lib/store'
-import { SLMark } from '../../components/store/Shell'
+import { TDMark } from '../../components/store/Shell'
 import Icon from '../../components/store/Icon'
 
 // Serengeti Labs platform admin: choose each shop's package.
@@ -24,6 +24,7 @@ export default function AdminShops() {
   const [busy, setBusy] = useState(null)
   const [ask, setAsk] = useState(null) // { shop, pkg }
   const [done, setDone] = useState('')
+  const [view, setView] = useState('packages') // packages | features
 
   const load = async () => {
     const { data, error } = await supabase.rpc('platform_list_shops')
@@ -58,6 +59,14 @@ export default function AdminShops() {
 
   return (
     <Page>
+      <div role="tablist" style={{ display: 'inline-flex', background: T.tint, borderRadius: 999, padding: 4, marginBottom: 18 }}>
+        {[['packages', 'Vifurushi (POS / Store)'], ['features', 'Vipengele (tabs)']].map(([v, l]) => (
+          <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}
+            style={{ border: 0, borderRadius: 999, padding: '9px 18px', fontSize: 14, fontWeight: view === v ? 700 : 500, cursor: 'pointer',
+              background: view === v ? T.green : 'transparent', color: view === v ? '#fff' : T.ink }}>{l}</button>
+        ))}
+      </div>
+      {view === 'features' ? <FeaturesPanel shops={shops} /> : <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 18 }}>
         {[['all', 'Maduka yote', shops.length, T.ink], ...PACKAGES.map(p => [p.v, p.label, counts[p.v], PKG_COLOR[p.v]])].map(([v, l, n, c]) => (
           <button key={v} onClick={() => setFilter(v)} style={{ ...card, textAlign: 'left', cursor: 'pointer', padding: 16, borderColor: filter === v ? c : T.line, boxShadow: filter === v ? `0 0 0 2px ${c}33` : 'none' }}>
@@ -121,7 +130,97 @@ export default function AdminShops() {
           </div>
         </div>
       )}
+      </>}
     </Page>
+  )
+}
+
+// Feature switches: on/off for everyone, with overrides for one shop. Hiding never deletes data.
+function FeaturesPanel({ shops }) {
+  const [shopId, setShopId] = useState('')
+  const [rows, setRows] = useState(null)
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState('')
+  const load = async (sid = shopId) => {
+    const { data, error } = await supabase.rpc('platform_list_features', { p_shop: sid || null })
+    if (error) { setErr(error.message); return }
+    setErr(''); setRows(data || [])
+  }
+  useEffect(() => { load(shopId) }, [shopId])
+  const setGlobal = async (f, on) => {
+    setBusy(f.key)
+    const { error } = await supabase.rpc('platform_set_feature', { p_key: f.key, p_enabled: on })
+    setBusy(''); if (error) setErr(error.message); else load()
+  }
+  const setShop = async (f, val) => {   // val: null (follow everyone) | true | false
+    setBusy(f.key)
+    const { error } = await supabase.rpc('platform_set_shop_feature', { p_shop: shopId, p_key: f.key, p_enabled: val })
+    setBusy(''); if (error) setErr(error.message); else load()
+  }
+  const shop = shops.find(x => x.id === shopId)
+  return (
+    <div>
+      <div style={{ ...card, marginBottom: 14 }}>
+        <p style={{ fontWeight: 700 }}>Vipengele vinavyoonekana</p>
+        <p style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
+          Zima tab kwa maduka yote, au chagua duka moja kuweka tofauti. Mabadiliko yanaonekana watumiaji wakifungua upya (web na app). Data haifutwi.
+        </p>
+        <div style={{ marginTop: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>Duka moja:</label>
+          <select value={shopId} onChange={e => setShopId(e.target.value)} style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid ' + T.line, fontSize: 14, minWidth: 240 }}>
+            <option value="">— Maduka yote (kwa wote) —</option>
+            {shops.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+          </select>
+        </div>
+      </div>
+      {err && <div style={{ ...banner, borderColor: '#B93A16', color: '#B93A16' }}>{err}</div>}
+      {!rows ? <p style={{ color: T.muted }}>Inapakia…</p> : (
+        <div style={{ ...card, padding: 0, overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <thead><tr style={{ textAlign: 'left', color: T.muted, fontSize: 12 }}>
+              <th style={{ padding: '12px 16px' }}>Kipengele</th>
+              <th style={{ padding: '12px 16px' }}>Kwa wote</th>
+              {shop && <th style={{ padding: '12px 16px' }}>{shop.name}</th>}
+            </tr></thead>
+            <tbody>
+              {rows.map(f => {
+                const effective = f.override === null || f.override === undefined ? f.enabled : f.override
+                return (
+                  <tr key={f.key} style={{ borderTop: '1px solid ' + T.line, opacity: busy === f.key ? 0.5 : 1 }}>
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ fontWeight: 600 }}>{f.label}</div>
+                      {f.overrides > 0 && <div style={{ fontSize: 12, color: T.muted }}>{f.overrides} duka lina mpangilio tofauti</div>}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <Toggle on={f.enabled} onChange={on => setGlobal(f, on)} />
+                    </td>
+                    {shop && <td style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'inline-flex', background: T.tint, borderRadius: 999, padding: 3, gap: 2 }}>
+                        {[[null, `Kama wote (${f.enabled ? 'imewashwa' : 'imezimwa'})`], [true, 'Washa'], [false, 'Zima']].map(([v, l]) => {
+                          const on = (f.override ?? null) === v
+                          return <button key={String(v)} onClick={() => !on && setShop(f, v)}
+                            style={{ border: 0, borderRadius: 999, padding: '6px 12px', fontSize: 12, fontWeight: on ? 700 : 500, cursor: on ? 'default' : 'pointer',
+                              background: on ? (v === false ? '#B93A16' : v === true ? '#0B7A6C' : T.green) : 'transparent', color: on ? '#fff' : T.ink }}>{l}</button>
+                        })}
+                      </div>
+                      <span style={{ marginLeft: 10, fontSize: 12, fontWeight: 700, color: effective ? '#0B7A6C' : '#B93A16' }}>{effective ? 'Inaonekana' : 'Imefichwa'}</span>
+                    </td>}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+function Toggle({ on, onChange }) {
+  return (
+    <button role="switch" aria-checked={on} onClick={() => onChange(!on)}
+      style={{ width: 46, height: 26, borderRadius: 999, border: 0, cursor: 'pointer', position: 'relative', background: on ? '#0B7A6C' : '#C9CCDD', transition: 'background .15s' }}>
+      <span style={{ position: 'absolute', top: 3, left: on ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .15s', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
+    </button>
   )
 }
 
@@ -130,10 +229,10 @@ function Page({ children }) {
     <div style={{ minHeight: '100vh', background: T.surface, color: T.ink, fontFamily: 'Outfit, system-ui, sans-serif' }}>
       <Head><title>Serengeti Admin — Vifurushi</title></Head>
       <header style={{ background: '#fff', borderBottom: '1px solid ' + T.line, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <SLMark size={34} />
+        <TDMark size={34} />
         <div style={{ flex: 1 }}>
           <p style={{ fontWeight: 700, fontSize: 17 }}>Serengeti Admin</p>
-          <p style={{ fontSize: 13, color: T.muted }}>Vifurushi vya maduka: POS · Store · Zote mbili</p>
+          <p style={{ fontSize: 13, color: T.muted }}>Vifurushi na vipengele vya maduka</p>
         </div>
         <Link href="/" style={{ fontSize: 14, color: T.green, fontWeight: 600 }}>← Rudi</Link>
       </header>

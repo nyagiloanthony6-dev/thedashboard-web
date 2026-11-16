@@ -2,7 +2,7 @@ import '../styles/globals.css'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
-import { loadModules, ownedShop, isPlatformAdmin } from '../lib/store'
+import { loadModules, ownedShop, isPlatformAdmin, loadFeatures, featureOn, PAGE_FEATURE } from '../lib/store'
 
 const PUBLIC = ['/', '/auth/login', '/auth/register', '/invest']
 
@@ -37,7 +37,7 @@ async function getAccess(userId) {
   const { data: prof } = await supabase.from('app_users').select('role,shop_id').eq('id', userId).single()
   const shopId = prof?.shop_id || (await ownedShop(userId))?.id
   const modules = await loadModules(shopId)
-  access = { userId, role: prof?.role || 'shop_admin', modules }
+  access = { userId, role: prof?.role || 'shop_admin', modules, shopId }
   return access
 }
 const matches = (path, p) => p.endsWith('$') ? path === p.slice(0, -1) : path.startsWith(p)
@@ -75,6 +75,11 @@ export default function App({ Component, pageProps }) {
           const basePath = '/' + router.pathname.split('/')[1]
           const canAccess = allowed.some(p => matches(router.pathname, p)) ||
             (router.pathname.startsWith('/admin') && await isPlatformAdmin())
+          // Feature switched off in Serengeti Admin: treat the page as not allowed
+          const feat = PAGE_FEATURE[router.pathname]
+          if (canAccess && feat && access.shopId && !featureOn(await loadFeatures(access.shopId), feat)) {
+            router.replace(homeRoute); return
+          }
           if (!canAccess) {
             router.push(homeRoute)
             return

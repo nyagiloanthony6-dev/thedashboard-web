@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
-import { loadModules, cachedModules, isStoreOnly, usePlatformAdmin } from '../lib/store'
+import { loadModules, cachedModules, isStoreOnly, usePlatformAdmin, loadFeatures, cachedFeatures, featureOn, PAGE_FEATURE } from '../lib/store'
 import Icon from './store/Icon'
 import { TDMark, SLWordmark, StoreFrame } from './store/Shell'
 
@@ -41,7 +41,9 @@ export default function Layout({ children, title, shop, profile }) {
   const [modules, setModules] = useState(cachedModules)
   useEffect(() => { if (shop?.id) loadModules(shop.id).then(setModules) }, [shop?.id])
   const platform = usePlatformAdmin()
-  const nav = [...NAV.filter(n => !n.module || (modules && modules[n.module])), ...(platform ? [{ href: '/admin/shops', icon: 'building', label: 'Serengeti Admin' }] : [])]
+  const [features, setFeatures] = useState(() => cachedFeatures(shop?.id))
+  useEffect(() => { if (shop?.id) loadFeatures(shop.id).then(setFeatures) }, [shop?.id])
+  const nav = [...NAV.filter(n => (!n.module || (modules && modules[n.module])) && featureOn(features, PAGE_FEATURE[n.href])), ...(platform ? [{ href: '/admin/shops', icon: 'building', label: 'Serengeti Admin' }] : [])]
 
   const active = (href) => router.pathname === href || (href !== '/reports' && router.pathname.startsWith(href + '/')) || (href === '/store/owner' && router.pathname.startsWith('/store'))
 
