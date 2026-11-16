@@ -224,6 +224,27 @@ function Toggle({ on, onChange }) {
   )
 }
 
+// Shop owners who are also admins go back to their shop; the admin-only account just logs out
+function PageNav() {
+  const [hasShop, setHasShop] = useState(null)
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return setHasShop(false)
+      const { data: prof } = await supabase.from('app_users').select('shop_id').eq('id', user.id).maybeSingle()
+      if (prof?.shop_id) return setHasShop(true)
+      const { data: own } = await supabase.from('shop_owners').select('shop_id').eq('user_id', user.id).limit(1)
+      setHasShop(!!own?.length)
+    })
+  }, [])
+  const logout = async () => { await supabase.auth.signOut(); window.location.href = '/auth/login' }
+  return (
+    <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+      {hasShop && <Link href="/dashboard" style={{ fontSize: 14, color: T.green, fontWeight: 600 }}>← Duka langu</Link>}
+      <button onClick={logout} style={{ border: '1px solid ' + T.line, background: '#fff', borderRadius: 999, padding: '7px 14px', fontSize: 13, fontWeight: 600, color: T.ink, cursor: 'pointer' }}>Toka</button>
+    </div>
+  )
+}
+
 function Page({ children }) {
   return (
     <div style={{ minHeight: '100vh', background: T.surface, color: T.ink, fontFamily: 'Outfit, system-ui, sans-serif' }}>
@@ -234,7 +255,7 @@ function Page({ children }) {
           <p style={{ fontWeight: 700, fontSize: 17 }}>Serengeti Admin</p>
           <p style={{ fontSize: 13, color: T.muted }}>Vifurushi na vipengele vya maduka</p>
         </div>
-        <Link href="/" style={{ fontSize: 14, color: T.green, fontWeight: 600 }}>← Rudi</Link>
+        <PageNav />
       </header>
       <main style={{ maxWidth: 1000, margin: '0 auto', padding: 20 }}>{children}</main>
     </div>

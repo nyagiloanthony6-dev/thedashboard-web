@@ -37,7 +37,9 @@ async function getAccess(userId) {
   const { data: prof } = await supabase.from('app_users').select('role,shop_id').eq('id', userId).single()
   const shopId = prof?.shop_id || (await ownedShop(userId))?.id
   const modules = await loadModules(shopId)
-  access = { userId, role: prof?.role || 'shop_admin', modules, shopId }
+  // Serengeti Labs admin account with no shop (e.g. admin@thedashboard.co.tz): admin pages only
+  const platformOnly = !shopId && await isPlatformAdmin()
+  access = { userId, role: prof?.role || 'shop_admin', modules, shopId, platformOnly }
   return access
 }
 const matches = (path, p) => p.endsWith('$') ? path === p.slice(0, -1) : path.startsWith(p)
@@ -56,13 +58,13 @@ export default function App({ Component, pageProps }) {
       }
 
       if (session) {
-        const { role, modules } = await getAccess(session.user.id)
+        const { role, modules, platformOnly } = await getAccess(session.user.id)
         const isAdmin = role === 'shop_admin' || role === 'super_admin'
         const kibaliShop = !modules.pos && modules.kibali
         const kibaliOnly = isAdmin && kibaliShop
         const staffOverride = kibaliShop && !isAdmin ? KIBALI_ONLY_STAFF[role] : null
-        const homeRoute = kibaliOnly ? '/store/owner' : staffOverride ? (role === 'cashier' ? '/store/shop' : '/store') : (ROLE_ROUTES[role] || '/dashboard')
-        const allowed = kibaliOnly ? KIBALI_ONLY_ADMIN : (staffOverride || ROLE_ALLOWED[role] || ['/dashboard'])
+        const homeRoute = platformOnly ? '/admin/shops' : kibaliOnly ? '/store/owner' : staffOverride ? (role === 'cashier' ? '/store/shop' : '/store') : (ROLE_ROUTES[role] || '/dashboard')
+        const allowed = platformOnly ? ['/admin'] : kibaliOnly ? KIBALI_ONLY_ADMIN : (staffOverride || ROLE_ALLOWED[role] || ['/dashboard'])
 
         // Redirect from login page to home
         if (router.pathname === '/auth/login') {
