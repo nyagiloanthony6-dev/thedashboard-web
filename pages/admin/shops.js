@@ -13,11 +13,14 @@ import Packages from '../../components/admin/Packages'
 import Features from '../../components/admin/Features'
 import Notices from '../../components/admin/Notices'
 import Settings from '../../components/admin/Settings'
+import Contacts from '../../components/admin/Contacts'
+import { t, loadLang, saveLang } from '../../components/admin/i18n'
 
 // Serengeti Admin: one place for every TheDashboard shop.
 // Sections are routed on the URL hash (#takwimu, #usajili …) so each can be bookmarked.
 const SECTIONS = [
   ['takwimu', 'Takwimu', 'chart'],
+  ['wateja', 'Wateja', 'users'],
   ['usajili', 'Usajili', 'calendar'],
   ['malipo', 'Malipo', 'wallet'],
   ['vifurushi', 'Vifurushi', 'layers'],
@@ -27,6 +30,7 @@ const SECTIONS = [
 ]
 const SUBTITLE = {
   takwimu: 'Muhtasari wa maduka, mapato na shughuli',
+  wateja: 'Mawasiliano ya wateja waliojisajili',
   usajili: 'Hali ya usajili wa kila duka, kuongeza muda na kusimamisha',
   malipo: 'Malipo yaliyopokelewa (ankara zinabaki kwenye billing admin)',
   vifurushi: 'POS pekee · Store pekee · Zote mbili',
@@ -43,6 +47,9 @@ export default function SerengetiAdmin() {
   const [err, setErr] = useState('')
   const [pay, setPay] = useState(null)   // shop to record a payment for
   const [ok, setOk] = useState('')
+  const [lang, setLang] = useState('sw')
+  useEffect(() => { setLang(loadLang()) }, [])
+  const switchLang = (l) => { saveLang(l); setLang(l) }
 
   const loadShops = useCallback(async () => {
     const { data, error } = await supabase.rpc('platform_list_shops')
@@ -59,20 +66,21 @@ export default function SerengetiAdmin() {
   }, [])
   const go = (k) => { window.location.hash = k }
 
-  if (allowed === null) return <Frame><p style={{ color: T.muted, padding: 24 }}>Inapakia…</p></Frame>
+  if (allowed === null) return <Frame lang={lang} setLang={switchLang}><p style={{ color: T.muted, padding: 24 }}>{t('Inapakia…')}</p></Frame>
   if (!allowed) return (
-    <Frame><div style={{ ...card, margin: 24 }}><p style={{ fontWeight: 700, fontSize: 18 }}>Huna ruhusa</p>
-      <p style={{ color: T.muted, marginTop: 6 }}>Ukurasa huu ni wa Serengeti Labs pekee.</p></div></Frame>
+    <Frame lang={lang} setLang={switchLang}><div style={{ ...card, margin: 24 }}><p style={{ fontWeight: 700, fontSize: 18 }}>{t('Huna ruhusa')}</p>
+      <p style={{ color: T.muted, marginTop: 6 }}>{t('Ukurasa huu ni wa Serengeti Labs pekee.')}</p></div></Frame>
   )
-  const title = SECTIONS.find(s => s[0] === section)[1]
+  const title = t(SECTIONS.find(s => s[0] === section)[1])
   return (
-    <Frame section={section} go={go}>
+    <Frame section={section} go={go} lang={lang} setLang={switchLang}>
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700 }}>{title}</h1>
-        <p style={{ color: T.muted, fontSize: 14 }}>{SUBTITLE[section]}</p>
+        <p style={{ color: T.muted, fontSize: 14 }}>{t(SUBTITLE[section])}</p>
       </div>
       <Msg err={err} ok={ok} />
       {section === 'takwimu' && <Analytics shops={shops} go={go} />}
+      {section === 'wateja' && <Contacts shops={shops} />}
       {section === 'usajili' && <Subscriptions shops={shops} plans={plans} reload={loadShops} onPay={setPay} />}
       {section === 'malipo' && <Payments shops={shops} plans={plans} reload={loadShops} />}
       {section === 'vifurushi' && <Packages shops={shops} reload={loadShops} />}
@@ -100,30 +108,42 @@ function PageNav() {
   const logout = async () => { await supabase.auth.signOut(); window.location.href = '/auth/login' }
   return (
     <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-      {hasShop && <Link href="/dashboard" style={{ fontSize: 14, color: T.green, fontWeight: 600 }}>← Duka langu</Link>}
-      <button onClick={logout} style={{ border: '1px solid ' + T.line, background: '#fff', borderRadius: 999, padding: '7px 14px', fontSize: 13, fontWeight: 600, color: T.ink, cursor: 'pointer' }}>Toka</button>
+      {hasShop && <Link href="/dashboard" style={{ fontSize: 14, color: T.green, fontWeight: 600 }}>{t('← Duka langu')}</Link>}
+      <button onClick={logout} style={{ border: '1px solid ' + T.line, background: '#fff', borderRadius: 999, padding: '7px 14px', fontSize: 13, fontWeight: 600, color: T.ink, cursor: 'pointer' }}>{t('Toka')}</button>
     </div>
   )
 }
 
-function Frame({ children, section, go }) {
+function LangSwitch({ lang, setLang }) {
   return (
-    <div style={{ minHeight: '100vh', background: T.surface, color: T.ink, fontFamily: 'Outfit, system-ui, sans-serif' }}>
+    <div role="group" aria-label={t('Lugha')} style={{ display: 'flex', background: T.tint, borderRadius: 999, padding: 3 }}>
+      {[['sw', 'SW'], ['en', 'EN']].map(([v, l]) => (
+        <button key={v} onClick={() => setLang(v)} aria-pressed={lang === v} lang={v}
+          style={{ border: 0, borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: lang === v ? T.green : 'transparent', color: lang === v ? '#fff' : T.ink }}>{l}</button>
+      ))}
+    </div>
+  )
+}
+
+function Frame({ children, section, go, lang, setLang }) {
+  return (
+    <div lang={lang} style={{ minHeight: '100vh', background: T.surface, color: T.ink, fontFamily: 'Outfit, system-ui, sans-serif' }}>
       <Head><title>Serengeti Admin — TheDashboard</title></Head>
       <header style={{ background: '#fff', borderBottom: '1px solid ' + T.line, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 20 }}>
         <TDMark size={34} />
         <div style={{ flex: 1 }}>
           <p style={{ fontWeight: 700, fontSize: 17 }}>Serengeti Admin</p>
-          <p style={{ fontSize: 12, color: T.muted }}>TheDashboard · maduka yote</p>
+          <p style={{ fontSize: 12, color: T.muted }}>{t('TheDashboard · maduka yote')}</p>
         </div>
+        {setLang && <LangSwitch lang={lang} setLang={setLang} />}
         <PageNav />
       </header>
       <div className="sa-wrap">
         {go && (
-          <nav aria-label="Sehemu za admin" className="sa-nav">
+          <nav aria-label={t('Sehemu za admin')} className="sa-nav">
             {SECTIONS.map(([k, l, icon]) => (
               <a key={k} href={'#' + k} aria-current={section === k ? 'page' : undefined} className={'sa-link' + (section === k ? ' on' : '')}>
-                <span className="sa-ic"><Icon name={icon} size={18} /></span>{l}
+                <span className="sa-ic"><Icon name={icon} size={18} /></span>{t(l)}
               </a>
             ))}
           </nav>

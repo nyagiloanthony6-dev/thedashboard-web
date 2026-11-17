@@ -11,12 +11,13 @@ export default function Register() {
   const [status,setStatus]=useState('')
   const [error,setError]=useState('')
   const [loading,setLoading]=useState(false)
-  const [form,setForm]=useState({shopName:'',fullName:'',phone:'',email:'',password:'',password2:''})
+  const [form,setForm]=useState({shopName:'',fullName:'',phone:'',location:'',email:'',password:'',password2:''})
   const set = k => e => setForm(p=>({...p,[k]:e.target.value}))
 
   const register = async (e) => {
     e.preventDefault()
     if(form.password!==form.password2){setError('Passwords do not match.');return}
+    if(form.phone.replace(/\D/g,'').length<9){setError('Enter a valid phone number.');return}
     if(form.password.length<6){setError('Password must be at least 6 characters.');return}
     setLoading(true);setStep(2);setError('')
     setStatus('Creating your account...')
@@ -24,13 +25,13 @@ export default function Register() {
     if(authErr){setError(authErr.message);setLoading(false);setStep(1);return}
     const userId=auth.user?.id
     if(!userId){setError('Account creation failed. Try again.');setLoading(false);setStep(1);return}
-    setStatus('Setting up your shop...')
-    const trialEnd=new Date();trialEnd.setDate(trialEnd.getDate()+14)
-    const {data:shop,error:shopErr}=await supabase.from('shops').insert({name:form.shopName.trim(),subscription:'trial',sub_plan:'trial',trial_started_at:new Date().toISOString(),sub_expires_at:trialEnd.toISOString()}).select().single()
-    if(shopErr){setError(shopErr.message);setLoading(false);setStep(1);return}
-    setStatus('Creating your profile...')
     const raw=form.phone.trim().replace(/\D/g,'')
     const phone=raw.startsWith('0')?'255'+raw.slice(1):raw.startsWith('255')?raw:'255'+raw
+    setStatus('Setting up your shop...')
+    const trialEnd=new Date();trialEnd.setDate(trialEnd.getDate()+14)
+    const {data:shop,error:shopErr}=await supabase.from('shops').insert({name:form.shopName.trim(),phone,address:form.location.trim()||null,subscription:'trial',sub_plan:'trial',trial_started_at:new Date().toISOString(),sub_expires_at:trialEnd.toISOString()}).select().single()
+    if(shopErr){setError(shopErr.message);setLoading(false);setStep(1);return}
+    setStatus('Creating your profile...')
     await supabase.from('app_users').upsert({id:userId,email:form.email.trim(),full_name:form.fullName.trim(),phone,role:'shop_admin',shop_id:shop.id},{onConflict:'id'})
     await supabase.from('shop_owners').insert({user_id:userId,shop_id:shop.id})
     setStatus('✅ Done! Redirecting...')
@@ -58,6 +59,7 @@ export default function Register() {
                 {k:'shopName',l:'Shop Name *',ph:'e.g. G2K Auto Parts',type:'text'},
                 {k:'fullName',l:'Your Full Name *',ph:'e.g. Anthony Nyagilo',type:'text'},
                 {k:'phone',l:'Phone Number *',ph:'e.g. 0741300354',type:'tel'},
+                {k:'location',l:'Shop Location *',ph:'e.g. Kariakoo, Dar es Salaam',type:'text'},
                 {k:'email',l:'Email Address *',ph:'e.g. you@gmail.com',type:'email'},
                 {k:'password',l:'Password *',ph:'At least 6 characters',type:'password'},
                 {k:'password2',l:'Confirm Password *',ph:'Repeat your password',type:'password'},

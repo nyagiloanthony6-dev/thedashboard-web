@@ -1,4 +1,5 @@
 import { T } from '../../lib/store'
+import { t } from './i18n'
 
 // Shared look for Serengeti Admin sections
 export const card = { background: '#fff', border: '1px solid ' + T.line, borderRadius: 14, padding: '14px 16px' }
@@ -24,13 +25,13 @@ export const STATUS = {
 }
 export function StatusPill({ s }) {
   const x = STATUS[s] || STATUS.active
-  return <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: x.bg, color: x.c, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{x.label}</span>
+  return <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: x.bg, color: x.c, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t(x.label)}</span>
 }
 export function DaysLeft({ date, status }) {
   const d = daysLeft(date)
   if (d === null) return <span style={{ color: T.muted }}>—</span>
   const c = status === 'suspended' ? T.muted : d < 0 ? '#B93A16' : d <= 7 ? '#B93A16' : d <= 30 ? '#9A5B00' : '#0B7A6C'
-  return <span style={{ ...mono, fontWeight: 700, color: c }}>{d < 0 ? `siku ${-d} zilizopita` : `siku ${d}`}</span>
+  return <span style={{ ...mono, fontWeight: 700, color: c }}>{d < 0 ? t('siku {n} zilizopita', { n: -d }) : t('siku {n}', { n: d })}</span>
 }
 
 export function Kpi({ l, v, c, sub }) {
@@ -59,7 +60,7 @@ export function Modal({ title, onClose, children, width = 460 }) {
       <div onClick={e => e.stopPropagation()} style={{ ...card, maxWidth: width, width: '100%', padding: 22, maxHeight: '92vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <p style={{ fontWeight: 700, fontSize: 18 }}>{title}</p>
-          <button onClick={onClose} aria-label="Funga" style={{ border: 0, background: 'transparent', fontSize: 22, color: T.muted, cursor: 'pointer' }}>×</button>
+          <button onClick={onClose} aria-label={t('Funga')} style={{ border: 0, background: 'transparent', fontSize: 22, color: T.muted, cursor: 'pointer' }}>×</button>
         </div>
         {children}
       </div>
@@ -74,7 +75,8 @@ export function Msg({ err, ok }) {
   </>
 }
 
-export function SearchBox({ value, onChange, placeholder = 'Tafuta duka…' }) {
+export function SearchBox({ value, onChange, placeholder: ph }) {
+  const placeholder = ph || t('Tafuta duka…')
   return (
     <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} aria-label={placeholder}
       style={{ ...inp, maxWidth: 360, padding: '10px 14px' }} />
