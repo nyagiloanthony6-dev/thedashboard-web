@@ -51,9 +51,9 @@ export default function Stock() {
     const rows=reportFiltered.map(p=>{
       const partNo=partField?p._cfv?.[partField.id]||'':''
       const stock=getStock(p)
-      return [p.name,partNo,p.category||'',p.product_type||'',stock,p.buy_price||0,p.sell_price||0,p.wholesale_price||0].join(',')
+      return [p.name,partNo,p.category||'',p.product_type||'',pcsOf(p),boxOf(p),p.buy_price||0,p.sell_price||0,p.wholesale_price||0].join(',')
     })
-    const header='Product Name,Part Number,Category,Type,Stock,Buy Price,Sell Price,Wholesale Price'
+    const header='Product Name,Part Number,Category,Type,Retail Stock (pcs),Wholesale Stock (boxes),Buy Price,Sell Price,Wholesale Price'
     const csv=[header,...rows].join('\n')
     const blob=new Blob([csv],{type:'text/csv'})
     const url=URL.createObjectURL(blob)
@@ -62,11 +62,11 @@ export default function Stock() {
 
   const exportExcel=()=>{
     const partField=customFields.find(f=>f.field_name.toLowerCase().includes('part'))
-    const header=['Product Name','Part Number','Category','Type','Stock','Buy Price','Sell Price','Wholesale Price']
+    const header=['Product Name','Part Number','Category','Type','Retail Stock (pcs)','Wholesale Stock (boxes)','Buy Price','Sell Price','Wholesale Price']
     const rows=reportFiltered.map(p=>{
       const partNo=partField?p._cfv?.[partField.id]||'':''
       const stock=getStock(p)
-      return [p.name,partNo,p.category||'',p.product_type||'',stock,p.buy_price||0,p.sell_price||0,p.wholesale_price||0]
+      return [p.name,partNo,p.category||'',p.product_type||'',pcsOf(p),boxOf(p),p.buy_price||0,p.sell_price||0,p.wholesale_price||0]
     })
     // Build simple XML-based Excel (xls)
     let xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Stock Report"><Table>`
@@ -374,6 +374,10 @@ export default function Stock() {
     return!q||p.name.toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q)||Object.values(p._cfv||{}).some(v=>String(v).toLowerCase().includes(q))
   })
   const getStock=p=>p.product_type==='wholesale'?(p.wholesale_stock||0):(p.retail_stock||p.stock||0)
+  // Retail pieces and wholesale boxes are separate stocks; show every one the item uses or holds
+  const pcsOf=p=>Number(p.retail_stock||p.stock||0), boxOf=p=>Number(p.wholesale_stock||0)
+  const showPcs=p=>p.product_type!=='wholesale'||pcsOf(p)!==0
+  const showBox=p=>p.product_type!=='retail'||boxOf(p)!==0
   const card={background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:12,padding:16}
   const partField=customFields.find(f=>f.field_name.toLowerCase().includes('part'))
   const toggleSort=col=>setReportSort(s=>({col,dir:s.col===col&&s.dir==='asc'?'desc':'asc'}))
@@ -406,9 +410,9 @@ export default function Stock() {
           ))}</div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
           {[
-            {l:'Total Items',v:products.reduce((a,p)=>a+getStock(p),0).toLocaleString()+' units',c:'#9A5B00'},
-            {l:'Stock Value (Cost)',v:'TZS '+(products.reduce((a,p)=>a+(getStock(p)*(p.buy_price||0)),0)).toLocaleString(),c:'#0B7A6C'},
-            {l:'Stock Value (Selling)',v:'TZS '+(products.reduce((a,p)=>{const sp=p.product_type==='wholesale'?(p.wholesale_price||p.sell_price||0):(p.sell_price||p.wholesale_price||0);return a+(getStock(p)*sp)},0)).toLocaleString(),c:'#9A5B00'},
+            {l:'Total Items',v:products.reduce((a,p)=>a+pcsOf(p),0).toLocaleString()+' pcs · '+products.reduce((a,p)=>a+boxOf(p),0).toLocaleString()+' boxes',c:'#9A5B00'},
+            {l:'Stock Value (Cost)',v:'TZS '+Math.round(products.reduce((a,p)=>a+boxOf(p)*(p.buy_price||0)+pcsOf(p)*(p.buy_price||0)/(p.product_type==='retail'?1:(p.box_qty||1)),0)).toLocaleString(),c:'#0B7A6C'},
+            {l:'Stock Value (Selling)',v:'TZS '+(products.reduce((a,p)=>a+pcsOf(p)*(p.sell_price||p.wholesale_price||0)+boxOf(p)*(p.wholesale_price||p.sell_price||0),0)).toLocaleString(),c:'#9A5B00'},
           ].map(k=>(
             <div key={k.l} style={card}><p style={{fontSize:10,color:'#5B607E',letterSpacing:0.8}}>{k.l.toUpperCase()}</p><p style={{fontSize:18,fontWeight:900,color:k.c,marginTop:6}}>{k.v}</p>{k.sub&&<p style={{fontSize:10,color:'#B93A16',marginTop:4}}>⚠️ {k.sub}</p>}</div>
           ))}
@@ -456,7 +460,10 @@ export default function Stock() {
                       {p.sell_price>0&&<div style={{color:'#2D2F8F'}}>{fmt(p.sell_price)}</div>}
                       {p.wholesale_price>0&&<div style={{color:'#2D2F8F'}}>{fmt(p.wholesale_price)} whs</div>}
                     </td>
-                    <td style={{padding:'12px 16px',fontSize:14,fontWeight:700,color:low?'#B93A16':'#15183A'}}>{stock}</td>
+                    <td style={{padding:'12px 16px',fontSize:14,fontWeight:700,color:low?'#B93A16':'#15183A',whiteSpace:'nowrap'}}>
+                      {showPcs(p)&&<div>{pcsOf(p)} <span style={{fontSize:11,fontWeight:500,color:'#5B607E'}}>pcs</span></div>}
+                      {showBox(p)&&<div>{boxOf(p)} <span style={{fontSize:11,fontWeight:500,color:'#5B607E'}}>{boxOf(p)===1?'box':'boxes'}</span></div>}
+                    </td>
                     <td style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
                         <button onClick={()=>openEdit(p)} style={{padding:'6px 12px',borderRadius:6,border:'1px solid #DCDFEC',background:'transparent',color:'#2D2F8F',fontSize:11,fontWeight:600}}>Edit</button>
@@ -487,7 +494,7 @@ export default function Stock() {
               <button onClick={exportCSV} style={{padding:'9px 16px',borderRadius:8,background:'rgba(11,122,108,0.12)',color:'#0B7A6C',border:'1px solid #25d36640',fontWeight:700,fontSize:13,cursor:'pointer',whiteSpace:'nowrap'}}>⬇ CSV</button>
               <button onClick={exportExcel} style={{padding:'9px 16px',borderRadius:8,background:'rgba(45,47,143,0.12)',color:'#2D2F8F',border:'1px solid #2196F340',fontWeight:700,fontSize:13,cursor:'pointer',whiteSpace:'nowrap'}}>⬇ Excel</button>
             </div>
-            <p style={{fontSize:11,color:'#5B607E',marginBottom:12}}>{reportFiltered.length} products · {reportFiltered.reduce((a,p)=>a+getStock(p),0).toLocaleString()} total units</p>
+            <p style={{fontSize:11,color:'#5B607E',marginBottom:12}}>{reportFiltered.length} products · {reportFiltered.reduce((a,p)=>a+pcsOf(p),0).toLocaleString()} pcs · {reportFiltered.reduce((a,p)=>a+boxOf(p),0).toLocaleString()} boxes</p>
 
             {/* Report table */}
             <div style={{background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:12,overflow:'hidden'}}>
@@ -531,7 +538,10 @@ export default function Stock() {
                         <td style={{padding:'10px 14px',fontSize:12,fontFamily:'monospace',color:'#0F7375'}}>{partNo}</td>
                         <td style={{padding:'10px 14px',fontSize:12,color:'#5B607E'}}>{p.category||'—'}</td>
                         <td style={{padding:'10px 14px',fontSize:11,color:'#8A8FAE',textTransform:'capitalize'}}>{p.product_type||'—'}</td>
-                        <td style={{padding:'10px 14px',fontSize:14,fontWeight:800,color:low?'#B93A16':stock===0?'#8A8FAE':'#0B7A6C'}}>{stock.toLocaleString()}</td>
+                        <td style={{padding:'10px 14px',fontSize:14,fontWeight:800,color:low?'#B93A16':stock===0?'#8A8FAE':'#0B7A6C',whiteSpace:'nowrap'}}>
+                          {showPcs(p)&&<div>{pcsOf(p).toLocaleString()} <span style={{fontSize:11,fontWeight:500,color:'#5B607E'}}>pcs</span></div>}
+                          {showBox(p)&&<div>{boxOf(p).toLocaleString()} <span style={{fontSize:11,fontWeight:500,color:'#5B607E'}}>boxes</span></div>}
+                        </td>
                         <td style={{padding:'10px 14px',fontSize:12,color:'#9A5B00',fontWeight:600}}>{p.buy_price?fmt(p.buy_price):'—'}</td>
                         <td style={{padding:'10px 14px',fontSize:12,color:'#2D2F8F',fontWeight:600}}>{sellPrice?fmt(sellPrice):'—'}</td>
                       </tr>
