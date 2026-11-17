@@ -19,7 +19,10 @@ function csv(rows) {
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000)
 }
 
-const linkBtn = { ...btnG, padding: '6px 11px', fontSize: 12, textDecoration: 'none', display: 'inline-block' }
+const svg = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }
+const IconPhone = () => <svg {...svg}><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" /></svg>
+const IconChat = () => <svg {...svg}><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.3A8.4 8.4 0 1 1 21 11.5z" /></svg>
+const IconMail = () => <svg {...svg}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>
 
 export default function Contacts({ shops }) {
   const [q, setQ] = useState('')
@@ -42,40 +45,62 @@ export default function Contacts({ shops }) {
           <div style={{ display: 'flex', background: T.tint, borderRadius: 999, padding: 3 }}>
             {[['7', 'Wiki hii'], ['30', 'Siku 30'], ['all', 'Zote']].map(([v, l]) => (
               <button key={v} onClick={() => setRange(v)} aria-pressed={range === v}
-                style={{ border: 0, borderRadius: 999, padding: '7px 14px', fontSize: 13, fontWeight: range === v ? 700 : 500, cursor: 'pointer', background: range === v ? T.green : 'transparent', color: range === v ? '#fff' : T.ink }}>{t(l)}</button>
+                style={{ border: 0, borderRadius: 999, padding: '7px 14px', fontSize: 13, whiteSpace: 'nowrap', fontWeight: range === v ? 700 : 500, cursor: 'pointer', background: range === v ? T.green : 'transparent', color: range === v ? '#fff' : T.ink }}>{t(l)}</button>
             ))}
           </div>
           <SearchBox value={q} onChange={setQ} placeholder={t('Tafuta jina, duka, simu au email…')} />
         </div>
-        <button onClick={() => csv(list)} disabled={!list.length} style={{ ...btnG, opacity: list.length ? 1 : 0.5 }}>⬇ {t('Pakua CSV')}</button>
+        <button onClick={() => csv(list)} disabled={!list.length} style={{ ...btnG, whiteSpace: 'nowrap', alignSelf: 'flex-start', opacity: list.length ? 1 : 0.5 }}>⬇ {t('Pakua CSV')}</button>
       </div>
-      <div style={{ ...card, padding: 0, overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr><th style={th}>{t('Mteja')}</th><th style={th}>{t('Simu')}</th><th style={th}>{t('Duka')}</th><th style={th}>{t('Kifurushi')}</th><th style={th}>{t('Hali')}</th><th style={th}>{t('Alijisajili')}</th><th style={th} /></tr></thead>
-          <tbody>
-            {list.map(x => {
-              const ph = contactPhone(x)
-              const wa = `https://wa.me/${intl(ph)}?text=${encodeURIComponent(t('Habari {n}, karibu TheDashboard.', { n: (x.owner_name || '').split(' ')[0] }))}`
-              return (
-                <tr key={x.id}>
-                  <td style={td}><b>{x.owner_name || '—'}</b><div style={{ fontSize: 12, color: T.muted }}>{x.owner_email || ''}</div></td>
-                  <td style={{ ...td, ...mono, fontSize: 13, whiteSpace: 'nowrap' }}>{ph ? pretty(ph) : '—'}</td>
-                  <td style={td}>{x.name}<div style={{ fontSize: 12, color: T.muted }}>{x.address || ''}</div></td>
-                  <td style={td}>{pkgLabel(x)}</td>
-                  <td style={td}><StatusPill s={x.status} /></td>
-                  <td style={{ ...td, whiteSpace: 'nowrap' }}>{dmy(x.created_at)}</td>
-                  <td style={{ ...td, whiteSpace: 'nowrap', textAlign: 'right' }}>
-                    {ph && <a href={'tel:+' + intl(ph)} style={linkBtn}>{t('Piga')}</a>}{' '}
-                    {ph && <a href={wa} target="_blank" rel="noreferrer" style={{ ...linkBtn, color: '#0B7A6C' }}>WhatsApp</a>}{' '}
-                    {x.owner_email && <a href={'mailto:' + x.owner_email} style={linkBtn}>Email</a>}
-                  </td>
-                </tr>
-              )
-            })}
-            {list.length === 0 && <tr><td style={{ ...td, color: T.muted }} colSpan={7}>{t('Hakuna mteja.')}</td></tr>}
-          </tbody>
-        </table>
+      <div style={{ ...card, padding: 0 }} role="table" aria-label={t('Wateja')}>
+        <div className="ct-row ct-head" role="row">
+          <span role="columnheader">{t('Mteja')}</span><span role="columnheader">{t('Duka')}</span>
+          <span role="columnheader">{t('Kifurushi')}</span><span role="columnheader">{t('Alijisajili')}</span><span />
+        </div>
+        {list.map(x => {
+          const ph = contactPhone(x)
+          const wa = `https://wa.me/${intl(ph)}?text=${encodeURIComponent(t('Habari {n}, karibu TheDashboard.', { n: (x.owner_name || '').split(' ')[0] }))}`
+          return (
+            <div key={x.id} className="ct-row" role="row">
+              <div role="cell" style={{ minWidth: 0 }}>
+                <b style={{ fontSize: 15 }}>{x.owner_name || '—'}</b>
+                {ph && <div style={{ ...mono, fontSize: 13, marginTop: 2 }}>{pretty(ph)}</div>}
+                {x.owner_email && <div className="ct-clip" style={{ fontSize: 12, color: T.muted }} title={x.owner_email}>{x.owner_email}</div>}
+              </div>
+              <div role="cell" style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{x.name}</div>
+                {x.address && <div style={{ fontSize: 12, color: T.muted }}>{x.address}</div>}
+              </div>
+              <div role="cell" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+                <span style={{ fontSize: 13 }}>{pkgLabel(x)}{x.sub_plan && !['trial', 'POS', 'Store', 'POS + Store'].includes(x.sub_plan) ? ' · ' + x.sub_plan : ''}</span>
+                <StatusPill s={x.status} />
+              </div>
+              <div role="cell" className="ct-date" style={{ fontSize: 13, color: T.muted, whiteSpace: 'nowrap' }}>{dmy(x.created_at)}</div>
+              <div role="cell" className="ct-actions">
+                {ph && <a href={'tel:+' + intl(ph)} className="ct-btn" title={t('Piga') + ' ' + pretty(ph)} aria-label={t('Piga') + ' ' + (x.owner_name || '')}><IconPhone /></a>}
+                {ph && <a href={wa} target="_blank" rel="noreferrer" className="ct-btn ct-wa" title="WhatsApp" aria-label={'WhatsApp ' + (x.owner_name || '')}><IconChat /></a>}
+                {x.owner_email && <a href={'mailto:' + x.owner_email} className="ct-btn" title={x.owner_email} aria-label={'Email ' + (x.owner_name || '')}><IconMail /></a>}
+              </div>
+            </div>
+          )
+        })}
+        {list.length === 0 && <p style={{ padding: 18, color: T.muted }}>{t('Hakuna mteja.')}</p>}
       </div>
+      <style jsx>{`
+        .ct-row { display: grid; grid-template-columns: minmax(180px, 1.5fr) minmax(160px, 1.4fr) minmax(110px, 0.9fr) 92px 126px; gap: 14px; align-items: start; padding: 14px 18px; border-top: 1px solid ${T.line}; }
+        .ct-head { border-top: 0; padding-top: 12px; padding-bottom: 10px; font-size: 12px; font-weight: 600; color: ${T.muted}; }
+        .ct-clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ct-actions { display: flex; gap: 6px; justify-content: flex-end; }
+        .ct-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid ${T.line}; display: inline-flex; align-items: center; justify-content: center; color: ${T.green}; background: #fff; }
+        .ct-btn:hover { background: ${T.tint}; }
+        .ct-wa { color: #0B7A6C; }
+        @media (max-width: 900px) {
+          .ct-head { display: none; }
+          .ct-row { grid-template-columns: 1fr auto; gap: 8px 12px; }
+          .ct-date { grid-column: 1; }
+          .ct-actions { grid-column: 2; grid-row: 1; }
+        }
+      `}</style>
       <p style={{ fontSize: 12, color: T.muted, marginTop: 10 }}>{t('Wateja wapya wanaojisajili mtandaoni wanaingia hapa wenyewe, pamoja na simu, email na mahali.')}</p>
     </div>
   )

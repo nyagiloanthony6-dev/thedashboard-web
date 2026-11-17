@@ -79,6 +79,6 @@ export function SearchBox({ value, onChange, placeholder: ph }) {
   const placeholder = ph || t('Tafuta duka…')
   return (
     <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} aria-label={placeholder}
-      style={{ ...inp, maxWidth: 360, padding: '10px 14px' }} />
+      style={{ ...inp, maxWidth: 360, minWidth: 200, flex: '1 1 220px', padding: '10px 14px' }} />
   )
 }

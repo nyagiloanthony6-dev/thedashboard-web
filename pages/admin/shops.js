@@ -165,7 +165,8 @@ function Frame({ children, section, go, lang, setLang }) {
         .sa-main { flex: 1; min-width: 0; padding: 22px 20px 60px; }
         @media (max-width: 860px) {
           .sa-wrap { flex-direction: column; }
-          .sa-nav { width: auto; position: static; display: flex; overflow-x: auto; gap: 4px; padding: 10px 12px; border-bottom: 1px solid ${T.line}; background: #fff; }
+          .sa-wrap > * { min-width: 0; }
+          .sa-nav { width: auto; min-width: 0; max-width: 100vw; position: static; display: flex; overflow-x: auto; gap: 4px; padding: 10px 12px; border-bottom: 1px solid ${T.line}; background: #fff; }
           .sa-link { white-space: nowrap; margin: 0; padding: 7px 10px; font-size: 14px; }
           .sa-ic { width: 24px; height: 24px; }
         }
