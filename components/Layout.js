@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { loadModules, cachedModules, isStoreOnly, usePlatformAdmin, loadFeatures, cachedFeatures, featureOn, PAGE_FEATURE } from '../lib/store'
 import Icon from './store/Icon'
 import { TDMark, SLWordmark, StoreFrame } from './store/Shell'
+import NoticeBanner from './NoticeBanner'
 
 // Serengeti Labs brand: white sidebar, indigo active state, saffron highlight.
 // module: 'pos' items are hidden for Store-only shops; 'kibali' (Store) items
@@ -105,7 +106,7 @@ export default function Layout({ children, title, shop, profile }) {
             </div>
           </div>
         </div>
-        <div style={{ padding:24 }}>{children}</div>
+        <div style={{ padding:24 }}><NoticeBanner shopId={shop?.id} />{children}</div>
       </main>
     </div>
   )

@@ -5,6 +5,7 @@ import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import { ROLE_LABELS, T, usePlatformAdmin } from '../../lib/store'
 import Icon from './Icon'
+import NoticeBanner from '../NoticeBanner'
 
 // Store layout in the Serengeti Labs look (light, warm, phone-first).
 // - Owners: sidebar on desktop, bottom tabs + "Zaidi" sheet on phones
@@ -44,7 +45,7 @@ export default function Shell({ k, title, tabs = [], children }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><LangSwitch /><UserChip k={k} /></div>
         </div>
       </header>
-      <main style={{ maxWidth: 640, margin: '0 auto', padding: '16px 16px 104px' }}>{inactive || children}</main>
+      <main style={{ maxWidth: 640, margin: '0 auto', padding: '16px 16px 104px' }}>{!inactive && <NoticeBanner shopId={k.shop?.id} />}{inactive || children}</main>
       {tabs.length > 0 && !inactive && <BottomTabs tabs={tabs} isOn={isOn} />}
     </Frame>
   )
@@ -167,6 +168,7 @@ function OwnerFrame({ k, title, tabs, isOn, children }) {
                 ))}
               </div>
             )}
+            <NoticeBanner shopId={k.shop?.id} />
             {children}
           </main>
         </div>
