@@ -16,16 +16,29 @@ export default function Plans({ plans, reload, shops }) {
   }, [])
   const using = (p) => shops.filter(s => !s.parent_id && (s.plan_id === p.id || (!s.plan_id && s.sub_plan === p.name))).length
   const featLabel = (k) => (feats.find(f => f.key === k) || {}).label || k
-  const shown = [...plans].sort((a, b) => (b.active - a.active) || (a.sort - b.sort) || a.monthly_price - b.monthly_price)
+  const order = (a, b) => (a.sort - b.sort) || a.monthly_price - b.monthly_price
+  const groups = [
+    ['TheDashboard POS', plans.filter(p => p.active && p.package !== 'store').sort(order), 'pos'],
+    ['TheDashboard Store', plans.filter(p => p.active && p.package === 'store').sort(order), 'store'],
+    ['Haitumiki', plans.filter(p => !p.active).sort(order), null],
+  ]
+  const blank = (pkg) => ({ name: '', package: pkg, monthly_price: '', active: true, features: null, max_shops: 1, includes_store: pkg === 'store', description: '' })
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
         <p style={{ fontSize: 13, color: T.muted, maxWidth: 640 }}>{t('Kila mpango una bei, vipengele vyake, idadi ya maduka, na kama Store imo. Duka linaona vipengele vya mpango wake tu.')}</p>
-        <button onClick={() => setEdit({ name: '', package: 'pos', monthly_price: '', active: true, features: null, max_shops: 1, includes_store: false, description: '' })} style={btnP}>{t('+ Mpango')}</button>
+        <button onClick={() => setEdit(blank('pos'))} style={btnP}>{t('+ Mpango')}</button>
       </div>
       <Msg err={msg.err} ok={msg.ok} />
+      {groups.filter(([, list, pkg]) => list.length || pkg).map(([title, list, pkg]) => (
+      <div key={title} style={{ marginBottom: 22 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <p style={{ fontWeight: 700, fontSize: 15, color: pkg ? T.ink : T.muted }}>{pkg ? title : t(title)}</p>
+          <span style={{ fontSize: 12, color: T.muted }}>{t('mipango {n}', { n: list.length })}</span>
+          {pkg && <button onClick={() => setEdit(blank(pkg))} style={{ border: 0, background: 'none', color: T.green, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>{t('+ Ongeza')}</button>}
+        </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-        {shown.map(p => {
+        {list.map(p => {
           const all = !p.features
           const missing = all ? [] : feats.filter(f => !p.features.includes(f.key) && f.enabled)
           return (
@@ -35,7 +48,9 @@ export default function Plans({ plans, reload, shops }) {
                   <p style={{ fontWeight: 700, fontSize: 17 }}>{p.name}</p>
                   <p style={{ fontSize: 12, color: T.muted }}>{PKG[p.package] || p.package}{!p.active && ' · ' + t('haitumiki')}</p>
                 </div>
-                <p style={{ ...mono, fontWeight: 700, fontSize: 18, color: T.green, whiteSpace: 'nowrap' }}>{tzs(p.monthly_price)}<span style={{ fontSize: 11, color: T.muted, fontWeight: 500 }}>{t('/mwezi')}</span></p>
+                {Number(p.monthly_price) > 0 || !p.active
+                  ? <p style={{ ...mono, fontWeight: 700, fontSize: 18, color: T.green, whiteSpace: 'nowrap' }}>{tzs(p.monthly_price)}<span style={{ fontSize: 11, color: T.muted, fontWeight: 500 }}>{t('/mwezi')}</span></p>
+                  : <button onClick={() => setEdit({ ...p, description: p.description || '' })} style={{ border: 0, background: '#FBE1D8', color: '#B93A16', fontWeight: 700, fontSize: 12, borderRadius: 999, padding: '5px 11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>{t('Weka bei')}</button>}
               </div>
               {p.description && <p style={{ fontSize: 13, color: T.ink }}>{p.description}</p>}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -53,7 +68,10 @@ export default function Plans({ plans, reload, shops }) {
             </div>
           )
         })}
+        {list.length === 0 && <p style={{ fontSize: 13, color: T.muted }}>{t('Bado hakuna mpango.')}</p>}
       </div>
+      </div>
+      ))}
       {edit && <EditPlan plan={edit} feats={feats} featLabel={featLabel} onClose={() => setEdit(null)}
         onSaved={() => { setEdit(null); setMsg({ ok: t('Mpango umehifadhiwa') }); reload() }} />}
     </div>

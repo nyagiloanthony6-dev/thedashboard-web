@@ -154,4 +154,5 @@ export const EN = {
   'Mabadiliko yanaonekana kwa maduka yote ya mpango huu wakifungua upya. Data haifutwi.': 'Changes reach every shop on this plan when they reload. No data is deleted.',
   '+{n} matawi': '+{n} branches', 'Kama mpango (imewashwa)': 'As plan (on)', 'Kama mpango (imezimwa)': 'As plan (off)',
   'Wanaolipia (kwa mpango)': 'Paying shops (by plan)',
+  'Haitumiki': 'Not in use', 'mipango {n}': '{n} plans', '+ Ongeza': '+ Add', 'Bado hakuna mpango.': 'No plans yet.', 'Weka bei': 'Set a price',
 }
