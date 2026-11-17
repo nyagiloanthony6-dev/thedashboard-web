@@ -6,11 +6,32 @@ import { t } from './i18n'
 
 const PKG = { pos: 'POS', store: 'Store', both: 'POS + Store' }
 
+// Friendly names for the features shown on the plan cards
+const FEAT_NAME = {
+  sales: 'Mauzo / POS (cashier)', customers: 'Wateja', expenses: 'Matumizi', credit: 'Mauzo ya mkopo (credit)',
+  loans: 'Mikopo', field_orders: 'Oda za field (sales rep)', reports: 'Ripoti ya muhtasari', monthly_report: 'Ripoti ya mauzo ya mwezi',
+  team: 'Timu na wafanyakazi', marketing: 'Masoko (app)', targets: 'Malengo ya mauzo (app)', reorder: 'Mapendekezo ya kuagiza (app)',
+  whatsapp: 'WhatsApp', vendors: 'Wasambazaji (vendors)', investors: 'Mfuko wa wawekezaji', batches: 'Batches za stock', warehouse: 'Ghala kuu',
+}
+const STORE_ITEMS = ['Oda za kutoa store (kibali)', 'Risiti zenye QR na namba ya siri', 'Pokea mzigo na kurekebisha stock', 'Ripoti na tahadhari za store']
+
+// What a plan gives: its features (by key) plus extras (branches, Store)
+function planItems(p, feats) {
+  if (p.package === 'store') return { keys: [], extras: [...STORE_ITEMS, 'Wafanyakazi: storekeeper na wanaoandika oda'] }
+  const on = feats.filter(f => f.enabled).map(f => f.key)
+  const keys = p.features ? on.filter(k => p.features.includes(k)) : on
+  const extras = []
+  if ((p.max_shops || 1) > 1) extras.push(t('Matawi hadi {n} kwa akaunti moja', { n: p.max_shops }), 'Muhtasari wa mauzo ya matawi yote')
+  if (p.includes_store || p.package === 'both') extras.push(...STORE_ITEMS)
+  return { keys, extras }
+}
+
 // Plans (products): price, the features they include, how many shops, and whether Store comes with them
 export default function Plans({ plans, reload, shops }) {
   const [feats, setFeats] = useState([])
   const [edit, setEdit] = useState(null)
   const [msg, setMsg] = useState({})
+  const [open, setOpen] = useState({})
   useEffect(() => {
     supabase.rpc('platform_list_features', { p_shop: null }).then(({ data }) => setFeats(data || []))
   }, [])
@@ -38,9 +59,16 @@ export default function Plans({ plans, reload, shops }) {
           {pkg && <button onClick={() => setEdit(blank(pkg))} style={{ border: 0, background: 'none', color: T.green, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>{t('+ Ongeza')}</button>}
         </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-        {list.map(p => {
+        {list.map((p, i) => {
           const all = !p.features
-          const missing = all ? [] : feats.filter(f => !p.features.includes(f.key) && f.enabled)
+          // Each POS plan builds on the cheaper one before it in the same group
+          const prev = pkg && pkg !== 'store' && i > 0 ? list[i - 1] : null
+          const mine = planItems(p, feats), before = prev ? planItems(prev, feats) : { keys: [], extras: [] }
+          const items = [
+            ...mine.keys.filter(k => !before.keys.includes(k)).map(k => t(FEAT_NAME[k] || featLabel(k))),
+            ...mine.extras.filter(x => !before.extras.includes(x)).map(x => t(x)),
+          ]
+          const isOpen = open[p.id], shownItems = isOpen ? items : items.slice(0, 7)
           return (
             <div key={p.id} style={{ ...card, opacity: p.active ? 1 : 0.55, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
@@ -55,12 +83,26 @@ export default function Plans({ plans, reload, shops }) {
               {p.description && <p style={{ fontSize: 13, color: T.ink }}>{p.description}</p>}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 <Chip>{(p.max_shops || 1) > 1 ? t('Maduka hadi {n}', { n: p.max_shops }) : t('Duka 1')}</Chip>
-                <Chip>{all ? t('Vipengele vyote') : t('Vipengele {n}', { n: p.features.length })}</Chip>
+                {p.package !== 'store' && <Chip>{all ? t('Vipengele vyote') : t('Vipengele {n}', { n: p.features.length })}</Chip>}
                 {p.includes_store && <Chip c="#0B7A6C">{t('Store imo')}</Chip>}
                 <Chip c={T.muted}>{t('Maduka {n} yanatumia', { n: using(p) })}</Chip>
               </div>
-              {missing.length > 0 && (
-                <p style={{ fontSize: 12, color: T.muted }}><b>{t('Haina:')}</b> {missing.map(f => f.label).join(', ')}</p>
+              {items.length > 0 && (
+                <div style={{ borderTop: '1px solid ' + T.line, paddingTop: 10 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>{prev ? t('Kila kitu cha {p}, pamoja na:', { p: prev.name }) : t('Inajumuisha:')}</p>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 4 }}>
+                    {shownItems.map(x => (
+                      <li key={x} style={{ display: 'flex', gap: 8, fontSize: 13, lineHeight: '18px' }}>
+                        <span aria-hidden="true" style={{ color: '#0B7A6C', fontWeight: 700 }}>✓</span><span>{x}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {items.length > 7 && (
+                    <button onClick={() => setOpen({ ...open, [p.id]: !isOpen })} style={{ border: 0, background: 'none', color: T.green, fontWeight: 600, fontSize: 12, cursor: 'pointer', padding: '6px 0 0' }}>
+                      {isOpen ? t('Onyesha machache') : t('+{n} zaidi', { n: items.length - 7 })}
+                    </button>
+                  )}
+                </div>
               )}
               <div style={{ marginTop: 'auto' }}>
                 <button onClick={() => setEdit({ ...p, description: p.description || '' })} style={{ ...btnG, padding: '7px 14px', fontSize: 13 }}>{t('Badilisha')}</button>
