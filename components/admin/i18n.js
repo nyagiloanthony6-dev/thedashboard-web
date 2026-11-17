@@ -142,4 +142,16 @@ export const EN = {
   'Watumiaji wa admin': 'Admin users',
   'Wanaoweza kuingia Serengeti Admin. Akaunti lazima iwe imeshatengenezwa.': 'People who can open Serengeti Admin. The account must already exist.',
   'wewe': 'you', 'Ondoa': 'Remove', 'email ya akaunti': 'account email', 'Ongeza': 'Add',
+  // Plans
+  'Mipango': 'Plans', 'Bidhaa zetu: bei, vipengele, idadi ya maduka': 'Our products: price, features, number of shops',
+  'Kipindi cha majaribio na watumiaji wa admin': 'Trial period and admin users',
+  'Kila mpango una bei, vipengele vyake, idadi ya maduka, na kama Store imo. Duka linaona vipengele vya mpango wake tu.': "Each plan has a price, its features, a number of shops, and whether Store is included. A shop only sees its plan's features.",
+  '/mwezi': '/month', 'Maduka hadi {n}': 'Up to {n} shops', 'Duka 1': '1 shop', 'Vipengele vyote': 'All features',
+  'Vipengele {n}': '{n} features', 'Store imo': 'Store included', 'Maduka {n} yanatumia': '{n} shops on it', 'Haina:': 'Not included:',
+  'Mpango mpya': 'New plan', 'Idadi ya maduka (matawi)': 'Number of shops (branches)',
+  'Store imo (inawashwa ukiweka mpango huu)': 'Store included (turned on when this plan is set)',
+  'Vipengele vilivyomo': 'Included features', 'Chagua vyote': 'Select all', 'imezimwa kwa wote': 'off for everyone',
+  'Mabadiliko yanaonekana kwa maduka yote ya mpango huu wakifungua upya. Data haifutwi.': 'Changes reach every shop on this plan when they reload. No data is deleted.',
+  '+{n} matawi': '+{n} branches', 'Kama mpango (imewashwa)': 'As plan (on)', 'Kama mpango (imezimwa)': 'As plan (off)',
+  'Wanaolipia (kwa mpango)': 'Paying shops (by plan)',
 }

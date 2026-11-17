@@ -14,6 +14,7 @@ import Features from '../../components/admin/Features'
 import Notices from '../../components/admin/Notices'
 import Settings from '../../components/admin/Settings'
 import Contacts from '../../components/admin/Contacts'
+import Plans from '../../components/admin/Plans'
 import { t, loadLang, saveLang } from '../../components/admin/i18n'
 
 // Serengeti Admin: one place for every TheDashboard shop.
@@ -23,6 +24,7 @@ const SECTIONS = [
   ['wateja', 'Wateja', 'users'],
   ['usajili', 'Usajili', 'calendar'],
   ['malipo', 'Malipo', 'wallet'],
+  ['mipango', 'Mipango', 'tag'],
   ['vifurushi', 'Vifurushi', 'layers'],
   ['vipengele', 'Vipengele', 'grid'],
   ['arifa', 'Arifa', 'bell'],
@@ -30,13 +32,14 @@ const SECTIONS = [
 ]
 const SUBTITLE = {
   takwimu: 'Muhtasari wa maduka, mapato na shughuli',
+  mipango: 'Bidhaa zetu: bei, vipengele, idadi ya maduka',
   wateja: 'Mawasiliano ya wateja waliojisajili',
   usajili: 'Hali ya usajili wa kila duka, kuongeza muda na kusimamisha',
   malipo: 'Malipo yaliyopokelewa (ankara zinabaki kwenye billing admin)',
   vifurushi: 'POS pekee · Store pekee · Zote mbili',
   vipengele: 'Tabs zinazoonekana kwa maduka yote au duka moja',
   arifa: 'Ujumbe kwa maduka kwenye web na app',
-  mipangilio: 'Mipango na bei, majaribio, watumiaji wa admin',
+  mipangilio: 'Kipindi cha majaribio na watumiaji wa admin',
 }
 
 export default function SerengetiAdmin() {
@@ -81,6 +84,7 @@ export default function SerengetiAdmin() {
       <Msg err={err} ok={ok} />
       {section === 'takwimu' && <Analytics shops={shops} go={go} />}
       {section === 'wateja' && <Contacts shops={shops} />}
+      {section === 'mipango' && <Plans plans={plans} reload={loadPlans} shops={shops} />}
       {section === 'usajili' && <Subscriptions shops={shops} plans={plans} reload={loadShops} onPay={setPay} />}
       {section === 'malipo' && <Payments shops={shops} plans={plans} reload={loadShops} />}
       {section === 'vifurushi' && <Packages shops={shops} reload={loadShops} />}

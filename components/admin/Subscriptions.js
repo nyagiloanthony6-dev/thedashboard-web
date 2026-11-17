@@ -12,9 +12,10 @@ export default function Subscriptions({ shops, plans, reload, onPay }) {
   const [edit, setEdit] = useState(null)   // shop
   const [msg, setMsg] = useState({})
   const ending = (x) => ['trial', 'active'].includes(x.status) && x.sub_expires_at && (new Date(x.sub_expires_at) - Date.now()) < 7 * 86400000
-  const list = shops.filter(x => (f === 'all' || (f === 'ending' ? ending(x) : x.status === f)) && (!q || x.name.toLowerCase().includes(q.toLowerCase()) || (x.phone || '').includes(q) || (x.owner_phone || '').includes(q) || (x.owner || '').toLowerCase().includes(q.toLowerCase())))
+  const main = shops.filter(x => !x.parent_id)
+  const list = main.filter(x => (f === 'all' || (f === 'ending' ? ending(x) : x.status === f)) && (!q || x.name.toLowerCase().includes(q.toLowerCase()) || (x.phone || '').includes(q) || (x.owner_phone || '').includes(q) || (x.owner || '').toLowerCase().includes(q.toLowerCase())))
     .sort((a, b) => new Date(a.sub_expires_at || 0) - new Date(b.sub_expires_at || 0))
-  const count = (k) => k === 'all' ? shops.length : k === 'ending' ? shops.filter(ending).length : shops.filter(x => x.status === k).length
+  const count = (k) => k === 'all' ? main.length : k === 'ending' ? main.filter(ending).length : main.filter(x => x.status === k).length
   return (
     <div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -33,11 +34,11 @@ export default function Subscriptions({ shops, plans, reload, onPay }) {
           <tbody>
             {list.map(x => (
               <tr key={x.id}>
-                <td style={td}><b>{x.name}</b><div style={{ fontSize: 12, color: T.muted }}>{[x.owner, x.owner_phone || x.phone].filter(Boolean).join(' · ')}</div></td>
+                <td style={td}><b>{x.name}</b>{x.branches > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: T.green, background: T.tint, borderRadius: 999, padding: '2px 8px', marginLeft: 6 }}>{t('+{n} matawi', { n: x.branches })}</span>}<div style={{ fontSize: 12, color: T.muted }}>{[x.owner, x.owner_phone || x.phone].filter(Boolean).join(' · ')}</div></td>
                 <td style={td}><StatusPill s={x.status} /></td>
                 <td style={td}>{x.sub_plan || '—'}</td>
                 <td style={td}>{dmy(x.sub_expires_at)}</td>
-                <td style={td}><DaysLeft date={x.sub_expires_at} status={x.status} /></td>
+                <td style={{ ...td, whiteSpace: 'nowrap' }}><DaysLeft date={x.sub_expires_at} status={x.status} /></td>
                 <td style={{ ...td, fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'nowrap' }}>{x.paid_total ? tzs(x.paid_total) : '—'}</td>
                 <td style={{ ...td, whiteSpace: 'nowrap', textAlign: 'right' }}>
                   <button onClick={() => onPay(x)} style={{ ...btnP, padding: '7px 12px', fontSize: 12 }}>{t('+ Malipo')}</button>{' '}

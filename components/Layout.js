@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
-import { loadModules, cachedModules, isStoreOnly, usePlatformAdmin, loadFeatures, cachedFeatures, featureOn, PAGE_FEATURE } from '../lib/store'
+import { loadModules, cachedModules, isStoreOnly, usePlatformAdmin, loadFeatures, cachedFeatures, featureOn, PAGE_FEATURE, loadBranches, switchShop } from '../lib/store'
 import Icon from './store/Icon'
 import { TDMark, SLWordmark, StoreFrame } from './store/Shell'
 import NoticeBanner from './NoticeBanner'
@@ -12,6 +12,7 @@ import NoticeBanner from './NoticeBanner'
 // show only when the shop has the Store module.
 const NAV = [
   { href:'/dashboard',  icon:'grid',      label:'Dashboard', module:'pos' },
+  { href:'/branches',   icon:'building',  label:'Branches' },
   { href:'/sales',      icon:'cart',      label:'Sales / POS', module:'pos' },
   { href:'/store/owner', icon:'store',    label:'Store', module:'kibali' },
   { href:'/stock',      icon:'tag',       label:'Stock' },
@@ -44,6 +45,16 @@ export default function Layout({ children, title, shop, profile }) {
   const platform = usePlatformAdmin()
   const [features, setFeatures] = useState(() => cachedFeatures(shop?.id))
   useEffect(() => { if (shop?.id) loadFeatures(shop.id).then(setFeatures) }, [shop?.id])
+  // Branch switcher: only for Business Pack owners with more than one shop
+  const [group, setGroup] = useState(null)
+  useEffect(() => { if (shop?.id && features?.branches === true) loadBranches().then(setGroup) }, [shop?.id, features?.branches])
+  const shopsInGroup = group?.shops || []
+  const [switching, setSwitching] = useState(false)
+  const goShop = async (id) => {
+    if (!id || id === shop?.id) return
+    setSwitching(true)
+    try { await switchShop(id); window.location.reload() } catch (e) { setSwitching(false); alert(e.message) }
+  }
   const nav = [...NAV.filter(n => (!n.module || (modules && modules[n.module])) && featureOn(features, PAGE_FEATURE[n.href])), ...(platform ? [{ href: '/admin/shops', icon: 'building', label: 'Serengeti Admin' }] : [])]
 
   const active = (href) => router.pathname === href || (href !== '/reports' && router.pathname.startsWith(href + '/')) || (href === '/store/owner' && router.pathname.startsWith('/store'))
@@ -69,7 +80,15 @@ export default function Layout({ children, title, shop, profile }) {
         {!col && shop && (
           <div style={{ padding:'10px 16px', borderBottom:`1px solid ${C.line}` }}>
             <p style={{ fontSize:10, color:C.muted, letterSpacing:0.8, fontWeight:600, marginBottom:2 }}>SHOP</p>
-            <p style={{ fontSize:14, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{shop.name}</p>
+            {shopsInGroup.length > 1 ? (
+              <select value={shop.id} onChange={e => goShop(e.target.value)} disabled={switching} aria-label="Switch shop"
+                style={{ width:'100%', fontSize:14, fontWeight:600, padding:'6px 8px', borderRadius:8, border:`1px solid ${C.line}`, background:C.surface, color:C.ink, cursor:'pointer' }}>
+                {shopsInGroup.map(x => <option key={x.id} value={x.id}>{x.name}{x.is_main ? ' (main)' : ''}</option>)}
+              </select>
+            ) : (
+              <p style={{ fontSize:14, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{shop.name}</p>
+            )}
+            {switching && <p style={{ fontSize:11, color:C.muted, marginTop:4 }}>Switching…</p>}
           </div>
         )}
         <nav style={{ flex:1, padding:'8px', overflowY:'auto' }}>

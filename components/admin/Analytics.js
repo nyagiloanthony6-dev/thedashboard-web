@@ -87,6 +87,14 @@ export default function Analytics({ shops, go }) {
                 </div>
               ))}
             </div>
+            {s.by_plan && Object.keys(s.by_plan).length > 0 && <>
+              <p style={{ fontWeight: 700, marginTop: 16 }}>{t('Wanaolipia (kwa mpango)')}</p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                {Object.entries(s.by_plan).sort((a, b) => b[1] - a[1]).map(([n, c]) => (
+                  <span key={n} style={{ fontSize: 13, background: T.surface, borderRadius: 999, padding: '5px 12px' }}>{n} <b style={mono}>{c}</b></span>
+                ))}
+              </div>
+            </>}
             <p style={{ fontWeight: 700, marginTop: 16 }}>{t('Yanayouza zaidi (siku 30)')}</p>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 4 }}>
               <tbody>{top.map(x => (

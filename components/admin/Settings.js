@@ -9,62 +9,8 @@ const PKG = { pos: 'POS', store: 'Store', both: 'POS + Store' }
 export default function Settings({ plans, reloadPlans }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 14, alignItems: 'start' }}>
-      <Plans plans={plans} reload={reloadPlans} />
-      <div style={{ display: 'grid', gap: 14 }}>
-        <Trial />
-        <Admins />
-      </div>
-    </div>
-  )
-}
-
-function Plans({ plans, reload }) {
-  const [edit, setEdit] = useState(null) // {id?, name, package, monthly_price, active}
-  const [msg, setMsg] = useState({})
-  const save = async () => {
-    setMsg({})
-    const { error } = await supabase.rpc('platform_save_plan', { p_id: edit.id || null, p_name: edit.name, p_package: edit.package, p_price: Number(edit.monthly_price) || 0, p_active: edit.active })
-    if (error) return setMsg({ err: error.message })
-    setEdit(null); setMsg({ ok: t('Mpango umehifadhiwa') }); reload()
-  }
-  return (
-    <div style={card}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <p style={{ fontWeight: 700, fontSize: 16 }}>{t('Mipango na bei')}</p>
-        <button onClick={() => setEdit({ name: '', package: 'pos', monthly_price: '', active: true })} style={{ ...btnP, padding: '7px 14px', fontSize: 13 }}>{t('+ Mpango')}</button>
-      </div>
-      <p style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{t('Bei hizi zinajaza kiasi unaporekodi malipo, na kukadiria mapato ya mwezi.')}</p>
-      <Msg err={msg.err} ok={msg.ok} />
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
-        <thead><tr><th style={th}>{t('Mpango')}</th><th style={th}>{t('Kifurushi')}</th><th style={{ ...th, textAlign: 'right' }}>{t('Kwa mwezi')}</th><th style={th} /></tr></thead>
-        <tbody>
-          {plans.map(p => (
-            <tr key={p.id} style={{ opacity: p.active ? 1 : 0.5 }}>
-              <td style={td}><b>{p.name}</b>{!p.active && <span style={{ fontSize: 12, color: T.muted }}> · {t('haitumiki')}</span>}</td>
-              <td style={td}>{PKG[p.package] || p.package}</td>
-              <td style={{ ...td, textAlign: 'right', ...mono, fontWeight: 700 }}>{tzs(p.monthly_price)}</td>
-              <td style={{ ...td, textAlign: 'right' }}><button onClick={() => setEdit({ ...p })} style={{ border: 0, background: 'none', color: T.green, fontWeight: 600, cursor: 'pointer' }}>{t('Badilisha')}</button></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {edit && (
-        <div style={{ background: T.surface, borderRadius: 12, padding: 14, marginTop: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-            <div><label style={lbl}>{t('Jina')}</label><input value={edit.name} onChange={e => setEdit({ ...edit, name: e.target.value })} style={inp} placeholder={t('mf. POS Pro')} /></div>
-            <div><label style={lbl}>{t('Bei kwa mwezi (TZS)')}</label><input type="number" min="0" value={edit.monthly_price} onChange={e => setEdit({ ...edit, monthly_price: e.target.value })} style={{ ...inp, ...mono }} /></div>
-            <div><label style={lbl}>{t('Kifurushi')}</label>
-              <select value={edit.package} onChange={e => setEdit({ ...edit, package: e.target.value })} style={inp}>
-                {Object.entries(PKG).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select></div>
-            <div><label style={lbl}>{t('Inatumika')}</label><div style={{ paddingTop: 6 }}><Toggle on={edit.active} onChange={v => setEdit({ ...edit, active: v })} label={t('Inatumika')} /></div></div>
-          </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-            <button onClick={save} style={btnP}>{t('Hifadhi')}</button>
-            <button onClick={() => setEdit(null)} style={btnG}>{t('Ghairi')}</button>
-          </div>
-        </div>
-      )}
+      <Trial />
+      <Admins />
     </div>
   )
 }

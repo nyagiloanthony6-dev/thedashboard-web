@@ -18,8 +18,8 @@ const ROLE_ROUTES = {
 // Pages each role is allowed to access. A path ending in '$' must match
 // exactly; any other path also allows its sub-pages.
 const ROLE_ALLOWED = {
-  shop_admin:  ['/dashboard', '/sales', '/stock', '/warehouse', '/customers', '/orders', '/expenses', '/credit', '/loans', '/whatsapp', '/reports', '/reports/monthly', '/team', '/settings', '/vendors', '/batches', '/investors', '/store'],
-  super_admin: ['/dashboard', '/sales', '/stock', '/warehouse', '/customers', '/orders', '/expenses', '/credit', '/loans', '/whatsapp', '/reports', '/reports/monthly', '/team', '/settings', '/vendors', '/batches', '/investors', '/store'],
+  shop_admin:  ['/dashboard', '/branches', '/sales', '/stock', '/warehouse', '/customers', '/orders', '/expenses', '/credit', '/loans', '/whatsapp', '/reports', '/reports/monthly', '/team', '/settings', '/vendors', '/batches', '/investors', '/store'],
+  super_admin: ['/dashboard', '/branches', '/sales', '/stock', '/warehouse', '/customers', '/orders', '/expenses', '/credit', '/loans', '/whatsapp', '/reports', '/reports/monthly', '/team', '/settings', '/vendors', '/batches', '/investors', '/store'],
   cashier:     ['/cashier', '/store$', '/store/shop'],
   sales_rep:   ['/rep'],
   shop_clerk:  ['/store$', '/store/shop'],

@@ -39,7 +39,7 @@ export function RecordPayment({ shop, shops, plans, onClose, onDone }) {
         <label style={lbl}>{t('Duka')}</label>
         <select value={shopId} onChange={e => setShopId(e.target.value)} style={inp}>
           <option value="">{t('— chagua duka —')}</option>
-          {shops.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+          {shops.filter(x => !x.parent_id).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
         </select>
       </>}
       {shop && <p style={{ fontSize: 14 }}><b>{shop.name}</b> · {t('inaisha sasa {d}', { d: dmy(shop.sub_expires_at) })}</p>}

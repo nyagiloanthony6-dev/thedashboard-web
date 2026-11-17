@@ -49,11 +49,12 @@ export default function Features({ shops }) {
             <thead><tr style={{ textAlign: 'left', color: T.muted, fontSize: 12 }}>
               <th style={{ padding: '12px 16px' }}>{t('Kipengele')}</th>
               <th style={{ padding: '12px 16px' }}>{t('Kwa wote')}</th>
-              {shop && <th style={{ padding: '12px 16px' }}>{shop.name}</th>}
+              {shop && <th style={{ padding: '12px 16px' }}>{shop.name}{rows[0]?.plan && <span style={{ fontWeight: 500 }}> · {rows[0].plan}</span>}</th>}
             </tr></thead>
             <tbody>
               {rows.map(f => {
-                const effective = f.override === null || f.override === undefined ? f.enabled : f.override
+                const base = f.enabled && f.plan_on !== false   // everyone's switch AND the shop's plan
+                const effective = f.override === null || f.override === undefined ? base : f.override
                 return (
                   <tr key={f.key} style={{ borderTop: '1px solid ' + T.line, opacity: busy === f.key ? 0.5 : 1 }}>
                     <td style={{ padding: '12px 16px' }}>
@@ -65,7 +66,7 @@ export default function Features({ shops }) {
                     </td>
                     {shop && <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'inline-flex', background: T.tint, borderRadius: 999, padding: 3, gap: 2 }}>
-                        {[[null, t(f.enabled ? 'Kama wote (imewashwa)' : 'Kama wote (imezimwa)')], [true, t('Washa')], [false, t('Zima')]].map(([v, l]) => {
+                        {[[null, f.plan ? t(base ? 'Kama mpango (imewashwa)' : 'Kama mpango (imezimwa)') : t(f.enabled ? 'Kama wote (imewashwa)' : 'Kama wote (imezimwa)')], [true, t('Washa')], [false, t('Zima')]].map(([v, l]) => {
                           const on = (f.override ?? null) === v
                           return <button key={String(v)} onClick={() => !on && setShop(f, v)}
                             style={{ border: 0, borderRadius: 999, padding: '6px 12px', fontSize: 12, fontWeight: on ? 700 : 500, cursor: on ? 'default' : 'pointer',
