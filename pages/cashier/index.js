@@ -4,12 +4,14 @@ import Head from 'next/head'
 import { supabase, fmt, fmtK, today } from '../../lib/supabase'
 import { loadModules, storeSell, storeReleaseForSale } from '../../lib/store'
 import ReleaseSlipModal from '../../components/store/ReleaseSlipModal'
+import GuarantorPicker, { useGuarantors } from '../../components/GuarantorPicker'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 export default function CashierPOS() {
   const router = useRouter()
   const [profile, setProfile] = useState(null)
   const [shop, setShop] = useState(null)
+  const guarantors = useGuarantors(shop?.id)
   const [products, setProducts] = useState([])
   const [customFields, setCustomFields] = useState([])
   const [cart, setCart] = useState([])
@@ -24,6 +26,7 @@ export default function CashierPOS() {
   const custSearchRef = useRef(null)
   const custDropRef = useRef(null)
   const [payMeth, setPayMeth] = useState('cash')
+  const [guarantorId, setGuarantorId] = useState('')
   const [disc, setDisc] = useState('')
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
@@ -137,8 +140,11 @@ export default function CashierPOS() {
   const isSplit = payMeth !== 'loan' && receivedAmt > 0 && receivedAmt < finalTotal
   const loanBalance = isSplit ? finalTotal - receivedAmt : 0
 
+  const needsGuarantor = payMeth === 'loan' || isSplit
   const completeSale = async () => {
     if (!cart.length) return
+    const guarantor = guarantors.find(g => g.id === guarantorId)
+    if (needsGuarantor && !guarantor) { alert('Choose the staff guarantor for this loan'); return }
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -151,6 +157,7 @@ export default function CashierPOS() {
         cash_paid: isSplit ? receivedAmt : null,
         loan_balance: isSplit ? loanBalance : null,
         brought_by: broughtByVal,
+        ...(needsGuarantor ? { loan_guarantor_id: guarantor.id, loan_guarantor_name: guarantor.full_name } : {}),
       }).select().single()
       if (sale) {
         await supabase.from('sale_items').insert(cart.map(c => ({
@@ -189,7 +196,7 @@ export default function CashierPOS() {
         }
         const rcpt = ({ id: sale.id.slice(-8).toUpperCase(), date: new Date(), customer: custName || 'Walk-in', items: cart.map(c => ({ name: c.name, qty: c.qty, price: c.sell_price, total: c.sell_price * c.qty, pn: partField && c._cfv?.[partField.id] })), subtotal, discount: discAmt, total: finalTotal, payMeth: isSplit ? 'split' : payMeth, cashPaid: receivedAmt, loanBalance, isSplit })
         if (newSlip) setPendingReceipt(rcpt); else setReceipt(rcpt)
-        setCart([]); setDisc(''); clearCustomer(); setPayMeth('cash'); setSplitCashPaid(''); setBroughtBy(''); setBroughtByCustom('')
+        setCart([]); setDisc(''); clearCustomer(); setPayMeth('cash'); setGuarantorId(''); setSplitCashPaid(''); setBroughtBy(''); setBroughtByCustom('')
         loadData()
       }
     } catch (e) { showToast('Error: ' + e.message, '#B93A16') }
@@ -677,6 +684,8 @@ export default function CashierPOS() {
                     {isSplit && <p style={{ fontSize:11, color:'#9A5B00', marginTop:4 }}>💸 Loan balance: {fmt(loanBalance)}</p>}
                   </div>
                 )}
+
+                {needsGuarantor && <GuarantorPicker staff={guarantors} value={guarantorId} onChange={setGuarantorId} />}
 
                 {/* Total */}
                 <div style={{ background:'#ECEEF7', border:'1px solid rgba(45,47,143,0.2)', borderRadius:12, padding:'10px 14px', marginBottom:10 }}>

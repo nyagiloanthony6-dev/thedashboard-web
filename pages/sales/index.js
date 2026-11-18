@@ -5,6 +5,7 @@ import Layout from '../../components/Layout'
 import { supabase, fmt, fmtK, today } from '../../lib/supabase'
 import { loadModules, storeSell, storeReleaseForSale } from '../../lib/store'
 import ReleaseSlipModal from '../../components/store/ReleaseSlipModal'
+import GuarantorPicker, { useGuarantors } from '../../components/GuarantorPicker'
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
@@ -12,6 +13,7 @@ export default function Sales() {
   const router = useRouter()
   const [profile, setProfile] = useState(null)
   const [shop, setShop] = useState(null)
+  const guarantors = useGuarantors(shop?.id)
   const [prods, setProds] = useState([])
   const [customFields, setCustomFields] = useState([])
   const [customers, setCustomers] = useState([])
@@ -30,6 +32,7 @@ export default function Sales() {
   const [custSearch, setCustSearch] = useState('')
   const [showCustDrop, setShowCustDrop] = useState(false)
   const [payMeth, setPayMeth] = useState('cash')
+  const [guarantorId, setGuarantorId] = useState('')
   const [disc, setDisc] = useState('')
   const [discType, setDiscType] = useState('amount')
   const [transportFee, setTransportFee] = useState('')
@@ -272,6 +275,10 @@ export default function Sales() {
     const isSplit = payMeth !== 'loan' && receivedAmt > 0 && receivedAmt < finalTotal
     const cashPaid = isSplit ? receivedAmt : 0
     const loanBalance = isSplit ? Math.max(0, finalTotal - cashPaid) : 0
+    // Loan (or part-paid) sales need a staff guarantor
+    const needsGuarantor = payMeth === 'loan' || isSplit
+    const guarantor = guarantors.find(g => g.id === guarantorId)
+    if (needsGuarantor && !guarantor) { setSaving(false); showToast('Choose the staff guarantor for this loan', '#B93A16'); return }
     const { data: sale, error: se } = await supabase.from('sales').insert({
       shop_id: shopId, cashier_id: profile.id, customer_id: custId,
       subtotal, discount: discAmt, total: finalTotal, total_profit: totProfit,
@@ -279,6 +286,7 @@ export default function Sales() {
       transport_fee: transportAmt || null, transport_destination: transportDest.trim() || null,
       cash_paid: isSplit ? cashPaid : null, loan_balance: isSplit ? loanBalance : null,
       brought_by: broughtBy === '__custom__' ? broughtByCustom.trim() || null : broughtBy.trim() || null,
+      ...(needsGuarantor ? { loan_guarantor_id: guarantor.id, loan_guarantor_name: guarantor.full_name } : {}),
     }).select().single()
     if (se) { setSaving(false); showToast('Error: ' + se.message, '#B93A16'); return }
 
@@ -333,7 +341,7 @@ export default function Sales() {
     if (newSlip) { setSlip(newSlip); setPendingReceipt(receiptData); setCollectStore(false) }
     else setReceipt(receiptData)
     setSales(p => [{ ...sale, customers: selCust || null, sale_items: cart.map(c => ({ product_name: c.name, qty: c.qty, unit_price: c.sell_price, line_total: c.sell_price * c.qty })) }, ...p])
-    setCart([]); setDisc(''); setCustName(''); setCustPhone(''); setSelCust(null); setPayMeth('cash'); setTransportFee(''); setTransportDest(''); setSplitCashPaid(''); setBroughtBy(''); setBroughtByCustom('')
+    setCart([]); setDisc(''); setCustName(''); setCustPhone(''); setSelCust(null); setPayMeth('cash'); setGuarantorId(''); setTransportFee(''); setTransportDest(''); setSplitCashPaid(''); setBroughtBy(''); setBroughtByCustom('')
     setSaving(false)
   }
 
@@ -582,6 +590,10 @@ export default function Sales() {
                           <p style={{ fontSize:11, color:'#0B7A6C', marginTop:4 }}>Fully paid</p>
                         )}
                       </div>
+                    )}
+
+                    {(payMeth === 'loan' || ((parseFloat(splitCashPaid) || 0) > 0 && (parseFloat(splitCashPaid) || 0) < finalTotal)) && (
+                      <div style={{ marginBottom: 12 }}><GuarantorPicker staff={guarantors} value={guarantorId} onChange={setGuarantorId} /></div>
                     )}
 
                     {/* Totals */}

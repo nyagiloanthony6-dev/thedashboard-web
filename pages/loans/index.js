@@ -15,6 +15,9 @@ export default function Loans() {
   const [payNote, setPayNote] = useState('')
   const [paySaving, setPaySaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [waiveAmt, setWaiveAmt] = useState('')
+  const [waiveNote, setWaiveNote] = useState('')
+  const [waiving, setWaiving] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
@@ -44,7 +47,7 @@ export default function Loans() {
     const updatedPmts = [...(detail.loan_payments||[]), pmt]
     const totalPaid = updatedPmts.reduce((a,p)=>a+(Number(p.amount)||0),0)
     const loanTotal = detail.payment_method==='split' ? (Number(detail.loan_balance)||Math.max(0,(Number(detail.total)||0)-(Number(detail.cash_paid)||0))) : (Number(detail.total)||0)
-    const fullyPaid = totalPaid >= loanTotal
+    const fullyPaid = totalPaid + (Number(detail.loan_waiver)||0) >= loanTotal
     await supabase.from('sales').update({ loan_paid: fullyPaid, loan_paid_at: fullyPaid?(payDate||today()):null }).eq('id', detail.id)
     const updated = { ...detail, loan_payments: updatedPmts, loan_paid: fullyPaid, loan_paid_at: fullyPaid?(payDate||today()):null }
     setLoans(p => p.map(s => s.id===detail.id ? updated : s))
@@ -57,7 +60,25 @@ export default function Loans() {
   const getLoanPaid = s => (s.loan_payments||[]).reduce((a,p)=>a+(Number(p.amount)||0),0)
   // For split sales, initial cash portion is already paid - only loan_balance is owed
   const getLoanTotal = s => s.payment_method==='split' ? (Number(s.loan_balance)||Math.max(0,(Number(s.total)||0)-(Number(s.cash_paid)||0))) : (Number(s.total)||0)
-  const getLoanOwing = s => Math.max(0, getLoanTotal(s) - getLoanPaid(s))
+  const getLoanOwing = s => Math.max(0, getLoanTotal(s) - getLoanPaid(s) - (Number(s.loan_waiver)||0))
+  const canWaive = ['shop_admin', 'super_admin'].includes(profile?.role)
+
+  // Forgive part or all of the balance (not money received; taken off profit)
+  const waive = async () => {
+    const amt = parseFloat(waiveAmt) || 0
+    if (amt <= 0) return alert('Enter the amount to waive')
+    if (!waiveNote.trim()) return alert('Write the reason for the waiver')
+    if (!confirm(`Waive ${fmt(amt)}? The customer will no longer owe this amount.`)) return
+    setWaiving(true)
+    const { data, error } = await supabase.rpc('td_waive_loan', { p_sale: String(detail.id), p_amount: amt, p_note: waiveNote.trim() })
+    setWaiving(false)
+    if (error) return alert(error.message)
+    const updated = { ...detail, loan_waiver: data.total_waiver, loan_waiver_note: (detail.loan_waiver_note ? detail.loan_waiver_note + ' | ' : '') + waiveNote.trim(),
+      total_profit: (Number(detail.total_profit)||0) - amt, loan_paid: data.owing <= 0, loan_paid_at: data.owing <= 0 ? (detail.loan_paid_at || today()) : null }
+    setLoans(p => p.map(x => x.id === detail.id ? updated : x)); setDetail(updated)
+    setWaiveAmt(''); setWaiveNote('')
+    showToast(data.owing <= 0 ? '✅ Waived · loan closed' : `Waived ${fmt(amt)} · still owing ${fmt(data.owing)}`)
+  }
 
   const filtLoans = loans.filter(s => {
     const owing = getLoanOwing(s)
@@ -148,6 +169,12 @@ export default function Loans() {
                 <button onClick={()=>setDetail(null)} style={{background:'none',border:'none',color:'#5B607E',fontSize:18,cursor:'pointer'}}>✕</button>
               </div>
 
+              <div style={{fontSize:13,marginTop:-8,marginBottom:14,display:'grid',gap:4}}>
+                {detail.customers?.phone && <span style={{color:'#5B607E'}}>{detail.customers.phone}</span>}
+                <span style={{color:detail.loan_guarantor_name?'#0F7375':'#9A5B00'}}>🤝 Guarantor: <b>{detail.loan_guarantor_name||'not set'}</b></span>
+                {(Number(detail.loan_waiver)||0) > 0 && <span style={{color:'#9A5B00'}}>Waived <b>{fmt(detail.loan_waiver)}</b>{detail.loan_waiver_note ? ' · ' + detail.loan_waiver_note : ''}</span>}
+              </div>
+
               {/* Items */}
               <p style={{fontSize:11,color:'#5B607E',letterSpacing:0.8,marginBottom:8}}>ITEMS PURCHASED</p>
               {(detail.sale_items||[]).map((it,i)=>(
@@ -198,6 +225,18 @@ export default function Loans() {
                   <button onClick={recordPayment} disabled={paySaving||!payAmount} style={{width:'100%',padding:'12px',borderRadius:8,background:paySaving||!payAmount?'#DCDFEC':'#0B7A6C',color:paySaving||!payAmount?'#8A8FAE': '#FFFFFF',fontWeight:700,fontSize:14,border:'none',cursor:'pointer'}}>
                     {paySaving?'Saving...':'💵 Record Payment'}
                   </button>
+                </div>
+              )}
+              {getLoanOwing(detail)>0&&canWaive&&(
+                <div style={{marginTop:16,border:'1px solid rgba(154,91,0,0.3)',background:'#FDF6E7',borderRadius:10,padding:14}}>
+                  <p style={{fontSize:11,color:'#9A5B00',letterSpacing:0.8,fontWeight:700,marginBottom:4}}>WAIVE BALANCE</p>
+                  <p style={{fontSize:12,color:'#5B607E',marginBottom:10}}>Forgive part or all of what is owed. Not counted as money received; taken off the profit.</p>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:8,marginBottom:8}}>
+                    <input value={waiveAmt} onChange={e=>setWaiveAmt(e.target.value)} type="number" placeholder={`Max ${fmt(getLoanOwing(detail))}`} style={C.input} aria-label="Amount to waive"/>
+                    <button type="button" onClick={()=>setWaiveAmt(String(getLoanOwing(detail)))} style={{padding:'0 12px',borderRadius:8,border:'1px solid rgba(154,91,0,0.4)',background:'#fff',color:'#9A5B00',fontWeight:700,cursor:'pointer'}}>All</button>
+                  </div>
+                  <input value={waiveNote} onChange={e=>setWaiveNote(e.target.value)} placeholder="Reason (required) e.g. damaged part returned" style={{...C.input,marginBottom:10}} aria-label="Reason for waiver"/>
+                  <button onClick={waive} disabled={waiving} style={{width:'100%',padding:'11px',borderRadius:8,background:'#9A5B00',color:'#fff',border:0,fontWeight:700,cursor:'pointer',opacity:waiving?0.6:1}}>{waiving?'Saving…':'Waive amount'}</button>
                 </div>
               )}
               {getLoanOwing(detail)<=0&&<div style={{marginTop:12,padding:'10px',background:'rgba(11,122,108,0.1)',borderRadius:8,textAlign:'center'}}><p style={{color:'#0B7A6C',fontWeight:700}}>✅ Fully Paid</p></div>}
