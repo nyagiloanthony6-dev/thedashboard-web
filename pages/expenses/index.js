@@ -49,11 +49,11 @@ export default function Expenses() {
       added_by_role: team.find(t => t.id === (form.added_by || profile.id))?.role || 'shop_admin',
     }
     if (editExp) {
-      const { data, error } = await supabase.from('expenses').update(payload).eq('id', editExp.id).select('*,app_users(full_name)').single()
+      const { data, error } = await supabase.from('expenses').update(payload).eq('id', editExp.id).select('*').single()
       if (error) { alert(error.message); setSaving(false); return }
       setExpenses(p => p.map(e => e.id === editExp.id ? data : e))
     } else {
-      const { data, error } = await supabase.from('expenses').insert(payload).select('*,app_users(full_name)').single()
+      const { data, error } = await supabase.from('expenses').insert(payload).select('*').single()
       if (error) { alert(error.message); setSaving(false); return }
       setExpenses(p => [data, ...p])
     }
