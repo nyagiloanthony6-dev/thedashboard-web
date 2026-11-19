@@ -107,8 +107,8 @@ export default function Loans() {
         <style>{`@keyframes spin{to{transform:rotate(360deg)}} input::placeholder{color:#8A8FAE}`}</style>
         {toast && <div style={{position:'fixed',top:20,right:20,background:toast.c,color:'#FFFFFF',padding:'12px 20px',borderRadius:10,fontWeight:700,fontSize:13,zIndex:9999}}>{toast.msg}</div>}
 
-        {/* Summary */}
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:12,marginBottom:24}}>
+        {/* Summary (the report has its own) */}
+        <div style={{display:filter==='report'?'none':'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:12,marginBottom:24}}>
           {[
             {l:'Total Loaned',v:fmtK(totalOut),c:'#9A5B00'},
             {l:'Total Repaid',v:fmtK(totalPaid),c:'#0B7A6C'},
@@ -132,7 +132,7 @@ export default function Loans() {
         <div style={{display:'grid',gridTemplateColumns:detail?'1fr 1fr':'1fr',gap:16}}>
           {/* Loan list */}
           <div>
-            {filter==='report'&&<LoanReport loans={loans} loanAmount={getLoanTotal} owingOf={getLoanOwing} onOpen={setDetail}/>}
+            {filter==='report'&&<LoanReport loans={loans} loanAmount={getLoanTotal} owingOf={getLoanOwing} onOpen={setDetail} shopName={shop?.name}/>}
             {filter!=='report'&&filtLoans.map(s=>{
               const paid=getLoanPaid(s), owing=getLoanOwing(s), pct=s.total>0?Math.round(paid/s.total*100):0
               return(
