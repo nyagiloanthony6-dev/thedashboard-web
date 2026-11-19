@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
+import LoanReport from '../../components/LoanReport'
 import { supabase, fmt, fmtK, today } from '../../lib/supabase'
 
 export default function Loans() {
@@ -123,7 +124,7 @@ export default function Loans() {
 
         {/* Filter */}
         <div style={{display:'flex',gap:8,marginBottom:20}}>
-          {[{k:'pending',l:'⏳ Pending'},{k:'paid',l:'✅ Paid'},{k:'all',l:'All'}].map(f=>(
+          {[{k:'pending',l:'⏳ Pending'},{k:'paid',l:'✅ Paid'},{k:'all',l:'All'},{k:'report',l:'📊 Report'}].map(f=>(
             <button key={f.k} onClick={()=>setFilter(f.k)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid',borderColor:filter===f.k?'#9A5B00':'#DCDFEC',background:filter===f.k?'rgba(242,160,7,0.15)':'transparent',color:filter===f.k?'#9A5B00':'#5B607E',fontWeight:filter===f.k?700:400,fontSize:13,cursor:'pointer'}}>{f.l}</button>
           ))}
         </div>
@@ -131,7 +132,8 @@ export default function Loans() {
         <div style={{display:'grid',gridTemplateColumns:detail?'1fr 1fr':'1fr',gap:16}}>
           {/* Loan list */}
           <div>
-            {filtLoans.map(s=>{
+            {filter==='report'&&<LoanReport loans={loans} loanAmount={getLoanTotal} owingOf={getLoanOwing} onOpen={setDetail}/>}
+            {filter!=='report'&&filtLoans.map(s=>{
               const paid=getLoanPaid(s), owing=getLoanOwing(s), pct=s.total>0?Math.round(paid/s.total*100):0
               return(
                 <div key={s.id} onClick={()=>setDetail(detail?.id===s.id?null:s)} style={{...C.card,marginBottom:10,cursor:'pointer',borderColor:detail?.id===s.id?'#9A5B00':owing<=0?'rgba(11,122,108,0.3)':'#DCDFEC'}}
@@ -158,7 +160,7 @@ export default function Loans() {
                 </div>
               )
             })}
-            {!filtLoans.length&&<div style={{...C.card,textAlign:'center',padding:40}}><p style={{fontSize:36}}>💸</p><p style={{color:'#8A8FAE',marginTop:10}}>No {filter==='all'?'':filter} loans found</p></div>}
+            {filter!=='report'&&!filtLoans.length&&<div style={{...C.card,textAlign:'center',padding:40}}><p style={{fontSize:36}}>💸</p><p style={{color:'#8A8FAE',marginTop:10}}>No {filter==='all'?'':filter} loans found</p></div>}
           </div>
 
           {/* Detail panel */}

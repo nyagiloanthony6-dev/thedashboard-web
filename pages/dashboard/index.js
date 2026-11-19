@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [profile,setProfile]=useState(null)
   const [shop,setShop]=useState(null)
   const [sales,setSales]=useState([])
+  const [monthAgg,setMonthAgg]=useState(null)   // full-month totals for shops with more sales than loaded
   const [expenses,setExpenses]=useState([])
   const [products,setProducts]=useState([])
   const [loading,setLoading]=useState(true)
@@ -41,6 +42,21 @@ export default function Dashboard() {
     ])
     setSales(sr.data||[]);setExpenses(er.data||[]);setProducts(pr.data||[])
     setLoading(false)
+    // This month's totals straight from the database when the shop has more sales than were loaded
+    if((sr.data||[]).length>=500){
+      const ms=new Date(new Date().getFullYear(),new Date().getMonth(),1)
+      const msDate=`${ms.getFullYear()}-${String(ms.getMonth()+1).padStart(2,'0')}-01`
+      let rev=0,prof=0,n=0,from=0
+      for(let g=0;g<50;g++){
+        const {data,error}=await supabase.from('sales').select('total,total_profit').eq('shop_id',shopId)
+          .or(`sale_date.gte.${msDate},and(sale_date.is.null,created_at.gte.${ms.toISOString()})`).range(from,from+999)
+        if(error) return
+        ;(data||[]).forEach(x=>{rev+=Number(x.total)||0;prof+=Number(x.total_profit)||0;n++})
+        if(!data||data.length<1000) break
+        from+=1000
+      }
+      setMonthAgg({rev,prof,n})
+    }
   }
 
   if(loading) return(
@@ -55,8 +71,9 @@ export default function Dashboard() {
   const mExp=expenses.filter(e=>new Date(e.expense_date||e.created_at)>=mStart)
   const totRev=sales.reduce((a,s)=>a+(s.total||0),0)
   const totProfit=sales.reduce((a,s)=>a+(s.total_profit||0),0)
-  const mRev=mSales.reduce((a,s)=>a+(s.total||0),0)
-  const mGross=mSales.reduce((a,s)=>a+(s.total_profit||0),0)
+  const mRev=monthAgg?monthAgg.rev:mSales.reduce((a,s)=>a+(Number(s.total)||0),0)
+  const mGross=monthAgg?monthAgg.prof:mSales.reduce((a,s)=>a+(Number(s.total_profit)||0),0)
+  const mCount=monthAgg?monthAgg.n:mSales.length
   const mExpAmt=mExp.reduce((a,e)=>a+(e.amount||0),0)
   const netProfit=mGross-mExpAmt
   // Check the stock the item is actually sold from: wholesale items count boxes, others count pieces
@@ -72,9 +89,8 @@ export default function Dashboard() {
 
   const card={background:'#FFFFFF',border:'1px solid #DCDFEC',borderRadius:12,padding:16}
   const kpis=[
-    {l:'Total Revenue',v:fmtK(totRev),c:'#2D2F8F',sub:sales.length+' sales'},
-    {l:'Total Profit',v:fmtK(totProfit),c:'#2D2F8F',sub:totRev>0?Math.round(totProfit/totRev*100)+'% margin':'—'},
-    {l:'This Month',v:fmtK(mRev),c:'#9A5B00',sub:mSales.length+' sales'},
+    {l:'Revenue · This month',v:fmtK(mRev),c:'#2D2F8F',sub:mCount+' sales'},
+    {l:'Gross Profit · This month',v:fmtK(mGross),c:'#2D2F8F',sub:mRev>0?Math.round(mGross/mRev*100)+'% margin':'—'},
     {l:'Net Profit (Mo.)',v:fmtK(netProfit),c:netProfit>=0?'#0B7A6C':'#B93A16',sub:'After expenses'},
     {l:'Products',v:products.length,c:'#0F7375',sub:lowStock.length+' low stock'},
   ]
