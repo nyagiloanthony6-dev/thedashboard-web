@@ -65,6 +65,16 @@ export default function Team() {
     setTeam(p=>p.filter(x=>x.id!==m.id))
   }
 
+  // Who can be named as staff guarantor on loan sales (everyone in the shop, admins included)
+  const [allStaff,setAllStaff]=useState([])
+  useEffect(()=>{ if(shop?.id) supabase.from('app_users').select('*').eq('shop_id',shop.id).order('full_name').then(({data})=>setAllStaff((data||[]).filter(u=>u.full_name))) },[shop?.id])
+  const toggleGuarantor=async(u)=>{
+    const nv=u.can_guarantee===false
+    const {error}=await supabase.from('app_users').update({can_guarantee:nv}).eq('id',u.id)
+    if(error){alert(error.message.includes('can_guarantee')?'Run the latest TheDashboard SQL update first (staff guarantor setting).':error.message);return}
+    setAllStaff(p=>p.map(x=>x.id===u.id?{...x,can_guarantee:nv}:x))
+  }
+
   const toggleBroughtBy=async(m)=>{
     const newVal=!m.show_in_brought_by
     setTogglingId(m.id)
@@ -120,6 +130,22 @@ export default function Team() {
           </div>
           <button onClick={()=>setShowModal(true)} style={{padding:'10px 20px',borderRadius:8,background:'#2D2F8F',color:'#FFFFFF',fontWeight:700,fontSize:13,border:'none'}}>+ Add Team Member</button>
         </div>
+
+        {/* Loan guarantors */}
+        {posOn&&<div style={{...card,marginBottom:16}}>
+          <p style={{fontSize:13,fontWeight:700,color:'#15183A'}}>🤝 Loan guarantors</p>
+          <p style={{fontSize:12,color:'#5B607E',margin:'4px 0 10px'}}>Click to choose who can be named as staff guarantor on a loan sale.</p>
+          <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+            {allStaff.map(u=>{const on=u.can_guarantee!==false;return(
+              <button key={u.id} onClick={()=>toggleGuarantor(u)} aria-pressed={on} title={on?'Click to hide from guarantor list':'Click to allow as guarantor'}
+                style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderRadius:20,cursor:'pointer',border:'1px solid',borderColor:on?'rgba(11,122,108,0.4)':'#DCDFEC',background:on?'rgba(11,122,108,0.1)':'#F5F6FB',color:on?'#0B7A6C':'#8A8FAE',fontSize:12,fontWeight:600}}>
+                <span style={{width:10,height:10,borderRadius:'50%',background:on?'#0B7A6C':'#C4C7DA'}}/>
+                <span style={{textDecoration:on?'none':'line-through'}}>{u.full_name}</span>
+                <span style={{fontSize:10,color:'#8A8FAE',fontWeight:500}}>{(u.role||'').replace('_',' ')}</span>
+              </button>)})}
+            {allStaff.length===0&&<span style={{fontSize:12,color:'#8A8FAE'}}>No staff yet.</span>}
+          </div>
+        </div>}
 
         {/* Brought By legend */}
         {posOn&&<div style={{marginBottom:16,padding:'10px 14px',borderRadius:8,background:'rgba(11,122,108,0.06)',border:'1px solid rgba(11,122,108,0.15)',display:'flex',alignItems:'center',gap:8}}>

@@ -6,8 +6,8 @@ export function useGuarantors(shopId) {
   const [list, setList] = useState([])
   useEffect(() => {
     if (!shopId) return
-    supabase.from('app_users').select('id,full_name,role').eq('shop_id', shopId).order('full_name')
-      .then(({ data }) => setList((data || []).filter(u => u.full_name)))
+    supabase.from('app_users').select('*').eq('shop_id', shopId).order('full_name')
+      .then(({ data }) => setList((data || []).filter(u => u.full_name && u.can_guarantee !== false)))
   }, [shopId])
   return list
 }
