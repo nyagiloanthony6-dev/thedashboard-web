@@ -89,6 +89,10 @@ export default function Reports() {
     <>
       <Head><title>Reports — TheDashboard</title></Head>
       <Layout title="Reports & Export" shop={shop} profile={profile}>
+        <a href="/reports/daily-cash" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,background:'#2D2F8F',color:'#fff',borderRadius:14,padding:'14px 18px',marginBottom:16,textDecoration:'none'}}>
+          <span><span style={{fontSize:15,fontWeight:800}}>💵 Daily cash report</span><br/><span style={{fontSize:12,color:'#C9CBF2'}}>Revenue, loans, expenses, petty cash and cash remained, day by day</span></span>
+          <span style={{fontSize:20}}>→</span>
+        </a>
         <div style={{display:'flex',gap:8,marginBottom:20}}>
           {[{k:'today',l:'Today'},{k:'month',l:'This Month'},{k:'year',l:'This Year'},{k:'all',l:'All Time'}].map(p=>(
             <button key={p.k} onClick={()=>setPeriod(p.k)} style={{padding:'8px 16px',borderRadius:8,border:'1px solid',borderColor:period===p.k?'#2D2F8F':'#DCDFEC',background:period===p.k?'rgba(45,47,143,0.15)':'transparent',color:period===p.k?'#2D2F8F':'#5B607E',fontSize:13,fontWeight:period===p.k?700:400}}>{p.l}</button>
