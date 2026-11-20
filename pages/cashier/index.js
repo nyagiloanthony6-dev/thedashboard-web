@@ -150,9 +150,18 @@ export default function CashierPOS() {
       const { data: { user } } = await supabase.auth.getUser()
       const custId = selectedCustomer?.id || null
       const broughtByVal = broughtBy === '__custom__' ? broughtByCustom.trim() : broughtBy.trim() || null
+      // Profit per line: wholesale sells a box (cost = buy_price), retail sells a piece
+      // (cost = buy_price / box_qty). The discount is shared across lines by value.
+      const lines = cart.map(c => {
+        const costUnit = (c.sale_type || posTab) === 'wholesale' ? Number(c.buy_price || 0) : Number(c.buy_price || 0) / (Number(c.box_qty) || 1)
+        const gross = c.sell_price * c.qty
+        const lineTotal = gross - (subtotal > 0 ? discAmt * gross / subtotal : 0)
+        return { c, costUnit, lineTotal, lineProfit: lineTotal - costUnit * c.qty }
+      })
+      const totProfit = lines.reduce((a, l) => a + l.lineProfit, 0)
       const { data: sale } = await supabase.from('sales').insert({
         shop_id: shop.id, cashier_id: user.id, customer_id: custId,
-        subtotal, discount: discAmt, total: finalTotal,
+        subtotal, discount: discAmt, total: finalTotal, total_profit: Math.round(totProfit * 100) / 100,
         payment_method: isSplit ? 'split' : payMeth, sale_date: today(),
         cash_paid: isSplit ? receivedAmt : null,
         loan_balance: isSplit ? loanBalance : null,
@@ -160,11 +169,11 @@ export default function CashierPOS() {
         ...(needsGuarantor ? { loan_guarantor_id: guarantor.id, loan_guarantor_name: guarantor.full_name } : {}),
       }).select().single()
       if (sale) {
-        await supabase.from('sale_items').insert(cart.map(c => ({
+        await supabase.from('sale_items').insert(lines.map(({ c, costUnit, lineTotal, lineProfit }) => ({
           sale_id: sale.id, product_id: c.id, product_name: c.name,
-          qty: c.qty, unit_price: c.sell_price, line_total: c.sell_price * c.qty,
-          buy_price: c.buy_price || 0, sale_type: c.sale_type,
-          line_profit: (c.sell_price - (c.buy_price || 0) / (c.box_qty || 1)) * c.qty,
+          qty: c.qty, unit_price: c.sell_price, line_total: lineTotal,
+          buy_price: costUnit, sale_type: c.sale_type || posTab,
+          line_profit: lineProfit,
         })))
         // Stock: Store shops record the sale in the history, or (Chukua store)
         // create a release order; POS-only shops keep the direct update.
