@@ -11,7 +11,7 @@ export default function Settings() {
   const [toast, setToast] = useState('')
 
   // Shop info
-  const [shopForm, setShopForm] = useState({ name: '', phone: '', email: '', address: '', currency: 'TZS', tax_rate: '', sale_mode: 'both' })
+  const [shopForm, setShopForm] = useState({ name: '', phone: '', email: '', address: '', tagline: '', currency: 'TZS', tax_rate: '', sale_mode: 'both' })
   const [shopSaving, setShopSaving] = useState(false)
 
   // Categories
@@ -43,7 +43,8 @@ export default function Settings() {
       name: shopData.name || '',
       phone: shopData.phone || '',
       email: shopData.email || '',
-      address: shopData.address || '',
+      address: shopData.address || shopData.location || '',
+      tagline: shopData.tagline || '',
       currency: shopData.currency || 'TZS',
       tax_rate: String(shopData.tax_rate || ''),
       sale_mode: shopData.sale_mode || 'both',
@@ -65,11 +66,12 @@ export default function Settings() {
       phone: shopForm.phone.trim() || null,
       email: shopForm.email.trim() || null,
       address: shopForm.address.trim() || null,
+      tagline: shopForm.tagline.trim() || null,
       currency: shopForm.currency,
       tax_rate: parseFloat(shopForm.tax_rate) || null,
       sale_mode: shopForm.sale_mode,
     }).eq('id', shop.id)
-    if (error) { showToast(error.message, '#B93A16') } else { showToast('Shop info saved!'); setShop(p => ({ ...p, name: shopForm.name, sale_mode: shopForm.sale_mode })) }
+    if (error) { showToast(/tagline/.test(error.message) ? 'Run the shop tagline SQL in Supabase first.' : error.message, '#B93A16') } else { showToast('Shop info saved!'); setShop(p => ({ ...p, name: shopForm.name, sale_mode: shopForm.sale_mode })) }
     setShopSaving(false)
   }
 
@@ -160,6 +162,10 @@ export default function Settings() {
                 <div>
                   <label style={C.label}>EMAIL</label>
                   <input value={shopForm.email} onChange={e => setShopForm(p => ({ ...p, email: e.target.value }))} placeholder="e.g. info@shop.co.tz" type="email" style={C.input} />
+                </div>
+                <div style={{ gridColumn:'1/-1' }}>
+                  <label style={C.label}>TAGLINE (UNDER SHOP NAME ON INVOICES)</label>
+                  <input value={shopForm.tagline} onChange={e => setShopForm(p => ({ ...p, tagline: e.target.value }))} placeholder="e.g. Genuine spare parts · leave empty for none" style={C.input} />
                 </div>
                 <div style={{ gridColumn:'1/-1' }}>
                   <label style={C.label}>ADDRESS</label>

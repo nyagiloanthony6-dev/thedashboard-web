@@ -43,7 +43,8 @@ export default function Receipt({ order, items, code, shopName, shopId }) {
         }
       `}</style>
       <div style={{ textAlign: 'center', fontWeight: 800, fontSize: 15, fontFamily: 'system-ui, sans-serif' }}>{(shopName || 'SHOP').toUpperCase()}</div>
-      {shopInfo?.address && <div style={{ textAlign: 'center', fontSize: 11 }}>{shopInfo.address}</div>}
+      {shopInfo?.tagline && <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 600 }}>{shopInfo.tagline}</div>}
+      {(shopInfo?.address || shopInfo?.location) && <div style={{ textAlign: 'center', fontSize: 11 }}>{shopInfo.address || shopInfo.location}</div>}
       {(shopInfo?.phone || shopInfo?.email) && <div style={{ textAlign: 'center', fontSize: 11 }}>{[shopInfo.phone && 'Simu: ' + shopInfo.phone, shopInfo.email].filter(Boolean).join('  |  ')}</div>}
       <div style={S.title}>KIBALI CHA KUTOA STORE</div>
       {cancelled && <div style={S.void}>IMESITISHWA — USITOE</div>}

@@ -30,6 +30,11 @@ export default function Invoice() {
     ])
     setSale(sr.data)
     setCustomFields(cfr.data || [])
+    // Use the shop the sale belongs to (branches), with its latest details
+    if (sr.data?.shop_id) {
+      const { data: saleShop } = await supabase.from('shops').select('*').eq('id', sr.data.shop_id).single()
+      if (saleShop) setShop(saleShop)
+    }
 
     if (sr.data?.sale_items?.length) {
       const productIds = sr.data.sale_items.map(i => i.product_id).filter(Boolean)
@@ -75,10 +80,11 @@ export default function Invoice() {
       <div className="invoice" style={{ maxWidth:780, margin:'0 auto', background:'#fff', borderRadius:12, boxShadow:'0 4px 32px rgba(0,0,0,0.12)', padding:'44px 52px', color:'#111' }}>
 
         {/* Header */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:40, paddingBottom:24, borderBottom:'3px solid #FFFFFF' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:40, paddingBottom:24, borderBottom:'3px solid #2D2F8F' }}>
           <div>
-            <h1 style={{ fontSize:30, fontWeight:900, color:'#FFFFFF', margin:'0 0 6px', letterSpacing:-1 }}>{shop?.name}</h1>
-            {shop?.address && <p style={{ fontSize:12, color:'#666', margin:'2px 0' }}>📍 {shop.address}</p>}
+            <h1 style={{ fontSize:30, fontWeight:900, color:'#2D2F8F', margin:'0 0 6px', letterSpacing:-1 }}>{shop?.name}</h1>
+            {shop?.tagline && <p style={{ fontSize:13, color:'#5B607E', margin:'0 0 6px', fontWeight:600 }}>{shop.tagline}</p>}
+            {(shop?.address || shop?.location) && <p style={{ fontSize:12, color:'#666', margin:'2px 0' }}>📍 {shop.address || shop.location}</p>}
             {shop?.phone && <p style={{ fontSize:12, color:'#666', margin:'2px 0' }}>📞 {shop.phone}</p>}
             {shop?.email && <p style={{ fontSize:12, color:'#666', margin:'2px 0' }}>✉️ {shop.email}</p>}
           </div>
@@ -86,7 +92,7 @@ export default function Invoice() {
             <div style={{ background:'#2D2F8F', color:'#fff', borderRadius:8, padding:'6px 20px', marginBottom:10, display:'inline-block' }}>
               <p style={{ fontSize:13, letterSpacing:3, margin:0, fontWeight:700 }}>INVOICE</p>
             </div>
-            <p style={{ fontSize:20, fontWeight:900, color:'#FFFFFF', margin:'4px 0 2px' }}>{invoiceNo}</p>
+            <p style={{ fontSize:20, fontWeight:900, color:'#15183A', margin:'4px 0 2px' }}>{invoiceNo}</p>
             <p style={{ fontSize:12, color:'#666', margin:0 }}>{new Date(sale.sale_date || sale.created_at).toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' })}</p>
           </div>
         </div>
@@ -95,7 +101,7 @@ export default function Invoice() {
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:32, marginBottom:32, padding:20, background:'#f7f8fa', borderRadius:10 }}>
           <div>
             <p style={{ fontSize:10, letterSpacing:2, color:'#999', fontWeight:700, marginBottom:8 }}>BILL TO</p>
-            <p style={{ fontSize:16, fontWeight:800, margin:'0 0 4px', color:'#FFFFFF' }}>{sale.customers?.name || 'Walk-in Customer'}</p>
+            <p style={{ fontSize:16, fontWeight:800, margin:'0 0 4px', color:'#15183A' }}>{sale.customers?.name || 'Walk-in Customer'}</p>
             {sale.customers?.phone && <p style={{ fontSize:12, color:'#555', margin:'2px 0' }}>{sale.customers.phone}</p>}
             {sale.customers?.email && <p style={{ fontSize:12, color:'#555', margin:'2px 0' }}>{sale.customers.email}</p>}
             {sale.customers?.address && <p style={{ fontSize:12, color:'#555', margin:'2px 0' }}>{sale.customers.address}</p>}
@@ -156,8 +162,8 @@ export default function Invoice() {
                 <span>{fmt(sale.transport_fee)}</span>
               </div>
             )}
-            <div style={{ display:'flex', justifyContent:'space-between', padding:'14px 0', fontSize:20, fontWeight:900, borderTop:'2px solid #FFFFFF', marginTop:6 }}>
-              <span>TOTAL</span><span style={{ color:'#FFFFFF' }}>{fmt(sale.total)}</span>
+            <div style={{ display:'flex', justifyContent:'space-between', padding:'14px 0', fontSize:20, fontWeight:900, borderTop:'2px solid #2D2F8F', marginTop:6 }}>
+              <span>TOTAL</span><span style={{ color:'#2D2F8F' }}>{fmt(sale.total)}</span>
             </div>
             {isSplit ? (
               <div style={{ background:'#fff8f0', border:'1px solid #9A5B00', borderRadius:8, padding:'10px 14px', marginTop:8 }}>
