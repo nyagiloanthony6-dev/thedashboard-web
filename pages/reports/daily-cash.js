@@ -38,11 +38,14 @@ export default function DailyCash() {
     setProfile(prof); setShop(shopData)
   })() }, [])
 
+  const limited = !!profile && !['super_admin', 'shop_admin'].includes(profile.role)
+
   const load = async () => {
     if (!shop?.id) return
     setLoading(true); setErr('')
-    const from = new Date(ym.y, ym.m, 1), last = new Date(ym.y, ym.m + 1, 0)
-    const to = last > now ? now : last
+    let from = new Date(ym.y, ym.m, 1), last = new Date(ym.y, ym.m + 1, 0)
+    let to = last > now ? now : last
+    if (limited) { from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2); to = now }
     const { data, error } = await supabase.rpc('td_daily_cash', { p_shop: shop.id, p_from: iso(from), p_to: iso(to) })
     if (error) {
       setErr(/td_daily_cash|function/i.test(error.message) ? 'The daily cash report is not set up yet. Run the "daily cash" SQL (20261120020000_daily_cash.sql) in Supabase.' : error.message)
@@ -50,7 +53,7 @@ export default function DailyCash() {
     } else setRows(Array.isArray(data) ? data : [])
     setLoading(false)
   }
-  useEffect(() => { load() }, [shop?.id, ym.y, ym.m])
+  useEffect(() => { load() }, [shop?.id, ym.y, ym.m, limited])
 
   const savePetty = async () => {
     const amt = parseFloat(String(edit.amount).replace(/,/g, '')) || 0
@@ -64,7 +67,7 @@ export default function DailyCash() {
 
   const todayIso = iso(now)
   const active = r => r.day === todayIso || N(r.revenue) || N(r.expenses) || N(r.petty_cash) || N(r.repaid)
-  const shown = showEmpty ? rows : rows.filter(active)
+  const shown = (showEmpty || limited) ? rows : rows.filter(active)
   const T = rows.reduce((a, r) => ({
     n: a.n + N(r.sales_count), revenue: a.revenue + N(r.revenue), loan: a.loan + N(r.loan), cash_in: a.cash_in + N(r.cash_in),
     expenses: a.expenses + N(r.expenses), petty: a.petty + N(r.petty_cash), repaid: a.repaid + N(r.repaid), remained: a.remained + N(r.remained),
@@ -95,20 +98,22 @@ export default function DailyCash() {
         <div className="dc-print">
           <div className="dc-noprint" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
             <Link href="/reports" style={{ color: '#5B607E', fontSize: 13, marginRight: 8 }}>← Reports</Link>
+            {limited ? <div style={{ fontWeight: 800, fontSize: 16 }}>Last 3 days</div> : <>
             <button style={btn} onClick={() => setYm(p => p.m === 0 ? { y: p.y - 1, m: 11 } : { y: p.y, m: p.m - 1 })}>‹</button>
             <div style={{ fontWeight: 800, fontSize: 16, minWidth: 110, textAlign: 'center' }}>{MON[ym.m]} {ym.y}</div>
             <button style={{ ...btn, opacity: isCur ? 0.4 : 1 }} disabled={isCur} onClick={() => setYm(p => p.m === 11 ? { y: p.y + 1, m: 0 } : { y: p.y, m: p.m + 1 })}>›</button>
+            </>}
             <div style={{ flex: 1 }} />
-            <label style={{ fontSize: 12, color: '#5B607E', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', textTransform: 'none', letterSpacing: 0 }}>
+            {!limited && <label style={{ fontSize: 12, color: '#5B607E', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', textTransform: 'none', letterSpacing: 0 }}>
               <input type="checkbox" checked={showEmpty} onChange={e => setShowEmpty(e.target.checked)} /> Show days with no activity
-            </label>
+            </label>}
             <button style={btn} onClick={exportCSV} disabled={!rows.length}>⬇ CSV</button>
             <button style={{ ...btn, background: '#2D2F8F', color: '#fff', borderColor: '#2D2F8F' }} onClick={() => window.print()}>🖨 Print / PDF</button>
           </div>
 
           {err && <div style={{ ...card, borderColor: '#B93A1655', color: '#B93A16', marginBottom: 16, fontSize: 13 }}>{err}</div>}
 
-          {!err && (
+          {!err && !limited && (
             <div style={{ background: '#2D2F8F', borderRadius: 16, padding: 20, color: '#fff', marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
                 <div>
@@ -140,7 +145,7 @@ export default function DailyCash() {
                     <th style={{ ...th, color: '#B93A16' }}>− LOANS</th>
                     <th style={th}>= CASH COLLECTED</th>
                     <th style={{ ...th, color: '#B93A16' }}>− EXPENSES</th>
-                    <th style={{ ...th, color: '#9A5B00' }}>− PETTY CASH</th>
+                    <th style={{ ...th, color: '#9A5B00' }}>− PETTY CASH<div style={{ fontWeight: 400, letterSpacing: 0, textTransform: 'none' }}>cash left at shop</div></th>
                     <th style={{ ...th, color: '#0B7A6C' }}>+ REPAYMENTS</th>
                     <th style={th}>= CASH REMAINED</th>
                   </tr>
@@ -163,7 +168,9 @@ export default function DailyCash() {
                         <td style={{ ...td, fontWeight: 700 }}>{plain(r.cash_in)}</td>
                         <td style={{ ...td, color: N(r.expenses) ? '#B93A16' : '#B8BBD0' }}>{plain(r.expenses)}</td>
                         <td style={{ ...td }}>
-                          {editing ? (
+                          {(limited && r.day !== todayIso) ? (
+                            <span title="Only the shop admin can change past days" style={{ color: '#9A5B00', fontWeight: 600 }}>{plain(r.petty_cash)} 🔒</span>
+                          ) : editing ? (
                             <div className="dc-noprint" style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
                               <input autoFocus value={edit.amount} onChange={e => setEdit(p => ({ ...p, amount: e.target.value.replace(/[^0-9.]/g, '') }))} onKeyDown={e => { if (e.key === 'Enter') savePetty(); if (e.key === 'Escape') setEdit(null) }} placeholder="Amount" style={{ width: 110, padding: '5px 8px', border: '1px solid #F2A007', borderRadius: 6, textAlign: 'right' }} />
                               <input value={edit.note} onChange={e => setEdit(p => ({ ...p, note: e.target.value }))} onKeyDown={e => { if (e.key === 'Enter') savePetty() }} placeholder="Note (optional)" style={{ width: 150, padding: '5px 8px', border: '1px solid #DCDFEC', borderRadius: 6 }} />
@@ -179,6 +186,7 @@ export default function DailyCash() {
                               {N(r.petty_cash) ? <span className="dc-noprint" style={{ marginLeft: 4, fontSize: 11 }}>✏️</span> : null}
                             </button>
                           )}
+                          {r.set_by && N(r.petty_cash) > 0 && !editing && <div style={{ fontSize: 10, color: '#9A5B00', marginTop: 2 }}>by {r.set_by}</div>}
                         </td>
                         <td style={{ ...td, color: N(r.repaid) ? '#0B7A6C' : '#B8BBD0' }}>{plain(r.repaid)}</td>
                         <td style={{ ...td, fontWeight: 900, color: N(r.remained) >= 0 ? '#0B7A6C' : '#B93A16' }}>{plain(r.remained)}</td>
@@ -186,7 +194,7 @@ export default function DailyCash() {
                     )
                   })}
                 </tbody>
-                {rows.length > 0 && (
+                {rows.length > 0 && !limited && (
                   <tfoot>
                     <tr style={{ background: '#F6F7FB' }}>
                       <td style={{ ...td, textAlign: 'left', fontWeight: 900, borderTop: '2px solid #DCDFEC' }}>TOTAL</td>
@@ -205,7 +213,7 @@ export default function DailyCash() {
             </div>
           )}
           <p className="dc-noprint" style={{ fontSize: 12, color: '#5B607E', marginTop: 12 }}>
-            Click <b>+ Set</b> in the Petty cash column to enter the amount kept in the shop for that day. Loans include the unpaid part of split sales.
+            Click <b>+ Set</b> in the Petty cash column to enter the cash left at the shop (petty cash) for that day.{limited ? ' Cashiers can set today only; the shop admin can change past days.' : ''} Loans include the unpaid part of split sales.
           </p>
         </div>
       </Layout>
