@@ -18,6 +18,8 @@ export default function Sales() {
   const [customFields, setCustomFields] = useState([])
   const [customers, setCustomers] = useState([])
   const [sales, setSales] = useState([])
+  const [staffNames, setStaffNames] = useState({})
+  const [saleBy, setSaleBy] = useState('')
   const [loading, setLoading] = useState(true)
 
   // POS state
@@ -187,6 +189,9 @@ export default function Sales() {
     const shopId = prof.shops.id
     loadModules(shopId).then(m => setStoreOn(m.kibali))
 
+    const { data: allStaffData } = await supabase.from('app_users').select('id,full_name,role').eq('shop_id', shopId)
+    const nm = {}; (allStaffData || []).forEach(u => { nm[u.id] = { name: u.full_name || 'Staff', role: u.role } })
+    setStaffNames(nm)
     const { data: sfData } = await supabase.from('app_users').select('id,full_name').eq('shop_id', shopId).eq('show_in_brought_by', true).order('full_name')
     setStaffList((sfData || []).filter(u => u.full_name))
 
@@ -353,7 +358,12 @@ export default function Sales() {
     if (period === 'year') return d.getFullYear() === now.getFullYear()
     return true
   }
-  const filtSales = sales.filter(filterSale)
+  const ROLE_LBL = { shop_admin: 'Admin', super_admin: 'Admin', cashier: 'Cashier', sales_rep: 'Sales rep', shop_clerk: 'Clerk', storekeeper: 'Storekeeper' }
+  const sellerKey = s => s.cashier_id || s.created_by || 'unknown'
+  const sellerOf = s => { const k = sellerKey(s); if (k === 'unknown') return { name: 'Not recorded', role: '' }; const u = staffNames[k] || (profile?.id === k ? { name: profile.full_name || 'Admin', role: profile.role } : null); return u ? { name: u.name, role: ROLE_LBL[u.role] || '' } : { name: 'Former staff', role: '' } }
+  const periodSales = sales.filter(filterSale)
+  const sellerGroups = Object.values(periodSales.reduce((g, s) => { const k = sellerKey(s); const w = sellerOf(s); g[k] = g[k] || { k, name: w.name, role: w.role, n: 0, tot: 0 }; g[k].n++; g[k].tot += Number(s.total) || 0; return g }, {})).sort((a, b) => b.tot - a.tot)
+  const filtSales = periodSales.filter(s => !saleBy || sellerKey(s) === saleBy)
   const filtRev = filtSales.reduce((a, s) => a + (s.total || 0), 0)
   const filtProfit = filtSales.reduce((a, s) => a + (s.total_profit || 0), 0)
 
@@ -729,6 +739,24 @@ export default function Sales() {
               ))}
             </div>
 
+            {/* Sold by */}
+            {sellerGroups.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 10, color: '#5B607E', letterSpacing: 0.8, marginBottom: 6 }}>SOLD BY · click to filter</p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[{ k: '', name: 'Everyone', n: periodSales.length, tot: periodSales.reduce((a, s) => a + (Number(s.total) || 0), 0) }, ...sellerGroups].map(c => {
+                    const on = saleBy === c.k
+                    return (
+                      <button key={c.k || 'all'} onClick={() => setSaleBy(on && c.k ? '' : c.k)} style={{ textAlign: 'left', padding: '8px 12px', borderRadius: 10, border: '1px solid', borderColor: on ? '#2D2F8F' : '#DCDFEC', background: on ? '#2D2F8F' : '#fff', color: on ? '#fff' : '#15183A', cursor: 'pointer' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700 }}>{c.k ? '👤 ' : ''}{c.name}{c.role ? <span style={{ fontWeight: 400, fontSize: 11, opacity: 0.75 }}> · {c.role}</span> : null}</div>
+                        <div style={{ fontSize: 11, color: on ? '#C9CBF2' : '#5B607E' }}>{c.n} sale{c.n !== 1 ? 's' : ''} · {fmtK(c.tot)}</div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Summary */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
               {[
@@ -749,7 +777,7 @@ export default function Sales() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #DCDFEC' }}>
-                    {['Date', 'Customer', 'Items', 'Payment', 'Total', 'Profit', '', ''].map(h => (
+                    {['Date', 'Customer', 'Sold by', 'Items', 'Payment', 'Total', 'Profit', '', ''].map(h => (
                       <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: 10, color: '#5B607E', letterSpacing: 0.8, fontWeight: 600 }}>{h}</th>
                     ))}
                   </tr>
@@ -762,6 +790,7 @@ export default function Sales() {
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                       <td style={{ padding: '10px 14px', fontSize: 12, color: '#5B607E' }}>{s.sale_date || s.created_at?.split('T')[0]}</td>
                       <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600 }}>{s.customers?.name || 'Walk-in'}</td>
+                      <td style={{ padding: '10px 14px', fontSize: 12 }}>{(() => { const w = sellerOf(s); return <span style={{ color: w.role ? '#0F7375' : '#8A8FAE', fontWeight: 600 }}>{w.name}{w.role && <span style={{ color: '#8A8FAE', fontWeight: 400 }}> · {w.role}</span>}</span> })()}</td>
                       <td style={{ padding: '10px 14px', fontSize: 12, color: '#5B607E' }}>{(s.sale_items || []).length}</td>
                       <td style={{ padding: '10px 14px' }}><span style={C.badge('#2D2F8F')}>{s.payment_method?.toUpperCase()}</span></td>
                       <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#2D2F8F' }}>{fmtK(s.total)}</td>
@@ -773,7 +802,7 @@ export default function Sales() {
                     </tr>
                   ))}
                   {!filtSales.length && (
-                    <tr><td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#8A8FAE' }}>No sales found for this period</td></tr>
+                    <tr><td colSpan={9} style={{ padding: 40, textAlign: 'center', color: '#8A8FAE' }}>No sales found for this period</td></tr>
                   )}
                 </tbody>
               </table>
