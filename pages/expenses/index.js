@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Head from 'next/head'
 import Layout from '../../components/Layout'
 import { supabase, fmt, fmtK, today } from '../../lib/supabase'
+import StaffLoans from '../../components/StaffLoans'
 
 const CATS = ['Transport','Stock Purchase','Rent','Salaries','Electricity','Water','Packaging','Cleaning','Marketing','Miscellaneous']
 const TYPES = ['operating','stock','capital','other']
@@ -19,6 +20,8 @@ export default function Expenses() {
   const [form, setForm] = useState({ category:'Transport', description:'', amount:'', expense_date:today(), expense_type:'operating', added_by:'' })
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
   const [toast, setToast] = useState('')
+  const [view, setView] = useState('exp')
+  const [allStaff, setAllStaff] = useState([])
 
   useEffect(() => { loadData() }, [])
 
@@ -35,6 +38,8 @@ export default function Expenses() {
     ])
     setExpenses(er.data || [])
     setTeam(tr.data || [])
+    const { data: st } = await supabase.from('app_users').select('id,full_name,role').eq('shop_id', shopId).order('full_name')
+    setAllStaff((st || []).filter(u => u.id !== user.id))
     setLoading(false)
   }
 
@@ -105,6 +110,24 @@ export default function Expenses() {
 
         {toast && <div style={{ position:'fixed', top:20, right:20, background:'#B93A16', color:'#fff', padding:'12px 20px', borderRadius:10, fontWeight:700, fontSize:13, zIndex:9999 }}>{toast}</div>}
 
+        {['shop_admin','super_admin'].includes(profile?.role) && (
+          <div style={{ display:'inline-flex', background:'#ECEEF7', border:'1px solid #DCDFEC', borderRadius:10, padding:3, marginBottom:16 }}>
+            {[{ k:'exp', l:'💸 Expenses' }, { k:'staff', l:'🤝 Staff loans' }].map(v => (
+              <button key={v.k} onClick={() => setView(v.k)} style={{ padding:'8px 18px', borderRadius:8, border:'none', background:view===v.k?'#2D2F8F':'transparent', color:view===v.k?'#fff':'#5B607E', fontWeight:700, fontSize:13, cursor:'pointer' }}>{v.l}</button>
+            ))}
+          </div>
+        )}
+
+        {view === 'staff' ? (
+          <>
+            <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+              {[{k:'today',l:'Today'},{k:'month',l:'This Month'},{k:'year',l:'This Year'},{k:'all',l:'All Time'}].map(p => (
+                <button key={p.k} onClick={() => setPeriod(p.k)} style={{ padding:'8px 16px', borderRadius:8, border:'1px solid', borderColor:period===p.k?'#3D3FAE':'#DCDFEC', background:period===p.k?'rgba(61,63,174,0.12)':'transparent', color:period===p.k?'#3D3FAE':'#5B607E', fontSize:13, fontWeight:period===p.k?700:400, cursor:'pointer' }}>{p.l}</button>
+              ))}
+            </div>
+            <StaffLoans shopId={shop?.id} staff={allStaff} period={period} onToast={showToast} />
+          </>
+        ) : (<>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
           <div style={{ display:'flex', gap:8 }}>
             {[{k:'today',l:'Today'},{k:'month',l:'This Month'},{k:'year',l:'This Year'},{k:'all',l:'All Time'}].map(p => (
@@ -182,6 +205,8 @@ export default function Expenses() {
             {!catList.length && <p style={{ color:'#8A8FAE', fontSize:13 }}>No expenses</p>}
           </div>
         </div>
+
+        </>)}
 
         {/* Modal */}
         {showModal && (
