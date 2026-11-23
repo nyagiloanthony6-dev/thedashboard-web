@@ -3,7 +3,7 @@ import { supabase, fmt, fmtK, today } from '../lib/supabase'
 
 // Staff loans (advances): given to staff, repaid in parts.
 // Cash out on the day given, cash in on repayment (daily cash report). Not counted against profit.
-export default function StaffLoans({ shopId, staff = [], period = 'month', onToast }) {
+export default function StaffLoans({ shopId, staff = [], period = 'month', onToast, onExpensesChanged }) {
   const [loans, setLoans] = useState([])
   const [pays, setPays] = useState([])
   const [ready, setReady] = useState(true)
@@ -29,7 +29,7 @@ export default function StaffLoans({ shopId, staff = [], period = 'month', onToa
   useEffect(() => { load() }, [shopId])
 
   const paidOf = id => pays.filter(p => p.loan_id === id).reduce((a, p) => a + (Number(p.amount) || 0), 0)
-  const rows = loans.map(l => { const paid = paidOf(l.id); return { ...l, paid, bal: Math.max(0, (Number(l.amount) || 0) - paid) } })
+  const rows = loans.map(l => { const paid = paidOf(l.id); const off = Number(l.written_off) || 0; return { ...l, paid, off, bal: Math.max(0, (Number(l.amount) || 0) - paid - off) } })
   const open = rows.filter(r => r.bal > 0)
   const owed = open.reduce((a, r) => a + r.bal, 0)
   const now = new Date()
@@ -64,6 +64,12 @@ export default function StaffLoans({ shopId, staff = [], period = 'month', onToa
     setSaving(false)
     if (error) { toast(error.message, true); return }
     setPayFor(null); toast('Repayment saved'); load()
+  }
+  const writeOff = async l => {
+    if (!confirm(`Write off ${l.staff_name}'s unpaid ${fmt(Math.round(l.bal))}?\n\nIt is recorded as an expense today and taken off profit. Cash is not affected.`)) return
+    const { error } = await supabase.rpc('td_staff_loan_write_off', { p_loan: l.id, p_note: null })
+    if (error) { toast(/td_staff_loan_write_off/.test(error.message) ? 'Run the staff loan move & write-off SQL first.' : error.message, true); return }
+    toast('Loan written off'); load(); onExpensesChanged && onExpensesChanged()
   }
   const del = async l => {
     if (!confirm(`Delete ${l.staff_name}'s loan of ${fmt(l.amount)} and its repayments?`)) return
@@ -159,7 +165,7 @@ export default function StaffLoans({ shopId, staff = [], period = 'month', onToa
                     {fmt(Math.round(l.paid))}
                     <div style={{ height: 6, borderRadius: 3, background: '#ECEEF7', marginTop: 6, overflow: 'hidden' }}><div style={{ width: `${Math.min(100, pct)}%`, height: 6, background: '#0B8A7A' }} /></div>
                   </td>
-                  <td style={{ padding: '12px 14px', fontSize: 14, textAlign: 'right', fontWeight: 800, color: l.bal > 0 ? '#B93A16' : '#0B7A6C' }}>{l.bal > 0 ? fmt(Math.round(l.bal)) : '✅ Repaid'}</td>
+                  <td style={{ padding: '12px 14px', fontSize: 14, textAlign: 'right', fontWeight: 800, color: l.bal > 0 ? '#B93A16' : l.off > 0 ? '#8A8FAE' : '#0B7A6C' }}>{l.bal > 0 ? fmt(Math.round(l.bal)) : l.off > 0 ? 'Written off' : '✅ Repaid'}{l.off > 0 && l.bal > 0 ? <div style={{ fontSize: 11, color: '#8A8FAE', fontWeight: 500 }}>written off {fmt(Math.round(l.off))}</div> : null}{l.off > 0 && l.bal <= 0 ? <div style={{ fontSize: 11, color: '#8A8FAE', fontWeight: 500 }}>{fmt(Math.round(l.off))}</div> : null}</td>
                   <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                     {paying ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 200 }}>
@@ -174,6 +180,7 @@ export default function StaffLoans({ shopId, staff = [], period = 'month', onToa
                     ) : (
                       <div style={{ display: 'flex', gap: 6 }}>
                         {l.bal > 0 && <button onClick={() => setPayFor({ id: l.id, amount: '', note: '', date: today() })} style={{ ...btn, padding: '6px 12px', fontSize: 12, background: '#0B7A6C', color: '#fff', borderColor: '#0B7A6C' }}>+ Repayment</button>}
+                        {l.bal > 0 && <button onClick={() => writeOff(l)} style={{ ...btn, padding: '6px 10px', fontSize: 12, color: '#8A8FAE' }}>Write off</button>}
                         <button onClick={() => del(l)} title="Delete" style={{ ...btn, padding: '6px 10px', fontSize: 12 }}>🗑</button>
                       </div>
                     )}

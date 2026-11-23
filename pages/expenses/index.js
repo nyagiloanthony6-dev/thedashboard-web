@@ -22,6 +22,19 @@ export default function Expenses() {
   const [toast, setToast] = useState('')
   const [view, setView] = useState('exp')
   const [allStaff, setAllStaff] = useState([])
+  const [moveExp, setMoveExp] = useState(null) // { e, staff_id, staff_name }
+  const [moving, setMoving] = useState(false)
+  const [loansKey, setLoansKey] = useState(0)
+  const isAdmin = ['shop_admin','super_admin'].includes(profile?.role)
+  const doMove = async () => {
+    const nm = (moveExp?.staff_name || '').trim()
+    if (!nm) { showToast('Choose who took the money'); return }
+    setMoving(true)
+    const { error } = await supabase.rpc('td_expense_to_staff_loan', { p_expense: String(moveExp.e.id), p_staff_id: moveExp.staff_id || null, p_staff_name: nm })
+    setMoving(false)
+    if (error) { showToast(/td_expense_to_staff_loan/.test(error.message) ? 'Run the staff loan move & write-off SQL first' : error.message); return }
+    setExpenses(p => p.filter(x => x.id !== moveExp.e.id)); setMoveExp(null); setLoansKey(k => k + 1); showToast('Moved to staff loans')
+  }
 
   useEffect(() => { loadData() }, [])
 
@@ -125,7 +138,7 @@ export default function Expenses() {
                 <button key={p.k} onClick={() => setPeriod(p.k)} style={{ padding:'8px 16px', borderRadius:8, border:'1px solid', borderColor:period===p.k?'#3D3FAE':'#DCDFEC', background:period===p.k?'rgba(61,63,174,0.12)':'transparent', color:period===p.k?'#3D3FAE':'#5B607E', fontSize:13, fontWeight:period===p.k?700:400, cursor:'pointer' }}>{p.l}</button>
               ))}
             </div>
-            <StaffLoans shopId={shop?.id} staff={allStaff} period={period} onToast={showToast} />
+            <StaffLoans key={loansKey} shopId={shop?.id} staff={allStaff} period={period} onToast={showToast} onExpensesChanged={loadData} />
           </>
         ) : (<>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
@@ -177,6 +190,7 @@ export default function Expenses() {
                     <td style={{ padding:'10px 14px', fontSize:14, fontWeight:700, color:'#B93A16' }}>{fmt(e.amount)}</td>
                     <td style={{ padding:'10px 14px' }}>
                       <div style={{ display:'flex', gap:6 }}>
+                        {isAdmin && e.category !== 'Staff loan written off' && <button onClick={() => setMoveExp({ e, staff_id:'', staff_name:'' })} title="Move to staff loan" style={{ padding:'5px 10px', borderRadius:6, border:'1px solid rgba(61,63,174,0.35)', background:'transparent', color:'#3D3FAE', fontSize:11, fontWeight:600, cursor:'pointer', marginRight:6, whiteSpace:'nowrap' }}>🤝 Loan</button>}
                         <button onClick={() => openEdit(e)} style={{ padding:'5px 10px', borderRadius:6, border:'1px solid #DCDFEC', background:'transparent', color:'#2D2F8F', fontSize:11, fontWeight:600, cursor:'pointer' }}>Edit</button>
                         <button onClick={() => del(e.id)} style={{ padding:'5px 10px', borderRadius:6, border:'1px solid rgba(185,58,22,0.3)', background:'transparent', color:'#B93A16', fontSize:11, fontWeight:600, cursor:'pointer' }}>Del</button>
                       </div>
@@ -207,6 +221,25 @@ export default function Expenses() {
         </div>
 
         </>)}
+
+        {moveExp && (
+          <div style={{ position:'fixed', inset:0, background:'rgba(21,24,58,0.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setMoveExp(null)}>
+            <div onClick={ev => ev.stopPropagation()} style={{ background:'#fff', borderRadius:16, padding:24, width:460, maxWidth:'92vw' }}>
+              <div style={{ fontWeight:800, color:'#3D3FAE', fontSize:16, marginBottom:4 }}>🤝 Move to staff loan</div>
+              <div style={{ fontSize:13, color:'#5B607E', marginBottom:16 }}>{moveExp.e.category} · {fmt(Number(moveExp.e.amount))} · {moveExp.e.expense_date}{moveExp.e.description ? ` · ${moveExp.e.description}` : ''}</div>
+              <div style={{ fontSize:10, color:'#5B607E', letterSpacing:0.8, fontWeight:700, marginBottom:6 }}>WHO TOOK THE MONEY? *</div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:8 }}>
+                {allStaff.map(u => { const on = moveExp.staff_id === u.id; return <button key={u.id} onClick={() => setMoveExp(p => ({ ...p, staff_id:u.id, staff_name:u.full_name || 'Staff' }))} style={{ padding:'6px 12px', borderRadius:16, border:'1.5px solid', borderColor:on?'#3D3FAE':'#DCDFEC', background:on?'#3D3FAE15':'#fff', color:on?'#3D3FAE':'#5B607E', fontWeight:700, fontSize:12, cursor:'pointer' }}>👤 {u.full_name}</button> })}
+              </div>
+              <input style={{ ...C.input, marginBottom:12 }} value={moveExp.staff_id ? '' : moveExp.staff_name} onChange={ev => setMoveExp(p => ({ ...p, staff_id:'', staff_name:ev.target.value }))} placeholder={moveExp.staff_id ? `Selected: ${moveExp.staff_name}` : 'Or type a name'} />
+              <div style={{ fontSize:12, color:'#5B607E', marginBottom:16 }}>The expense is removed and a staff loan of the same amount and date is created. Profit goes up by this amount; cash stays the same.</div>
+              <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+                <button onClick={() => setMoveExp(null)} style={{ padding:'9px 16px', borderRadius:8, border:'1px solid #DCDFEC', background:'#fff', cursor:'pointer', fontWeight:600 }}>Cancel</button>
+                <button disabled={moving} onClick={doMove} style={{ padding:'9px 16px', borderRadius:8, border:'none', background:'#3D3FAE', color:'#fff', cursor:'pointer', fontWeight:700, opacity:moving?0.6:1 }}>{moving ? 'Moving…' : 'Move to staff loan'}</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal */}
         {showModal && (
