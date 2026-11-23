@@ -73,7 +73,7 @@ export default function DailyCash() {
     expenses: a.expenses + N(r.expenses), petty: a.petty + N(r.petty_cash), repaid: a.repaid + N(r.repaid), remained: a.remained + N(r.remained),
     sl: a.sl + N(r.staff_loan), sr: a.sr + N(r.staff_repaid),
   }), { n: 0, revenue: 0, loan: 0, cash_in: 0, expenses: 0, petty: 0, repaid: 0, remained: 0, sl: 0, sr: 0 })
-  const hasStaff = T.sl > 0 || T.sr > 0
+  const hasStaff = false // staff loans are paid from the bank: never part of this report
   const isCur = ym.y === now.getFullYear() && ym.m === now.getMonth()
 
   const exportCSV = () => {
