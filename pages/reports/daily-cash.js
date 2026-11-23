@@ -71,7 +71,9 @@ export default function DailyCash() {
   const T = rows.reduce((a, r) => ({
     n: a.n + N(r.sales_count), revenue: a.revenue + N(r.revenue), loan: a.loan + N(r.loan), cash_in: a.cash_in + N(r.cash_in),
     expenses: a.expenses + N(r.expenses), petty: a.petty + N(r.petty_cash), repaid: a.repaid + N(r.repaid), remained: a.remained + N(r.remained),
-  }), { n: 0, revenue: 0, loan: 0, cash_in: 0, expenses: 0, petty: 0, repaid: 0, remained: 0 })
+    sl: a.sl + N(r.staff_loan), sr: a.sr + N(r.staff_repaid),
+  }), { n: 0, revenue: 0, loan: 0, cash_in: 0, expenses: 0, petty: 0, repaid: 0, remained: 0, sl: 0, sr: 0 })
+  const hasStaff = T.sl > 0 || T.sr > 0
   const isCur = ym.y === now.getFullYear() && ym.m === now.getMonth()
 
   const exportCSV = () => {
@@ -122,7 +124,7 @@ export default function DailyCash() {
                   <div style={{ fontSize: 12, color: '#C9CBF2', marginTop: 2 }}>{T.n} sales · {rows.filter(active).length} days with activity</div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(120px,1fr))', gap: 8 }}>
-                  {[['Revenue', T.revenue, ''], ['Loans', T.loan, '−'], ['Cash collected', T.cash_in, '='], ['Expenses', T.expenses, '−'], ['Petty cash', T.petty, '−'], ['Repayments', T.repaid, '+']].map(([l, v, sg]) => (
+                  {[['Revenue', T.revenue, ''], ['Loans', T.loan, '−'], ['Cash collected', T.cash_in, '='], ['Expenses', T.expenses, '−'], ['Petty cash', T.petty, '−'], ['Repayments', T.repaid, '+'], ...(hasStaff ? [['Staff loans', T.sl, '−'], ['Staff repaid', T.sr, '+']] : [])].map(([l, v, sg]) => (
                     <div key={l} style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 12px' }}>
                       <div style={{ fontSize: 15, fontWeight: 800 }}>{sg ? sg + ' ' : ''}{plain(v)}</div>
                       <div style={{ fontSize: 10, color: '#C9CBF2', letterSpacing: 0.6 }}>{l.toUpperCase()}</div>
@@ -130,7 +132,7 @@ export default function DailyCash() {
                   ))}
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: '#C9CBF2', marginTop: 12 }}>Cash remained = Revenue − Loans − Expenses − Petty cash + Loan repayments received</div>
+              <div style={{ fontSize: 11, color: '#C9CBF2', marginTop: 12 }}>Cash remained = Revenue − Loans − Expenses − Petty cash + Loan repayments{hasStaff ? ' − Staff loans + Staff repayments' : ''}</div>
             </div>
           )}
 
@@ -147,12 +149,14 @@ export default function DailyCash() {
                     <th style={{ ...th, color: '#B93A16' }}>− EXPENSES</th>
                     <th style={{ ...th, color: '#9A5B00' }}>− PETTY CASH<div style={{ fontWeight: 400, letterSpacing: 0, textTransform: 'none' }}>cash left at shop</div></th>
                     <th style={{ ...th, color: '#0B7A6C' }}>+ REPAYMENTS</th>
+                    {hasStaff && <th style={{ ...th, color: '#3D3FAE' }}>− STAFF LOANS</th>}
+                    {hasStaff && <th style={{ ...th, color: '#0B7A6C' }}>+ STAFF REPAID</th>}
                     <th style={th}>= CASH REMAINED</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {loading && !rows.length && <tr><td colSpan={9} style={{ ...td, textAlign: 'center', color: '#5B607E' }}>Loading…</td></tr>}
-                  {!loading && shown.length === 0 && <tr><td colSpan={9} style={{ ...td, textAlign: 'center', color: '#5B607E', padding: 30 }}>No sales or expenses in {MON[ym.m]} {ym.y}.</td></tr>}
+                  {loading && !rows.length && <tr><td colSpan={hasStaff ? 11 : 9} style={{ ...td, textAlign: 'center', color: '#5B607E' }}>Loading…</td></tr>}
+                  {!loading && shown.length === 0 && <tr><td colSpan={hasStaff ? 11 : 9} style={{ ...td, textAlign: 'center', color: '#5B607E', padding: 30 }}>No sales or expenses in {MON[ym.m]} {ym.y}.</td></tr>}
                   {shown.map(r => {
                     const d = new Date(r.day + 'T00:00:00'); const isToday = r.day === todayIso
                     const editing = edit && edit.day === r.day
@@ -189,6 +193,8 @@ export default function DailyCash() {
                           {r.set_by && N(r.petty_cash) > 0 && !editing && <div style={{ fontSize: 10, color: '#9A5B00', marginTop: 2 }}>by {r.set_by}</div>}
                         </td>
                         <td style={{ ...td, color: N(r.repaid) ? '#0B7A6C' : '#B8BBD0' }}>{plain(r.repaid)}</td>
+                        {hasStaff && <td style={{ ...td, color: N(r.staff_loan) ? '#3D3FAE' : '#B8BBD0' }}>{plain(r.staff_loan)}</td>}
+                        {hasStaff && <td style={{ ...td, color: N(r.staff_repaid) ? '#0B7A6C' : '#B8BBD0' }}>{plain(r.staff_repaid)}</td>}
                         <td style={{ ...td, fontWeight: 900, color: N(r.remained) >= 0 ? '#0B7A6C' : '#B93A16' }}>{plain(r.remained)}</td>
                       </tr>
                     )
@@ -205,6 +211,8 @@ export default function DailyCash() {
                       <td style={{ ...td, fontWeight: 800, color: '#B93A16', borderTop: '2px solid #DCDFEC' }}>{plain(T.expenses)}</td>
                       <td style={{ ...td, fontWeight: 800, color: '#9A5B00', borderTop: '2px solid #DCDFEC' }}>{plain(T.petty)}</td>
                       <td style={{ ...td, fontWeight: 800, color: '#0B7A6C', borderTop: '2px solid #DCDFEC' }}>{plain(T.repaid)}</td>
+                      {hasStaff && <td style={{ ...td, fontWeight: 800, color: '#3D3FAE', borderTop: '2px solid #DCDFEC' }}>{plain(T.sl)}</td>}
+                      {hasStaff && <td style={{ ...td, fontWeight: 800, color: '#0B7A6C', borderTop: '2px solid #DCDFEC' }}>{plain(T.sr)}</td>}
                       <td style={{ ...td, fontWeight: 900, fontSize: 15, color: T.remained >= 0 ? '#0B7A6C' : '#B93A16', borderTop: '2px solid #DCDFEC' }}>{plain(T.remained)}</td>
                     </tr>
                   </tfoot>
