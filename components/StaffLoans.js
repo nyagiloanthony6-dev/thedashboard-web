@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase, fmt, fmtK, today } from '../lib/supabase'
 
 // Staff loans (advances): given to staff, repaid in parts.
-// Cash out on the day given, cash in on repayment (daily cash report). Not counted against profit.
+// Paid from the bank: not part of the daily cash report. Not counted against profit.
 export default function StaffLoans({ shopId, staff = [], period = 'month', onToast, onExpensesChanged }) {
   const [loans, setLoans] = useState([])
   const [pays, setPays] = useState([])
@@ -103,8 +103,8 @@ export default function StaffLoans({ shopId, staff = [], period = 'month', onToa
             </div>
           )}
         </div>
-        <div style={card}><div style={{ fontSize: 10, color: '#5B607E', letterSpacing: 0.8, fontWeight: 700 }}>GIVEN (PERIOD)</div><div style={{ fontSize: 22, fontWeight: 900, color: '#3D3FAE', marginTop: 6 }}>{fmtK(givenP)}</div><div style={{ fontSize: 11, color: '#5B607E', marginTop: 4 }}>Money out</div></div>
-        <div style={card}><div style={{ fontSize: 10, color: '#5B607E', letterSpacing: 0.8, fontWeight: 700 }}>REPAID (PERIOD)</div><div style={{ fontSize: 22, fontWeight: 900, color: '#0B7A6C', marginTop: 6 }}>{fmtK(repaidP)}</div><div style={{ fontSize: 11, color: '#5B607E', marginTop: 4 }}>Money back in</div></div>
+        <div style={card}><div style={{ fontSize: 10, color: '#5B607E', letterSpacing: 0.8, fontWeight: 700 }}>GIVEN (PERIOD)</div><div style={{ fontSize: 22, fontWeight: 900, color: '#3D3FAE', marginTop: 6 }}>{fmtK(givenP)}</div><div style={{ fontSize: 11, color: '#5B607E', marginTop: 4 }}>Paid from the bank</div></div>
+        <div style={card}><div style={{ fontSize: 10, color: '#5B607E', letterSpacing: 0.8, fontWeight: 700 }}>REPAID (PERIOD)</div><div style={{ fontSize: 22, fontWeight: 900, color: '#0B7A6C', marginTop: 6 }}>{fmtK(repaidP)}</div><div style={{ fontSize: 11, color: '#5B607E', marginTop: 4 }}>Paid back by staff</div></div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -112,7 +112,7 @@ export default function StaffLoans({ shopId, staff = [], period = 'month', onToa
         <label style={{ fontSize: 12, color: '#5B607E', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'none', letterSpacing: 0, whiteSpace: 'nowrap' }}>
           <input type="checkbox" checked={showPaid} onChange={e => setShowPaid(e.target.checked)} /> Show all fully repaid loans
         </label>
-        <span style={{ fontSize: 12, color: '#5B607E', marginLeft: 'auto' }}>Staff loans are not counted against profit: staff pay them back.</span>
+        <span style={{ fontSize: 12, color: '#5B607E', marginLeft: 'auto' }}>Paid from the bank: not in the daily cash report, and not counted against profit.</span>
       </div>
 
       {showGive && (
